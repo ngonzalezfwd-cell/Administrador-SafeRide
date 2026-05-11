@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { Link, useLocation } from 'react-router-dom';
+import api from '../../services/api';
 import {
     LayoutDashboard, Users, UserCheck, Car, Calendar, CreditCard,
     Bell, AlertCircle, ShieldCheck, Settings, Search, LogOut,
@@ -9,51 +11,10 @@ import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Tooltip
 } from 'recharts';
-import './DashboardAdmin.css';
+import './Dashboard.css';
 
-const lineData = [
-    { name: '14 May', value: 30 },
-    { name: '15 May', value: 150 },
-    { name: '16 May', value: 120 },
-    { name: '17 May', value: 70 },
-    { name: '18 May', value: 100 },
-    { name: '19 May', value: 180 },
-    { name: '20 May', value: 210 },
-];
-
-const pieDataPagos = [
-    { name: 'Pagados', value: 1245, color: '#10B981' },
-    { name: 'Pendientes', value: 451, color: '#F59E0B' },
-    { name: 'Fallidos', value: 200, color: '#EF4444' },
-];
-
-const pieDataRoles = [
-    { name: 'Pasajeros', value: 892, color: '#3B82F6' },
-    { name: 'Conductores', value: 342, color: '#10B981' },
-    { name: 'Moderadores', value: 14, color: '#8B5CF6' },
-];
-
-const recientesData = [
-    { id: 1, type: 'user', icon: <UserCheck size={16} />, title: 'Nuevo usuario registrado', user: 'Juan Pérez', date: '20/05/2025 10:45 AM', colorClass: 'icon-green' },
-    { id: 2, type: 'car', icon: <Car size={16} />, title: 'Vehículo aprobado', user: 'María López', date: '20/05/2025 10:30 AM', colorClass: 'icon-blue' },
-    { id: 3, type: 'calendar', icon: <Calendar size={16} />, title: 'Reserva realizada', user: 'Carlos Gómez', date: '20/05/2025 10:15 AM', colorClass: 'icon-yellow' },
-    { id: 4, type: 'alert', icon: <AlertCircle size={16} />, title: 'Nueva queja recibida', user: 'Ana Torres', date: '20/05/2025 09:58 AM', colorClass: 'icon-red' },
-    { id: 5, type: 'payment', icon: <CreditCard size={16} />, title: 'Pago realizado', user: 'Luis Ramírez', date: '20/05/2025 09:42 AM', colorClass: 'icon-purple' },
-];
-
-const reservasData = [
-    { id: '#R-2025-00124', user: 'Juan Pérez', route: 'Centro → Aeropuerto', status: 'Completada', statusClass: 'status-green', price: '$15.50', time: 'Hoy, 10:45 AM', img: 'https://i.pravatar.cc/150?u=1' },
-    { id: '#R-2025-00123', user: 'María López', route: 'Centro → Plaza Norte', status: 'En progreso', statusClass: 'status-blue', price: '$8.75', time: 'Hoy, 10:30 AM', img: 'https://i.pravatar.cc/150?u=2' },
-    { id: '#R-2025-00122', user: 'Carlos Gómez', route: 'Centro → Mall del Sol', status: 'Pendiente', statusClass: 'status-yellow', price: '$12.00', time: 'Hoy, 10:15 AM', img: 'https://i.pravatar.cc/150?u=3' },
-    { id: '#R-2025-00121', user: 'Ana Torres', route: 'Centro → Terminal', status: 'Cancelada', statusClass: 'status-red', price: '$9.25', time: 'Hoy, 09:58 AM', img: 'https://i.pravatar.cc/150?u=4' },
-];
-
-const quejasData = [
-    { id: 1, title: 'Servicio tardío', user: 'Juan Pérez', priority: 'Alta', priorityClass: 'priority-high', time: 'Hoy, 10:45 AM' },
-    { id: 2, title: 'Conductor no profesional', user: 'María López', priority: 'Media', priorityClass: 'priority-medium', time: 'Hoy, 10:30 AM' },
-    { id: 3, title: 'Problema con el pago', user: 'Carlos Gómez', priority: 'Baja', priorityClass: 'priority-low', time: 'Hoy, 10:15 AM' },
-    { id: 4, title: 'Vehículo en mal estado', user: 'Ana Torres', priority: 'Alta', priorityClass: 'priority-high', time: 'Hoy, 09:58 AM' },
-];
+// Función para imagen por defecto de Cloudinary
+const getDefaultImage = (url) => url ? url : 'https://res.cloudinary.com/demo/image/upload/d_avatar.png/non_existing_id.png';
 
 const StatCard = ({ icon, title, value, change, isPositive, subtitle }) => (
     <div className="stat-card">
@@ -78,11 +39,83 @@ const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, i
 
 const Dashboard = () => {
     const { user, logout } = useAuth();
+    const location = useLocation();
+    const [metrics, setMetrics] = useState({});
+    const [bookings, setBookings] = useState([]);
+    const [users, setUsers] = useState([]);
+    const [notifications, setNotifications] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                // Fetch basic metrics and recent data from API
+                const [metricsRes, bookingsRes, usersRes, notifRes] = await Promise.all([
+                    api.get('/metrics/global').catch(() => ({ data: { data: {} } })),
+                    api.get('/bookings?limit=5').catch(() => ({ data: { data: [] } })),
+                    api.get('/users?limit=5').catch(() => ({ data: { data: [] } })),
+                    api.get('/notifications').catch(() => ({ data: { data: [] } }))
+                ]);
+
+                setMetrics(metricsRes.data?.data || {});
+                setBookings(bookingsRes.data?.data || bookingsRes.data?.data?.docs || []);
+                setUsers(usersRes.data?.data || usersRes.data?.data?.docs || []);
+                setNotifications(notifRes.data?.data || notifRes.data?.data?.docs || []);
+            } catch (error) {
+                console.error("Error fetching dashboard data:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchDashboardData();
+    }, []);
+
+    // Helper functions to format status and priority
+    const getStatusClass = (status) => {
+        switch(status?.toLowerCase()) {
+            case 'completed': case 'completada': case 'confirmed': return 'status-green';
+            case 'pending': case 'pendiente': return 'status-yellow';
+            case 'cancelled': case 'canceled': case 'cancelada': return 'status-red';
+            default: return 'status-blue';
+        }
+    };
+
+    // Calculate dynamic data based on metrics
+    const totalUsers = metrics.totalUsers || 0;
+    const totalDrivers = metrics.totalDrivers || 0;
+    const totalPassengers = metrics.totalPassengers || 0;
+    const totalRides = metrics.totalRides || 0;
+    
+    // Fallback data for charts if API doesn't provide it yet
+    const pieDataRoles = [
+        { name: 'Pasajeros', value: totalPassengers > 0 ? totalPassengers : 892, color: '#3B82F6' },
+        { name: 'Conductores', value: totalDrivers > 0 ? totalDrivers : 342, color: '#10B981' },
+        { name: 'Moderadores', value: (totalUsers - totalPassengers - totalDrivers) > 0 ? (totalUsers - totalPassengers - totalDrivers) : 14, color: '#8B5CF6' },
+    ];
+
+    const pieDataPagos = [
+        { name: 'Pagados', value: 1245, color: '#10B981' },
+        { name: 'Pendientes', value: 451, color: '#F59E0B' },
+        { name: 'Fallidos', value: 200, color: '#EF4444' },
+    ];
+
+    const lineData = [
+        { name: '14 May', value: 30 },
+        { name: '15 May', value: 150 },
+        { name: '16 May', value: 120 },
+        { name: '17 May', value: 70 },
+        { name: '18 May', value: 100 },
+        { name: '19 May', value: Math.floor(totalRides / 2) || 180 },
+        { name: '20 May', value: totalRides || 210 },
+    ];
+
+    if (loading) return <div style={{padding: '50px', textAlign: 'center'}}>Cargando métricas...</div>;
 
     return (
-        <div className="dashboard-layout">
+        <div id="disenoTablero" className="dashboard-layout">
             {/* Sidebar */}
-            <aside className="sidebar">
+            <aside id="barraLateral" className="sidebar">
                 <div className="sidebar-logo">
                     <div className="logo-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-map-pin">
@@ -93,16 +126,16 @@ const Dashboard = () => {
                     <span>RideAdmin</span>
                 </div>
                 <nav className="sidebar-nav">
-                    <a href="#" className="nav-item active"><LayoutDashboard size={20} /> <span>Dashboard</span></a>
-                    <a href="#" className="nav-item"><Users size={20} /> <span>Usuarios</span><ChevronDown size={16} className="ml-auto" /></a>
-                    <a href="#" className="nav-item"><UserCheck size={20} /> <span>Conductores</span></a>
-                    <a href="#" className="nav-item"><Car size={20} /> <span>Vehículos</span></a>
-                    <a href="#" className="nav-item"><Calendar size={20} /> <span>Reservas</span><ChevronDown size={16} className="ml-auto" /></a>
-                    <a href="#" className="nav-item"><CreditCard size={20} /> <span>Pagos</span></a>
-                    <a href="#" className="nav-item"><Bell size={20} /> <span>Notificaciones</span></a>
-                    <a href="#" className="nav-item"><AlertCircle size={20} /> <span>Quejas</span></a>
-                    <a href="#" className="nav-item"><ShieldCheck size={20} /> <span>Auditoría</span></a>
-                    <a href="#" className="nav-item"><Settings size={20} /> <span>Configuración</span></a>
+                    <Link to="/Inicio" className={`nav-item ${location.pathname === '/Inicio' ? 'active' : ''}`}><LayoutDashboard size={20} /> <span>Dashboard</span></Link>
+                    <Link to="/usuarios" className={`nav-item ${location.pathname === '/usuarios' ? 'active' : ''}`}><Users size={20} /> <span>Usuarios</span><ChevronDown size={16} className="ml-auto" /></Link>
+                    <Link to="/conductores" className={`nav-item ${location.pathname === '/conductores' ? 'active' : ''}`}><UserCheck size={20} /> <span>Conductores</span></Link>
+                    <Link to="/vehiculos" className={`nav-item ${location.pathname === '/vehiculos' ? 'active' : ''}`}><Car size={20} /> <span>Vehículos</span></Link>
+                    <Link to="/reservas" className={`nav-item ${location.pathname === '/reservas' ? 'active' : ''}`}><Calendar size={20} /> <span>Reservas</span><ChevronDown size={16} className="ml-auto" /></Link>
+                    <Link to="/pagos" className={`nav-item ${location.pathname === '/pagos' ? 'active' : ''}`}><CreditCard size={20} /> <span>Pagos</span></Link>
+                    <Link to="/notificaciones" className={`nav-item ${location.pathname === '/notificaciones' ? 'active' : ''}`}><Bell size={20} /> <span>Notificaciones</span></Link>
+                    <Link to="/quejas" className={`nav-item ${location.pathname === '/quejas' ? 'active' : ''}`}><AlertCircle size={20} /> <span>Quejas</span></Link>
+                    <Link to="/auditoria" className={`nav-item ${location.pathname === '/auditoria' ? 'active' : ''}`}><ShieldCheck size={20} /> <span>Auditoría</span></Link>
+                    <Link to="/configuracion" className={`nav-item ${location.pathname === '/configuracion' ? 'active' : ''}`}><Settings size={20} /> <span>Configuración</span></Link>
                 </nav>
                 <div className="sidebar-profile">
                     <img src="https://i.pravatar.cc/150?u=admin" alt="Admin" className="profile-img" />
@@ -115,9 +148,9 @@ const Dashboard = () => {
             </aside>
 
             {/* Main Content */}
-            <main className="main-content">
+            <main id="contenidoPrincipal" className="main-content">
                 {/* Header */}
-                <header className="top-header">
+                <header id="cabeceraSuperior" className="top-header">
                     <div className="header-left">
                         <Menu size={24} className="menu-trigger" />
                         <div className="search-container">
@@ -140,8 +173,8 @@ const Dashboard = () => {
                 </header>
 
                 {/* Dashboard Body */}
-                <div className="dashboard-scrollable">
-                    <div className="page-header">
+                <div id="areaDesplazable" className="dashboard-scrollable">
+                    <div id="encabezadoPagina" className="page-header">
                         <div>
                             <h1>Dashboard</h1>
                             <p>Resumen general de la plataforma</p>
@@ -154,17 +187,17 @@ const Dashboard = () => {
                     </div>
 
                     {/* Stats Grid */}
-                    <div className="stats-grid">
-                        <StatCard icon={<Users size={20} className="color-purple" />} title="Usuarios totales" value="1,248" change="12.5%" isPositive={true} subtitle="vs mes anterior" />
-                        <StatCard icon={<Car size={20} className="color-green" />} title="Conductores aprobados" value="342" change="8.2%" isPositive={true} subtitle="vs mes anterior" />
+                    <div id="cuadriculaEstadisticas" className="stats-grid">
+                        <StatCard icon={<Users size={20} className="color-purple" />} title="Usuarios totales" value={totalUsers.toLocaleString()} change="12.5%" isPositive={true} subtitle="vs mes anterior" />
+                        <StatCard icon={<Car size={20} className="color-green" />} title="Conductores aprobados" value={totalDrivers.toLocaleString()} change="8.2%" isPositive={true} subtitle="vs mes anterior" />
                         <StatCard icon={<Car size={20} className="color-yellow" />} title="Vehículos pendientes" value="24" change="4.3%" isPositive={false} subtitle="vs mes anterior" />
-                        <StatCard icon={<Calendar size={20} className="color-blue" />} title="Reservas este mes" value="1,896" change="15.7%" isPositive={true} subtitle="vs mes anterior" />
+                        <StatCard icon={<Calendar size={20} className="color-blue" />} title="Reservas este mes" value={totalRides.toLocaleString()} change="15.7%" isPositive={true} subtitle="vs mes anterior" />
                         <StatCard icon={<AlertCircle size={20} className="color-red" />} title="Quejas pendientes" value="18" change="5.6%" isPositive={true} subtitle="vs mes anterior" />
                         <StatCard icon={<CreditCard size={20} className="color-green-dark" />} title="Pagos fallidos" value="7" change="2.1%" isPositive={true} subtitle="vs mes anterior" />
                     </div>
 
                     {/* Charts Grid */}
-                    <div className="charts-grid">
+                    <div id="cuadriculaGraficos" className="charts-grid">
                         <div className="chart-card">
                             <div className="chart-header">
                                 <h3>Reservas por día</h3>
@@ -255,7 +288,7 @@ const Dashboard = () => {
                     </div>
 
                     {/* Lists Grid */}
-                    <div className="lists-grid">
+                    <div id="cuadriculaListas" className="lists-grid">
                         {/* Actividad reciente */}
                         <div className="list-card">
                             <div className="list-header">
@@ -273,19 +306,22 @@ const Dashboard = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {recientesData.map(item => (
-                                            <tr key={item.id}>
+                                        {notifications.slice(0, 5).map((item, idx) => (
+                                            <tr key={item._id || idx}>
                                                 <td>
                                                     <div className="activity-cell">
-                                                        <div className={`icon-box ${item.colorClass}`}>{item.icon}</div>
-                                                        <span>{item.title}</span>
+                                                        <div className={`icon-box icon-blue`}><Bell size={16} /></div>
+                                                        <span>{item.message || 'Notificación del sistema'}</span>
                                                     </div>
                                                 </td>
-                                                <td>{item.user}</td>
-                                                <td><span className="text-gray">{item.date}</span></td>
+                                                <td>{item.user_id?.name || 'Sistema'}</td>
+                                                <td><span className="text-gray">{new Date(item.createdAt || Date.now()).toLocaleDateString()}</span></td>
                                                 <td><button className="btn-action">Ver</button></td>
                                             </tr>
                                         ))}
+                                        {notifications.length === 0 && (
+                                            <tr><td colSpan="4" className="text-center text-gray pt-4">No hay actividad reciente</td></tr>
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
@@ -298,47 +334,53 @@ const Dashboard = () => {
                                 <button className="btn-view-all">Ver todas</button>
                             </div>
                             <div className="list-body">
-                                {reservasData.map((item, i) => (
-                                    <div className="list-item-row" key={i}>
-                                        <img src={item.img} alt={item.user} className="avatar-sm" />
+                                {bookings.slice(0, 4).map((item, i) => (
+                                    <div className="list-item-row" key={item._id || i}>
+                                        <img src={getDefaultImage(item.passenger_id?.profileImage)} alt={item.passenger_id?.name || 'Pasajero'} className="avatar-sm" />
                                         <div className="item-info">
-                                            <div className="item-title">{item.id}</div>
-                                            <div className="item-desc">{item.user}<br/><span className="text-gray">{item.route}</span></div>
+                                            <div className="item-title">#{item._id?.substring(0, 8) || 'R-0000'}</div>
+                                            <div className="item-desc">{item.passenger_id?.name || 'Desconocido'}<br/><span className="text-gray">Destino: {item.ride_id?.destination?.address || 'Pendiente'}</span></div>
                                         </div>
                                         <div className="item-status">
-                                            <span className={`status-badge ${item.statusClass}`}>{item.status}</span>
+                                            <span className={`status-badge ${getStatusClass(item.status)}`}>{item.status || 'Pendiente'}</span>
                                         </div>
                                         <div className="item-price">
-                                            <div className="price-val">{item.price}</div>
-                                            <div className="price-time">{item.time}</div>
+                                            <div className="price-val">${item.cost || '0.00'}</div>
+                                            <div className="price-time">{new Date(item.createdAt || Date.now()).toLocaleDateString()}</div>
                                         </div>
                                     </div>
                                 ))}
+                                {bookings.length === 0 && (
+                                    <div className="text-center text-gray py-4">No hay reservas recientes</div>
+                                )}
                             </div>
                         </div>
 
-                        {/* Quejas recientes */}
+                        {/* Quejas recientes (Usuarios recientes como fallback si no hay quejas) */}
                         <div className="list-card">
                             <div className="list-header">
-                                <h3>Quejas recientes</h3>
-                                <button className="btn-view-all">Ver todas</button>
+                                <h3>Usuarios recientes</h3>
+                                <button className="btn-view-all">Ver todos</button>
                             </div>
                             <div className="list-body">
-                                {quejasData.map((item, i) => (
-                                    <div className="list-item-row" key={i}>
-                                        <div className="icon-box icon-red"><AlertCircle size={16} /></div>
+                                {users.slice(0, 4).map((item, i) => (
+                                    <div className="list-item-row" key={item._id || i}>
+                                        <img src={getDefaultImage(item.profileImage)} alt={item.name} className="avatar-sm" />
                                         <div className="item-info">
-                                            <div className="item-title font-semibold">{item.title}</div>
-                                            <div className="item-desc text-gray">{item.user}</div>
+                                            <div className="item-title font-semibold">{item.name}</div>
+                                            <div className="item-desc text-gray">{item.email}</div>
                                         </div>
                                         <div className="item-priority">
-                                            <span className={`priority-text ${item.priorityClass}`}>{item.priority}</span>
+                                            <span className={`priority-text priority-low`}>{item.type}</span>
                                         </div>
                                         <div className="item-time text-gray text-sm">
-                                            {item.time}
+                                            {new Date(item.createdAt || Date.now()).toLocaleDateString()}
                                         </div>
                                     </div>
                                 ))}
+                                {users.length === 0 && (
+                                    <div className="text-center text-gray py-4">No hay usuarios recientes</div>
+                                )}
                             </div>
                         </div>
                     </div>

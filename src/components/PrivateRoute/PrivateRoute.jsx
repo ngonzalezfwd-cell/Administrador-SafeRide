@@ -15,7 +15,7 @@ const PrivateRoute = ({ requiredRole }) => {
     }
 
     if (!user) {
-        return <Navigate to="/login" replace />;
+        return <Navigate to="/Login" replace />;
     }
 
     // Verificación de rol: acepta 'admin' y 'administrador'
