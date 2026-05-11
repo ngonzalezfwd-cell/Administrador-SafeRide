@@ -1,14 +1,15 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
+import './PrivateRoute.css';
 
 const PrivateRoute = ({ requiredRole }) => {
     const { user, loading } = useAuth();
 
     if (loading) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-                <div className="spinner">Cargando...</div>
+            <div id="pantallaAccesoCargando" className="contenedorCargando">
+                <div id="textoAccesoCargando" className="indicadorCargando">Cargando...</div>
             </div>
         );
     }
@@ -17,7 +18,7 @@ const PrivateRoute = ({ requiredRole }) => {
         return <Navigate to="/login" replace />;
     }
 
-    // Role check: supports both 'admin' and 'administrador' as discussed
+    // Verificación de rol: acepta 'admin' y 'administrador'
     if (requiredRole && user.type !== 'admin' && user.type !== 'administrador') {
         return <Navigate to="/" replace />;
     }

@@ -1,8 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import PrivateRoute from '../components/PrivateRoute';
-import Login from '../pages/Login';
-import Dashboard from '../pages/Dashboard';
+import PrivateRoute from '../components/PrivateRoute/PrivateRoute';
+import Login from '../pages/Login/Login';
+import DashboardAdmin from '../pages/DashboardAdmin/Dashboard';
 
 const Routing = () => {
   return (
@@ -13,13 +13,13 @@ const Routing = () => {
         
         {/* Rutas Privadas (Admin Only) */}
         <Route element={<PrivateRoute requiredRole="admin" />}>
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/Inicio" element={<DashboardAdmin />} />
           {/* Añade más rutas de admin aquí */}
         </Route>
 
         {/* Redirección por defecto */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/" element={<Navigate to="/Inicio" replace />} />
+        <Route path="*" element={<Navigate to="/Inicio" replace />} />
       </Routes>
     </Router>
   );
