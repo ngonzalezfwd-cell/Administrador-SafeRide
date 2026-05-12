@@ -35,7 +35,7 @@ aside {
   padding: 24px;
   font-size: 1.25rem;
   font-weight: 700;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .IconSafeRide {
@@ -54,8 +54,14 @@ aside {
   overflow-y: auto;
 }
 
-.sidebarNav::-webkit-scrollbar { width: 4px; }
-.sidebarNav::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.295); border-radius: 4px; }
+.sidebarNav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebarNav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.295);
+  border-radius: 4px;
+}
 
 .navItem {
   display: flex;
@@ -89,7 +95,7 @@ aside {
   align-items: center;
   gap: 12px;
   padding: 20px;
-  background-color: rgba(0,0,0,0.2);
+  background-color: rgba(0, 0, 0, 0.2);
   border-top: 1px solid rgba(255, 255, 255, 0.199);
 }
 
@@ -210,7 +216,7 @@ header {
   border: 2px solid white;
 }
 
-.userInfo{
+.userInfo {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -226,7 +232,7 @@ header {
   cursor: pointer;
 
   margin: -5px;
-  color:  #64748B;
+  color: #64748B;
 }
 
 
@@ -307,12 +313,35 @@ header {
   justify-content: center;
 }
 
-.color-purple { color: #8B5CF6; background-color: #F5F3FF; }
-.color-green { color: #10B981; background-color: #ECFDF5; }
-.color-yellow { color: #F59E0B; background-color: #FFFBEB; }
-.color-blue { color: #3B82F6; background-color: #EFF6FF; }
-.color-red { color: #EF4444; background-color: #FEF2F2; }
-.color-green-dark { color: #059669; background-color: #ECFDF5; }
+.color-purple {
+  color: #8B5CF6;
+  background-color: #F5F3FF;
+}
+
+.color-green {
+  color: #10B981;
+  background-color: #ECFDF5;
+}
+
+.color-yellow {
+  color: #F59E0B;
+  background-color: #FFFBEB;
+}
+
+.color-blue {
+  color: #3B82F6;
+  background-color: #EFF6FF;
+}
+
+.color-red {
+  color: #EF4444;
+  background-color: #FEF2F2;
+}
+
+.color-green-dark {
+  color: #059669;
+  background-color: #ECFDF5;
+}
 
 .estadisticaValor {
   font-size: 20px;
@@ -338,10 +367,18 @@ header {
   align-items: center;
   font-weight: 600;
 }
-.estadisticaCambio.positive { color: #12b47e; }
-.estadisticaCambio.negative { color: #e03737; }
 
-.estadisticaSubtitulo { color: #667d9c; }
+.estadisticaCambio.positive {
+  color: #12b47e;
+}
+
+.estadisticaCambio.negative {
+  color: #e03737;
+}
+
+.estadisticaSubtitulo {
+  color: #667d9c;
+}
 
 /* ============================================
    Grafico de lineas
@@ -455,6 +492,7 @@ header {
 .nombreLeyenda { color: #475569; }
 .valorLeyenda { font-weight: 600; color: #0F172A; }
 .porcentajeLeyenda { color: #94A3B8; font-weight: 400; margin-left: 4px; }
+
 
 /* --- Lists Grid --- */
 .cuadriculaListas {
@@ -573,6 +611,7 @@ header {
   padding-bottom: 16px;
   border-bottom: 1px solid #F1F5F9;
 }
+
 .filaElemento:last-child {
   border-bottom: none;
   padding-bottom: 0;
@@ -607,6 +646,7 @@ header {
   font-size: 0.75rem;
   font-weight: 500;
 }
+
 .estadoVerde { background-color: #ECFDF5; color: #10B981; }
 .estadoAzul { background-color: #EFF6FF; color: #3B82F6; }
 .estadoAmarillo { background-color: #FFFBEB; color: #F59E0B; }
@@ -631,6 +671,7 @@ header {
   font-size: 0.85rem;
   font-weight: 600;
 }
+
 .prioridadAlta { color: #EF4444; }
 .prioridadMedia { color: #F59E0B; }
 .prioridadBaja { color: #10B981; }
