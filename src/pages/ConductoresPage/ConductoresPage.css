@@ -1,11 +1,7 @@
 /* ============================================
    ConductoresPage.css
-   Estilos específicos de la página de Conductores.
-   Reutiliza las clases base de Dashboard.css
-   (importado desde ConductoresPage.jsx)
    ============================================ */
 
-/* ── Botón Registrar Conductor ─────────────────── */
 .conductores-btn-registrar {
   display: flex;
   align-items: center;
@@ -18,8 +14,7 @@
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, transform 0.15s;
-  font-family: 'Inter', -apple-system, sans-serif;
+  transition: all 0.2s;
 }
 
 .conductores-btn-registrar:hover {
@@ -27,101 +22,30 @@
   transform: translateY(-1px);
 }
 
-/* ── Stats Grid (4 columnas) ─────────────────────── */
-.conductores-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  margin-bottom: 28px;
-}
-
-/* ── Stat Card ───────────────────────────────────── */
-.conductores-stat-card {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  border: 1px solid #E2E8F0;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-  transition: box-shadow 0.2s;
-}
-
-.conductores-stat-card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-}
-
-.conductores-stat-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.conductores-stat-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background-color: #F8FAFC;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.conductores-stat-value {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #0F172A;
-}
-
-.conductores-stat-label {
-  font-size: 0.8rem;
-  color: #64748B;
-  margin-bottom: 10px;
-}
-
-.conductores-stat-trend {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.75rem;
-  color: #94A3B8;
-}
-
-.conductores-stat-trend.up {
-  color: #10B981;
-  font-weight: 600;
-}
-
-/* ── Colores de iconos (compatibles con Dashboard) ─ */
-.color-purple { color: #8B5CF6; background-color: #F5F3FF !important; }
-.color-green  { color: #10B981; background-color: #ECFDF5 !important; }
-.color-yellow { color: #F59E0B; background-color: #FFFBEB !important; }
-.color-blue   { color: #3B82F6; background-color: #EFF6FF !important; }
-
-/* ── Drivers Grid ─────────────────────────────────── */
 .conductores-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 20px;
+  margin-top: 24px;
 }
 
-/* ── Driver Card ─────────────────────────────────── */
 .conductor-card {
   background: white;
   border-radius: 12px;
   border: 1px solid #E2E8F0;
-  padding: 22px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  gap: 20px;
+  transition: all 0.2s;
 }
 
 .conductor-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.07);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+  border-color: #2563EB;
 }
 
-/* Cabecera de la tarjeta */
 .conductor-card-header {
   display: flex;
   justify-content: space-between;
@@ -135,53 +59,46 @@
 }
 
 .conductor-avatar {
-  width: 52px;
-  height: 52px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #E2E8F0;
+  border: 2px solid #F1F5F9;
 }
 
-.conductor-name-group {}
-
 .conductor-name {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 600;
   color: #0F172A;
-  margin: 0 0 4px;
+  margin: 0 0 4px 0;
 }
 
 .conductor-rating {
   display: flex;
   align-items: center;
   gap: 2px;
-  font-size: 0.75rem;
-  color: #64748B;
 }
 
 .star-filled { color: #F59E0B; fill: #F59E0B; }
-.star-empty  { color: #CBD5E1; fill: #CBD5E1; }
+.star-empty { color: #E2E8F0; fill: #E2E8F0; }
 
-/* Status Badge */
-.conductor-badge {
-  font-size: 0.7rem;
-  font-weight: 700;
+.status-badge {
   padding: 4px 10px;
   border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
   text-transform: capitalize;
-  white-space: nowrap;
 }
 
-.badge-online   { background: #DCFCE7; color: #166534; }
-.badge-on-trip  { background: #EFF6FF; color: #1E40AF; }
-.badge-offline  { background: #F1F5F9; color: #64748B; }
+.status-green { background-color: #DCFCE7; color: #166534; }
+.status-blue { background-color: #EFF6FF; color: #1E40AF; }
+.status-gray { background-color: #F1F5F9; color: #64748B; }
 
-/* Detalles */
 .conductor-details {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px 0;
+  gap: 12px;
+  padding: 16px 0;
   border-top: 1px solid #F1F5F9;
   border-bottom: 1px solid #F1F5F9;
 }
@@ -190,7 +107,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 0.84rem;
+  font-size: 0.85rem;
   color: #475569;
 }
 
@@ -199,187 +116,86 @@
   flex-shrink: 0;
 }
 
-/* Botones de acción */
 .conductor-actions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
 .conductor-btn-secondary {
   flex: 1;
-  background: #F8FAFC;
+  background: white;
   border: 1px solid #E2E8F0;
-  color: #334155;
-  padding: 9px 0;
+  color: #475569;
+  padding: 10px;
   border-radius: 8px;
   font-size: 0.85rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  font-family: inherit;
 }
 
 .conductor-btn-secondary:hover {
-  background: #F1F5F9;
+  background-color: #F8FAFC;
   border-color: #CBD5E1;
 }
 
 .conductor-btn-primary {
   flex: 1;
-  background: #2563EB;
+  background-color: #2563EB;
   border: none;
   color: white;
-  padding: 9px 0;
+  padding: 10px;
   border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
-  font-family: inherit;
+  transition: all 0.2s;
 }
 
 .conductor-btn-primary:hover {
-  background: #1D4ED8;
+  background-color: #1D4ED8;
 }
 
-/* ── Add Driver Card ─────────────────────────────── */
 .conductor-add-card {
-  border: 2px dashed #CBD5E1;
+  border: 2px dashed #E2E8F0;
   border-radius: 12px;
-  padding: 22px;
+  padding: 32px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  min-height: 240px;
-  gap: 12px;
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
+  transition: all 0.2s;
+  background-color: transparent;
 }
 
 .conductor-add-card:hover {
   border-color: #2563EB;
-  background: #F8FBFF;
+  background-color: #F8FAFC;
 }
 
 .conductor-add-icon {
-  width: 60px;
-  height: 60px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
-  background: #EFF6FF;
+  background-color: #EFF6FF;
   color: #2563EB;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-bottom: 16px;
 }
 
 .conductor-add-card h3 {
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 600;
-  color: #0F172A;
-  margin: 0;
+  color: #1E293B;
+  margin: 0 0 8px 0;
 }
 
 .conductor-add-card p {
-  font-size: 0.82rem;
-  color: #94A3B8;
-  margin: 0;
-}
-
-/* ── Empty State ─────────────────────────────────── */
-.conductores-empty {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  padding: 60px 20px;
-  background: white;
-  border-radius: 12px;
-  border: 1px dashed #E2E8F0;
-  text-align: center;
-}
-
-.conductores-empty-icon {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: #F1F5F9;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #94A3B8;
-}
-
-.conductores-empty h3 {
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: #1E293B;
-  margin: 0;
-}
-
-.conductores-empty p {
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   color: #64748B;
   margin: 0;
-  max-width: 360px;
-}
-
-.conductores-empty-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #2563EB;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 8px;
-  font-family: inherit;
-  transition: background 0.2s;
-}
-
-.conductores-empty-btn:hover { background: #1D4ED8; }
-
-/* ── Loading ─────────────────────────────────────── */
-.conductores-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  padding: 80px;
-  color: #64748B;
-}
-
-.conductores-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #E2E8F0;
-  border-top-color: #2563EB;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* ── Responsive ──────────────────────────────────── */
-@media (max-width: 1400px) {
-  .conductores-stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .conductores-grid       { grid-template-columns: repeat(2, 1fr); }
-}
-
-@media (max-width: 1024px) {
-  .conductores-stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .conductores-grid       { grid-template-columns: 1fr; }
-}
-
-@media (max-width: 768px) {
-  .conductores-stats-grid { grid-template-columns: 1fr; }
 }

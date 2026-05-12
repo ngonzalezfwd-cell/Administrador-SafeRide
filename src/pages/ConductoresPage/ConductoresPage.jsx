@@ -2,12 +2,7 @@
  * ConductoresPage.jsx
  * 
  * Página de Gestión de Conductores — SafeRide Admin Panel
- * 
- * Arquitectura alineada con Dashboard.jsx:
- * - Sidebar con Link (react-router-dom) para navegación real
- * - lucide-react para iconografía (igual que el dashboard)
- * - useAuth para datos del usuario autenticado
- * - Patrón service async listo para conectar backend
+ * Sincronizada con la estructura exacta de Dashboard.jsx para heredar estilos.
  * 
  * @author SafeRide Dev Team
  */
@@ -21,48 +16,31 @@ import {
   ChevronDown, Plus, Truck, Star, Zap, MapPin, Clock,
   Award, ArrowUpRight, ArrowDownRight, MoreVertical
 } from 'lucide-react';
+import driverService from '../../services/driverService';
 import '../DashboardAdmin/Dashboard.css';
 import './ConductoresPage.css';
+import IconSafeRide from '../../imgs/IconSafeRide.png';
+import DefaultImageUser from '../../imgs/DefaultImageUser.png';
 
 // ─────────────────────────────────────────────────────────────
-// COMPONENTE: Tarjeta de Estadística
-// Reutilizable, aislado de responsabilidades de datos
-// ─────────────────────────────────────────────────────────────
-const StatCard = ({ icon, label, value, trend, trendUp }) => (
-  <div className="conductores-stat-card">
-    <div className="conductores-stat-header">
-      <div className="conductores-stat-icon">{icon}</div>
-      <div className="conductores-stat-value">{value}</div>
-    </div>
-    <div className="conductores-stat-label">{label}</div>
-    {trend && (
-      <div className={`conductores-stat-trend ${trendUp ? 'up' : 'neutral'}`}>
-        {trendUp ? <ArrowUpRight size={13} /> : null}
-        <span>{trend}</span>
-      </div>
-    )}
-  </div>
-);
+const getDefaultImagen = (url) => (url && url.trim() !== '') ? url : DefaultImageUser;
 
 // ─────────────────────────────────────────────────────────────
 // COMPONENTE: Tarjeta de Conductor
-// Recibe el objeto driver del backend normalizado
 // ─────────────────────────────────────────────────────────────
 const DriverCard = ({ driver }) => {
-  // Mapeo de status a clase CSS para el badge
   const statusClass = {
-    'online':   'badge-online',
-    'on-trip':  'badge-on-trip',
-    'offline':  'badge-offline',
-  }[driver.status?.toLowerCase().replace(' ', '-')] || 'badge-offline';
+    'online':   'status-green',
+    'on-trip':  'status-blue',
+    'offline':  'status-gray',
+  }[driver.status?.toLowerCase().replace(' ', '-')] || 'status-gray';
 
   return (
     <div className="conductor-card">
-      {/* Header: avatar + nombre + badge */}
       <div className="conductor-card-header">
         <div className="conductor-avatar-group">
           <img
-            src={driver.profileImage || `https://i.pravatar.cc/150?u=${driver._id}`}
+            src={getDefaultImagen(driver.profileImage)}
             alt={driver.name}
             className="conductor-avatar"
           />
@@ -80,12 +58,11 @@ const DriverCard = ({ driver }) => {
             </div>
           </div>
         </div>
-        <span className={`conductor-badge ${statusClass}`}>
+        <span className={`status-badge ${statusClass}`}>
           {driver.status || 'Offline'}
         </span>
       </div>
 
-      {/* Detalles del vehículo y turno */}
       <div className="conductor-details">
         {driver.vehicle && (
           <div className="conductor-detail-row">
@@ -113,7 +90,6 @@ const DriverCard = ({ driver }) => {
         )}
       </div>
 
-      {/* Acciones */}
       <div className="conductor-actions">
         <button className="conductor-btn-secondary">Ver Perfil</button>
         <button className="conductor-btn-primary">Editar</button>
@@ -123,47 +99,15 @@ const DriverCard = ({ driver }) => {
 };
 
 // ─────────────────────────────────────────────────────────────
-// COMPONENTE: Empty State
-// ─────────────────────────────────────────────────────────────
-const EmptyState = ({ onAdd }) => (
-  <div className="conductores-empty">
-    <div className="conductores-empty-icon">
-      <Truck size={40} />
-    </div>
-    <h3>No hay conductores registrados</h3>
-    <p>Conecta el backend o registra el primer conductor para comenzar.</p>
-    <button className="conductores-empty-btn" onClick={onAdd}>
-      <Plus size={16} /> Registrar Conductor
-    </button>
-  </div>
-);
-
-// ─────────────────────────────────────────────────────────────
-// COMPONENTE: Add Driver Card (dashed border)
-// ─────────────────────────────────────────────────────────────
-const AddDriverCard = ({ onClick }) => (
-  <div className="conductor-add-card" onClick={onClick} role="button" tabIndex={0}>
-    <div className="conductor-add-icon">
-      <UserCheck size={32} />
-    </div>
-    <h3>Registrar Conductor</h3>
-    <p>Incorporar un nuevo conductor a la flota</p>
-  </div>
-);
-
-// ─────────────────────────────────────────────────────────────
 // PÁGINA PRINCIPAL: ConductoresPage
 // ─────────────────────────────────────────────────────────────
 const ConductoresPage = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, cerrarSesion } = useAuth();
   const location = useLocation();
 
-  // ── Estado principal ──────────────────────────────────────
-  const [drivers, setDrivers]     = useState([]);    // Lista de conductores
-  const [loading, setLoading]     = useState(true);  // Estado de carga
-  const [searchTerm, setSearch]   = useState('');    // Término de búsqueda
-
-  // Estadísticas derivadas del backend
+  const [drivers, setDrivers]     = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [searchTerm, setSearch]   = useState('');
   const [stats, setStats] = useState({
     total:     0,
     activeNow: 0,
@@ -171,35 +115,19 @@ const ConductoresPage = () => {
     onTrip:    0,
   });
 
-  // ── Carga inicial ─────────────────────────────────────────
-  useEffect(() => {
-    loadDrivers();
-  }, []);
+  useEffect(() => { loadDrivers(); }, []);
 
-  /**
-   * loadDrivers
-   * Lógica de fetching preparada para conectar con driverService.
-   * 
-   * Reemplazar el bloque de comentario con:
-   *   const response = await driverService.getAllDrivers({ type: 'conductor' });
-   *   if (response.success) {
-   *     setDrivers(response.data);
-   *     computeStats(response.data);
-   *   }
-   */
   const loadDrivers = async () => {
     setLoading(true);
     try {
-      // ── CONECTAR BACKEND AQUÍ ──────────────────────────────
-      // const response = await driverService.getAllDrivers({ type: 'conductor' });
-      // if (response?.success && Array.isArray(response.data)) {
-      //   setDrivers(response.data);
-      //   computeStats(response.data);
-      // }
-
-      // Mientras tanto: estados vacíos reales
-      setDrivers([]);
-      setStats({ total: 0, activeNow: 0, avgRating: 0, onTrip: 0 });
+      const response = await driverService.getAllDrivers({ search: searchTerm });
+      if (response?.success && Array.isArray(response.data)) {
+        setDrivers(response.data);
+        computeStats(response.data);
+      } else {
+        setDrivers([]);
+        setStats({ total: 0, activeNow: 0, avgRating: 0, onTrip: 0 });
+      }
     } catch (err) {
       console.error('[ConductoresPage] Error al cargar conductores:', err);
     } finally {
@@ -207,17 +135,12 @@ const ConductoresPage = () => {
     }
   };
 
-  /**
-   * computeStats
-   * Calcula las métricas del panel a partir de los datos del API.
-   * Se llama automáticamente luego de cargar drivers.
-   */
   const computeStats = (data) => {
     const active    = data.filter(d => d.status === 'online' || d.status === 'on-trip');
     const onTrip    = data.filter(d => d.status === 'on-trip');
     const avgRating = data.length > 0
       ? (data.reduce((s, d) => s + (d.rating || 0), 0) / data.length).toFixed(1)
-      : 0;
+      : '0.0';
 
     setStats({
       total:     data.length,
@@ -227,100 +150,71 @@ const ConductoresPage = () => {
     });
   };
 
-  /**
-   * handleSearch
-   * Dispara búsqueda al presionar Enter.
-   * Preparado para conectar con searchDrivers(term).
-   */
   const handleSearch = (e) => {
-    if (e.key === 'Enter') {
-      // driverService.searchDrivers(searchTerm).then(...)
-      loadDrivers();
-    }
+    if (e.key === 'Enter') loadDrivers();
   };
 
-  // ── Helper: clase activa del sidebar ─────────────────────
-  const navActive = (path) =>
-    location.pathname.toLowerCase() === path.toLowerCase() ? 'active' : '';
+  const handleCerrarSesion = logout || cerrarSesion;
 
-  // ─────────────────────────────────────────────────────────
-  // RENDER
-  // ─────────────────────────────────────────────────────────
   return (
-    <div id="disenoConductores" className="dashboard-layout">
+    <div className="dashboardContent">
 
-      {/* ════════════════════════════════════════
-          SIDEBAR — Idéntico al Dashboard.jsx
-          ════════════════════════════════════════ */}
-      <aside id="barraLateralConductores" className="sidebar">
-        {/* Logo */}
-        <div className="sidebar-logo">
-          <div className="logo-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-              strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-              <circle cx="12" cy="10" r="3" />
-            </svg>
-          </div>
+      {/* --- SIDEBAR --- */}
+      <aside>
+        <div className="sidebaLogo">
+          <img src={IconSafeRide} alt="Icono" className='IconSafeRide' />
           <span>RideAdmin</span>
         </div>
 
-        {/* Navegación */}
-        <nav className="sidebar-nav">
-          <Link to="/Inicio"         className={`nav-item ${navActive('/Inicio')}`}>
-            <LayoutDashboard size={20} /><span>Dashboard</span>
+        <nav className="sidebarNav">
+          <Link to="/inicio" className={`navItem ${location.pathname === '/inicio' ? 'active' : ''}`}>
+            <LayoutDashboard size={20} /> <span>Panel</span>
           </Link>
-          <Link to="/Usuarios"       className={`nav-item ${navActive('/Usuarios')}`}>
-            <Users size={20} /><span>Usuarios</span><ChevronDown size={16} className="ml-auto" />
+          <Link to="/usuarios" className={`navItem ${location.pathname === '/usuarios' ? 'active' : ''}`}>
+            <Users size={20} /> <span>Usuarios</span><ChevronDown size={16} className="FlechaSidebar" />
           </Link>
-          <Link to="/Conductores"    className={`nav-item ${navActive('/Conductores')}`}>
-            <UserCheck size={20} /><span>Conductores</span>
+          <Link to="/conductores" className={`navItem ${location.pathname === '/conductores' ? 'active' : ''}`}>
+            <UserCheck size={20} /> <span>Conductores</span>
           </Link>
-          <Link to="/Vehiculos"      className={`nav-item ${navActive('/Vehiculos')}`}>
-            <Car size={20} /><span>Vehículos</span>
+          <Link to="/vehiculos" className={`navItem ${location.pathname === '/vehiculos' ? 'active' : ''}`}>
+            <Car size={20} /> <span>Vehículos</span>
           </Link>
-          <Link to="/Reservas"       className={`nav-item ${navActive('/Reservas')}`}>
-            <Calendar size={20} /><span>Reservas</span><ChevronDown size={16} className="ml-auto" />
+          <Link to="/reservas" className={`navItem ${location.pathname === '/reservas' ? 'active' : ''}`}>
+            <Calendar size={20} /> <span>Reservas</span><ChevronDown size={16} className="FlechaSidebar" />
           </Link>
-          <Link to="/Pagos"          className={`nav-item ${navActive('/Pagos')}`}>
-            <CreditCard size={20} /><span>Pagos</span>
+          <Link to="/pagos" className={`navItem ${location.pathname === '/pagos' ? 'active' : ''}`}>
+            <CreditCard size={20} /> <span>Pagos</span>
           </Link>
-          <Link to="/Notificaciones" className={`nav-item ${navActive('/Notificaciones')}`}>
-            <Bell size={20} /><span>Notificaciones</span>
+          <Link to="/notificaciones" className={`navItem ${location.pathname === '/notificaciones' ? 'active' : ''}`}>
+            <Bell size={20} /> <span>Notificaciones</span>
           </Link>
-          <Link to="/Quejas"         className={`nav-item ${navActive('/Quejas')}`}>
-            <AlertCircle size={20} /><span>Quejas</span>
+          <Link to="/quejas" className={`navItem ${location.pathname === '/quejas' ? 'active' : ''}`}>
+            <AlertCircle size={20} /> <span>Quejas</span>
           </Link>
-          <Link to="/Auditoria"      className={`nav-item ${navActive('/Auditoria')}`}>
-            <ShieldCheck size={20} /><span>Auditoría</span>
+          <Link to="/auditoria" className={`navItem ${location.pathname === '/auditoria' ? 'active' : ''}`}>
+            <ShieldCheck size={20} /> <span>Auditoría</span>
           </Link>
-          <Link to="/Configuracion"  className={`nav-item ${navActive('/Configuracion')}`}>
-            <Settings size={20} /><span>Configuración</span>
+          <Link to="/configuracion" className={`navItem ${location.pathname === '/configuracion' ? 'active' : ''}`}>
+            <Settings size={20} /> <span>Configuración</span>
           </Link>
         </nav>
 
-        {/* Perfil Admin */}
-        <div className="sidebar-profile">
-          <img src="https://i.pravatar.cc/150?u=admin" alt="Admin" className="profile-img" />
-          <div className="profile-info">
-            <span className="profile-name">{user?.name || 'Admin'}</span>
-            <span className="profile-role">Super Administrador</span>
+        <div className="sidebarPerfil">
+          <img src={getDefaultImagen(user?.profileImage)} alt="Admin" className="FotoPerfil" />
+          <div className="PerfilInfo">
+            <span className="NombrePerfil">{user?.name || 'Admin'}</span>
+            <span className="RolPerfil">Super Administrador</span>
           </div>
-          <ChevronDown size={16} className="profile-chevron" onClick={logout} title="Cerrar sesión" />
+          <ChevronDown size={16} className="FlechaPerfil" onClick={handleCerrarSesion} style={{cursor: 'pointer'}} />
         </div>
       </aside>
 
-      {/* ════════════════════════════════════════
-          MAIN CONTENT
-          ════════════════════════════════════════ */}
-      <main id="contenidoConductores" className="main-content">
-
-        {/* ── TOPBAR ── */}
-        <header id="topbarConductores" className="top-header">
-          <div className="header-left">
-            <Menu size={24} className="menu-trigger" />
-            <div className="search-container">
-              <Search size={18} className="search-icon" />
+      {/* --- MAIN --- */}
+      <main>
+        <header>
+          <div className="headerIzquierdo">
+            <div className="buscadorContainer">
+              <Search size={18} className="buscadorIcono" />
               <input
                 type="text"
                 placeholder="Buscar conductores por nombre, placa..."
@@ -328,29 +222,29 @@ const ConductoresPage = () => {
                 onChange={e => setSearch(e.target.value)}
                 onKeyDown={handleSearch}
               />
-              <span className="search-kbd">⏎</span>
             </div>
           </div>
-          <div className="header-right">
-            <div className="notification-wrapper">
-              <Bell size={20} />
-              <span className="notification-badge">5</span>
-            </div>
-            <div className="user-dropdown">
-              <img src="https://i.pravatar.cc/150?u=admin" alt="Admin" />
-              <span>{user?.name || 'Admin'}</span>
+          
+          <div className="headerDerecho">
+            <div className='userInfo'>
+              <span>Bienvenido/a, {user?.name || 'Admin'}</span>
               <ChevronDown size={16} />
             </div>
+            <div className="notificacionCampana">
+              <Bell size={20} />
+              <span className="notificacionBadge">5</span>
+            </div>
+            <div className="userInfo">
+              <img src={getDefaultImagen(user?.profileImage)} alt="Admin" />
+            </div>
+            <Menu size={22} className="IconMenu" />
           </div>
         </header>
 
-        {/* ── BODY ── */}
-        <div id="cuerpoDesplazableConductores" className="dashboard-scrollable">
-
-          {/* Page Header */}
-          <div id="encabezadoConductores" className="page-header">
+        <div className="dashboardBody">
+          <div id="encabezadoPagina" className="page-header">
             <div>
-              <h1>Conductores</h1>
+              <h1>Gestión de Conductores</h1>
               <p>Gestiona y monitorea el rendimiento y disponibilidad de la flota</p>
             </div>
             <button className="conductores-btn-registrar">
@@ -358,40 +252,46 @@ const ConductoresPage = () => {
             </button>
           </div>
 
-          {/* ── STATS GRID ── */}
-          <div id="estadisticasConductores" className="conductores-stats-grid">
-            <StatCard
-              icon={<Users size={20} className="color-purple" />}
-              label="Total Conductores"
-              value={loading ? '—' : stats.total.toLocaleString()}
-              trend="12.5% vs mes anterior"
-              trendUp
-            />
-            <StatCard
-              icon={<Zap size={20} className="color-green" />}
-              label="Activos Ahora"
-              value={loading ? '—' : stats.activeNow.toLocaleString()}
-              trend="Monitoreo en vivo"
-            />
-            <StatCard
-              icon={<Star size={20} className="color-yellow" />}
-              label="Rating Promedio"
-              value={loading ? '—' : stats.avgRating}
-              trend="Todas las valoraciones"
-            />
-            <StatCard
-              icon={<Truck size={20} className="color-blue" />}
-              label="En Viaje"
-              value={loading ? '—' : stats.onTrip.toLocaleString()}
-              trend="Ocupación de flota"
-            />
+          <div className="graficosGrid">
+            <div className="tarjetaEstadistica">
+              <div className="estadisticaHeader">
+                <div className="estadisticaIcono color-purple"><Users size={20} /></div>
+                <div className="estadisticaValor">{loading ? '—' : stats.total}</div>
+              </div>
+              <div className="estadisticaTitulo">Total Conductores</div>
+              <div className="estadisticaFooter">
+                <span className="estadisticaCambio positive"><ArrowUpRight size={14} /> 12.5%</span>
+                <span className="estadisticaSubtitulo">vs mes anterior</span>
+              </div>
+            </div>
+
+            <div className="tarjetaEstadistica">
+              <div className="estadisticaHeader">
+                <div className="estadisticaIcono color-green"><Zap size={20} /></div>
+                <div className="estadisticaValor">{loading ? '—' : stats.activeNow}</div>
+              </div>
+              <div className="estadisticaTitulo">Activos Ahora</div>
+              <div className="estadisticaFooter">
+                <span className="estadisticaSubtitulo">Monitoreo en vivo</span>
+              </div>
+            </div>
+
+            <div className="tarjetaEstadistica">
+              <div className="estadisticaHeader">
+                <div className="estadisticaIcono color-yellow"><Star size={20} /></div>
+                <div className="estadisticaValor">{loading ? '—' : stats.avgRating}</div>
+              </div>
+              <div className="estadisticaTitulo">Rating Promedio</div>
+              <div className="estadisticaFooter">
+                <span className="estadisticaSubtitulo">Todas las valoraciones</span>
+              </div>
+            </div>
           </div>
 
-          {/* ── DRIVERS GRID ── */}
           <div id="gridConductores">
             {loading ? (
-              <div className="conductores-loading">
-                <div className="conductores-spinner" />
+              <div className="loading-state-dashboard">
+                <div className="spinner-dashboard" />
                 <p>Cargando conductores...</p>
               </div>
             ) : drivers.length > 0 ? (
@@ -399,18 +299,31 @@ const ConductoresPage = () => {
                 {drivers.map(driver => (
                   <DriverCard key={driver._id} driver={driver} />
                 ))}
-                {/* Card para agregar nuevo conductor */}
-                <AddDriverCard />
+                <div className="conductor-add-card">
+                  <div className="conductor-add-icon">
+                    <UserCheck size={32} />
+                  </div>
+                  <h3>Registrar Conductor</h3>
+                  <p>Incorporar un nuevo miembro a la flota</p>
+                </div>
               </div>
             ) : (
-              /* ── EMPTY STATE ── */
               <div className="conductores-grid">
-                <EmptyState onAdd={() => {}} />
-                <AddDriverCard />
+                <div className="empty-state-dashboard">
+                  <Truck size={40} />
+                  <h3>No hay conductores registrados</h3>
+                  <p>Conecta el backend o registra el primer conductor para comenzar.</p>
+                </div>
+                <div className="conductor-add-card">
+                  <div className="conductor-add-icon">
+                    <UserCheck size={32} />
+                  </div>
+                  <h3>Registrar Conductor</h3>
+                  <p>Incorporar un nuevo miembro a la flota</p>
+                </div>
               </div>
             )}
           </div>
-
         </div>
       </main>
     </div>

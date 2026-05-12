@@ -2,7 +2,7 @@
  * Pasajeros.jsx
  *
  * Página de Gestión de Pasajeros — SafeRide Admin Panel
- * Sigue la misma arquitectura que Dashboard.jsx y ConductoresPage.jsx.
+ * Sincronizada con la estructura exacta de Dashboard.jsx para heredar estilos.
  *
  * @author SafeRide Dev Team
  */
@@ -19,12 +19,11 @@ import {
 import passengerService from '../../services/passengerService';
 import '../DashboardAdmin/Dashboard.css';
 import './Pasajeros.css';
+import IconSafeRide from '../../imgs/IconSafeRide.png';
+import DefaultImageUser from '../../imgs/DefaultImageUser.png';
 
 // ─────────────────────────────────────────────────────────────
-// Imagen por defecto usando DiceBear (no depende de avatar externo)
-// ─────────────────────────────────────────────────────────────
-const getDefaultImage = (url, name) =>
-  url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name || 'U')}`;
+const getDefaultImagen = (url) => (url && url.trim() !== '') ? url : DefaultImageUser;
 
 // ─────────────────────────────────────────────────────────────
 // COMPONENTE: Tarjeta de Pasajero
@@ -34,7 +33,7 @@ const PassengerCard = ({ passenger }) => (
     <div className="p-card-header">
       <div className="p-user-info">
         <img
-          src={getDefaultImage(passenger.profileImage, passenger.name)}
+          src={getDefaultImagen(passenger.profileImage)}
           alt={passenger.name}
           className="p-avatar"
         />
@@ -74,7 +73,7 @@ const PassengerCard = ({ passenger }) => (
 // PÁGINA PRINCIPAL: PasajerosPage
 // ─────────────────────────────────────────────────────────────
 const PasajerosPage = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, cerrarSesion } = useAuth();
   const location = useLocation();
 
   const [passengers, setPassengers] = useState([]);
@@ -86,10 +85,6 @@ const PasajerosPage = () => {
 
   useEffect(() => { loadPassengers(); }, []);
 
-  /**
-   * Carga los pasajeros desde el backend.
-   * Conectar con: passengerService.getAllPassengers({ search: searchTerm })
-   */
   const loadPassengers = async () => {
     setLoading(true);
     try {
@@ -120,77 +115,68 @@ const PasajerosPage = () => {
     if (e.key === 'Enter') loadPassengers();
   };
 
-  const navActive = (path) =>
-    location.pathname.toLowerCase() === path.toLowerCase() ? 'active' : '';
+  // Usamos el mismo nombre de función de logout que en Dashboard para consistencia
+  const handleCerrarSesion = logout || cerrarSesion;
 
   return (
-    <div id="disenoPasajeros" className="dashboard-layout">
+    <div className="dashboardContent">
 
-      {/* ═══ SIDEBAR ═══ */}
-      <aside id="barraLateralPasajeros" className="sidebar">
-        <div className="sidebar-logo">
-          <div className="logo-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-              strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-              <circle cx="12" cy="10" r="3" />
-            </svg>
-          </div>
+      {/* --- SIDEBAR --- */}
+      <aside>
+        <div className="sidebaLogo">
+          <img src={IconSafeRide} alt="Icono" className='IconSafeRide' />
           <span>RideAdmin</span>
         </div>
 
-        <nav className="sidebar-nav">
-          <Link to="/Inicio"         className={`nav-item ${navActive('/Inicio')}`}>
-            <LayoutDashboard size={20} /><span>Dashboard</span>
+        <nav className="sidebarNav">
+          <Link to="/inicio" className={`navItem ${location.pathname === '/inicio' ? 'active' : ''}`}>
+            <LayoutDashboard size={20} /> <span>Panel</span>
           </Link>
-          <Link to="/Usuarios"       className={`nav-item ${navActive('/Usuarios')}`}>
-            <Users size={20} /><span>Usuarios</span><ChevronDown size={16} className="ml-auto" />
+          <Link to="/usuarios" className={`navItem ${location.pathname === '/usuarios' ? 'active' : ''}`}>
+            <Users size={20} /> <span>Usuarios</span><ChevronDown size={16} className="FlechaSidebar" />
           </Link>
-          <Link to="/Conductores"    className={`nav-item ${navActive('/Conductores')}`}>
-            <UserCheck size={20} /><span>Conductores</span>
+          <Link to="/conductores" className={`navItem ${location.pathname === '/conductores' ? 'active' : ''}`}>
+            <UserCheck size={20} /> <span>Conductores</span>
           </Link>
-          <Link to="/Vehiculos"      className={`nav-item ${navActive('/Vehiculos')}`}>
-            <Car size={20} /><span>Vehículos</span>
+          <Link to="/vehiculos" className={`navItem ${location.pathname === '/vehiculos' ? 'active' : ''}`}>
+            <Car size={20} /> <span>Vehículos</span>
           </Link>
-          <Link to="/Reservas"       className={`nav-item ${navActive('/Reservas')}`}>
-            <Calendar size={20} /><span>Reservas</span><ChevronDown size={16} className="ml-auto" />
+          <Link to="/reservas" className={`navItem ${location.pathname === '/reservas' ? 'active' : ''}`}>
+            <Calendar size={20} /> <span>Reservas</span><ChevronDown size={16} className="FlechaSidebar" />
           </Link>
-          <Link to="/Pagos"          className={`nav-item ${navActive('/Pagos')}`}>
-            <CreditCard size={20} /><span>Pagos</span>
+          <Link to="/pagos" className={`navItem ${location.pathname === '/pagos' ? 'active' : ''}`}>
+            <CreditCard size={20} /> <span>Pagos</span>
           </Link>
-          <Link to="/Notificaciones" className={`nav-item ${navActive('/Notificaciones')}`}>
-            <Bell size={20} /><span>Notificaciones</span>
+          <Link to="/notificaciones" className={`navItem ${location.pathname === '/notificaciones' ? 'active' : ''}`}>
+            <Bell size={20} /> <span>Notificaciones</span>
           </Link>
-          <Link to="/Quejas"         className={`nav-item ${navActive('/Quejas')}`}>
-            <AlertCircle size={20} /><span>Quejas</span>
+          <Link to="/quejas" className={`navItem ${location.pathname === '/quejas' ? 'active' : ''}`}>
+            <AlertCircle size={20} /> <span>Quejas</span>
           </Link>
-          <Link to="/Auditoria"      className={`nav-item ${navActive('/Auditoria')}`}>
-            <ShieldCheck size={20} /><span>Auditoría</span>
+          <Link to="/auditoria" className={`navItem ${location.pathname === '/auditoria' ? 'active' : ''}`}>
+            <ShieldCheck size={20} /> <span>Auditoría</span>
           </Link>
-          <Link to="/Configuracion"  className={`nav-item ${navActive('/Configuracion')}`}>
-            <Settings size={20} /><span>Configuración</span>
+          <Link to="/configuracion" className={`navItem ${location.pathname === '/configuracion' ? 'active' : ''}`}>
+            <Settings size={20} /> <span>Configuración</span>
           </Link>
         </nav>
 
-        <div className="sidebar-profile">
-          <img src="https://i.pravatar.cc/150?u=admin" alt="Admin" className="profile-img" />
-          <div className="profile-info">
-            <span className="profile-name">{user?.name || 'Admin'}</span>
-            <span className="profile-role">Super Administrador</span>
+        <div className="sidebarPerfil">
+          <img src={getDefaultImagen(user?.profileImage)} alt="Admin" className="FotoPerfil" />
+          <div className="PerfilInfo">
+            <span className="NombrePerfil">{user?.name || 'Admin'}</span>
+            <span className="RolPerfil">Super Administrador</span>
           </div>
-          <ChevronDown size={16} className="profile-chevron" onClick={logout} title="Cerrar sesión" />
+          <ChevronDown size={16} className="FlechaPerfil" onClick={handleCerrarSesion} style={{cursor: 'pointer'}} />
         </div>
       </aside>
 
-      {/* ═══ MAIN ═══ */}
-      <main id="contenidoPasajeros" className="main-content">
-
-        {/* Topbar */}
-        <header id="topbarPasajeros" className="top-header">
-          <div className="header-left">
-            <Menu size={24} className="menu-trigger" />
-            <div className="search-container">
-              <Search size={18} className="search-icon" />
+      {/* --- MAIN --- */}
+      <main>
+        <header>
+          <div className="headerIzquierdo">
+            <div className="buscadorContainer">
+              <Search size={18} className="buscadorIcono" />
               <input
                 type="text"
                 placeholder="Buscar pasajeros..."
@@ -198,29 +184,29 @@ const PasajerosPage = () => {
                 onChange={e => setSearch(e.target.value)}
                 onKeyDown={handleSearch}
               />
-              <span className="search-kbd">⏎</span>
             </div>
           </div>
-          <div className="header-right">
-            <div className="notification-wrapper">
-              <Bell size={20} />
-              <span className="notification-badge">3</span>
-            </div>
-            <div className="user-dropdown">
-              <img src="https://i.pravatar.cc/150?u=admin" alt="Admin" />
-              <span>{user?.name || 'Admin'}</span>
+          
+          <div className="headerDerecho">
+            <div className='userInfo'>
+              <span>Bienvenido/a, {user?.name || 'Admin'}</span>
               <ChevronDown size={16} />
             </div>
+            <div className="notificacionCampana">
+              <Bell size={20} />
+              <span className="notificacionBadge">3</span>
+            </div>
+            <div className="userInfo">
+              <img src={getDefaultImagen(user?.profileImage)} alt="Admin" />
+            </div>
+            <Menu size={22} className="IconMenu" />
           </div>
         </header>
 
-        {/* Body */}
-        <div id="cuerpoDesplazablePasajeros" className="dashboard-scrollable">
-
-          {/* Page Header */}
-          <div id="encabezadoPasajeros" className="page-header">
+        <div className="dashboardBody">
+          <div id="encabezadoPagina" className="page-header">
             <div>
-              <h1>Pasajeros</h1>
+              <h1>Gestión de Pasajeros</h1>
               <p>Supervisa y administra los usuarios registrados en la plataforma</p>
             </div>
             <button className="btn-add-passenger">
@@ -228,56 +214,48 @@ const PasajerosPage = () => {
             </button>
           </div>
 
-          {/* Stats */}
-          <div id="estadisticasPasajeros" className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-header">
-                <div className="stat-icon-wrapper color-blue"><Users size={20} /></div>
-                <div className="stat-value">{loading ? '—' : stats.total}</div>
+          {/* Stats Reutilizando las clases de Dashboard */}
+          <div className="graficosGrid">
+            <div className="tarjetaEstadistica">
+              <div className="estadisticaHeader">
+                <div className="estadisticaIcono color-blue"><Users size={20} /></div>
+                <div className="estadisticaValor">{loading ? '—' : stats.total}</div>
               </div>
-              <div className="stat-title">Total Pasajeros</div>
-              <div className="stat-footer">
-                <span className="stat-change positive"><TrendingUp size={13} /> 12%</span>
-                <span className="stat-subtitle">vs mes anterior</span>
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-header">
-                <div className="stat-icon-wrapper color-green"><Activity size={20} /></div>
-                <div className="stat-value">{loading ? '—' : stats.active}</div>
-              </div>
-              <div className="stat-title">Activos ahora</div>
-              <div className="stat-footer">
-                <span className="stat-subtitle">En línea actualmente</span>
+              <div className="estadisticaTitulo">Total Pasajeros</div>
+              <div className="estadisticaFooter">
+                <span className="estadisticaCambio positive"><TrendingUp size={14} /> 12%</span>
+                <span className="estadisticaSubtitulo">vs mes anterior</span>
               </div>
             </div>
-            <div className="stat-card">
-              <div className="stat-header">
-                <div className="stat-icon-wrapper color-yellow"><Star size={20} /></div>
-                <div className="stat-value">{loading ? '—' : stats.avgRating}</div>
+
+            <div className="tarjetaEstadistica">
+              <div className="estadisticaHeader">
+                <div className="estadisticaIcono color-green"><Activity size={20} /></div>
+                <div className="estadisticaValor">{loading ? '—' : stats.active}</div>
               </div>
-              <div className="stat-title">Rating Promedio</div>
-              <div className="stat-footer">
-                <span className="stat-subtitle">Basado en reseñas</span>
+              <div className="estadisticaTitulo">Activos ahora</div>
+              <div className="estadisticaFooter">
+                <span className="estadisticaSubtitulo">En línea actualmente</span>
               </div>
             </div>
-            <div className="stat-card">
-              <div className="stat-header">
-                <div className="stat-icon-wrapper color-purple"><Calendar size={20} /></div>
-                <div className="stat-value">{loading ? '—' : stats.totalRides}</div>
+
+            <div className="tarjetaEstadistica">
+              <div className="estadisticaHeader">
+                <div className="estadisticaIcono color-yellow"><Star size={20} /></div>
+                <div className="estadisticaValor">{loading ? '—' : stats.avgRating}</div>
               </div>
-              <div className="stat-title">Viajes Realizados</div>
-              <div className="stat-footer">
-                <span className="stat-subtitle">Histórico total</span>
+              <div className="estadisticaTitulo">Rating Promedio</div>
+              <div className="estadisticaFooter">
+                <span className="estadisticaSubtitulo">Basado en reseñas</span>
               </div>
             </div>
           </div>
 
           {/* Grid de Pasajeros */}
-          <div id="gridPasajeros" className="passengers-section">
+          <div className="passengers-section">
             {loading ? (
-              <div className="loading-state">
-                <div className="conductores-spinner" />
+              <div className="loading-state-dashboard">
+                <div className="spinner-dashboard" />
                 <p>Cargando pasajeros...</p>
               </div>
             ) : passengers.length > 0 ? (
@@ -285,14 +263,13 @@ const PasajerosPage = () => {
                 {passengers.map(p => <PassengerCard key={p._id} passenger={p} />)}
               </div>
             ) : (
-              <div className="empty-state">
+              <div className="empty-state-dashboard">
                 <Users size={48} />
                 <h3>No se encontraron pasajeros</h3>
                 <p>Conecta el backend o prueba con otro término de búsqueda.</p>
               </div>
             )}
           </div>
-
         </div>
       </main>
     </div>
