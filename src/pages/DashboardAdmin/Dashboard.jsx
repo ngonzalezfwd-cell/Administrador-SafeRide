@@ -14,57 +14,42 @@ import {
 import './Dashboard.css';
 import IconSafeRide from '../../imgs/IconSafeRide.png';
 import DefaultImageUser from '../../imgs/DefaultImageUser.png';
-// ──────────────────────────────────────────────────────────────────────────────────────────────────
-
 
 // ────────────── Función para imagen por defecto de Cloudinary ────────────────────────
 const getDefaultImagen = (url) => (url && url.trim() !== '') ? url : DefaultImageUser;
 
 // ────────────── Tarjeta de estadísticas con iconos ───────────────────────────────────
 const TarjetaEstadistica = ({ icon, title, value, change, isPositive, subtitle }) => (
-    
     <div className="tarjetaEstadistica">
-
         <div className="estadisticaHeader">
-
             <div className="estadisticaIcono">{icon}</div>
             <div className="estadisticaValor">{value}</div>
         </div>
-
         <div className="estadisticaTitulo">{title}</div>
-
         <div className="estadisticaFooter">
-            
             <span className={"estadisticaCambio " + (isPositive ? 'positive' : 'negative')}>
                 {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
                 {change}
             </span>
-
             <span className="estadisticaSubtitulo">{subtitle}</span>
         </div>
     </div>
 );
 
-// ──────────────────────────────────────────────────────────────────────────────────────────────────
-// ──────────────────────────────────────────────────────────────────────────────────────────────────
-
 const Dashboard = () => {
-    
-    const { user, cerrarSesion } = useAuth();
+    const { user, cerrarSesion, logout } = useAuth();
     const location = useLocation();
     const [metricas, setMetricas] = useState({});
-    const [ Reservas, setReservas] = useState([]);
+    const [Reservas, setReservas] = useState([]);
     const [usuarios, setUsuarios] = useState([]);
     const [notificaciones, setNotificaciones] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const handleLogout = cerrarSesion || logout;
 
-    // ────────────── useEffect para cargar datos del dashboard ────────────────────────
     useEffect(() => {
         const CargarDatos = async () => {
             try {
-
-                // Obteniendo metricas
                 const [metricasRes, reservasRes, usuariosRes, notificacionesRes] = await Promise.all([
                     api.get('/metrics/global').catch(() => ({ data: { data: {} } })),
                     api.get('/bookings?limit=5').catch(() => ({ data: { data: [] } })),
@@ -72,46 +57,34 @@ const Dashboard = () => {
                     api.get('/notifications').catch(() => ({ data: { data: [] } }))
                 ]);
 
-                // Actualizando estados
                 setMetricas(metricasRes.data?.data || {});
                 setReservas(reservasRes.data?.data || reservasRes.data?.data?.docs || []);
                 setUsuarios(usuariosRes.data?.data || usuariosRes.data?.data?.docs || []);
                 setNotificaciones(notificacionesRes.data?.data || notificacionesRes.data?.data?.docs || []);
-
             } catch (error) {
-
                 console.error("Error al cargar datos del dashboard:", error);
             } finally {
                 setLoading(false);
             }
         };
-
         CargarDatos();
     }, []);
 
-
-    
-    // ────────────── Función para obtener el color del estado de la reserva ────────────────────────
-    const ObtenerColorEstado = (status) => {
+    const getStatusClass = (status) => {
         switch(status?.toLowerCase()) {
-            case 'completada': 
-                return 'status-green';
-            case 'confirmada': 
-                return 'status-blue';
-            case 'pendiente': 
-                return 'status-yellow';
-            case 'cancelada': 
-                return 'status-red';
+            case 'completada': return 'status-green';
+            case 'confirmada': return 'status-blue';
+            case 'pendiente': return 'status-yellow';
+            case 'cancelada': return 'status-red';
+            default: return '';
         }
     };
 
-    // ────────────── Cálculos de métricas ────────────────────────
     const totalUsuarios = metricas.totalUsuarios || 0;
     const totalConductores = metricas.totalConductores || 0;
     const totalPasajeros = metricas.totalPasajeros || 0;
     const totalViajes = metricas.totalViajes || 0;
     
-    // ────────────── Datos de fallback para gráficos si la API no los proporciona ────────────────────────
     const pieDataRoles = [
         { name: 'Pasajeros', value: totalPasajeros > 0 ? totalPasajeros : 892, color: '#3B82F6' },
         { name: 'Conductores', value: totalConductores > 0 ? totalConductores : 342, color: '#10B981' },
@@ -136,123 +109,74 @@ const Dashboard = () => {
 
     if (loading) return <div style={{padding: '50px', textAlign: 'center'}}>Cargando métricas...</div>;
 
-
-
-    // =======================================================================
-        // ────── DASHBOARD ────────────────────────
-        
     return (
-
         <div className="dashboardContent">
-
-            {/* --- SIDEBAR --- */}
             <aside>
-
                 <div className="sidebaLogo">
-
                     <img src={IconSafeRide} alt="Icono" className='IconSafeRide' />
                     <span>RideAdmin</span>
                 </div>
 
                 <nav className="sidebarNav">
-
-                    <Link to="/Inicio" className={`navItem ${location.pathname === '/Inicio' ? 'active' : ''}`}><LayoutDashboard size={20} /> <span>Panel</span></Link>
-                    
+                    <Link to="/inicio" className={`navItem ${location.pathname === '/inicio' ? 'active' : ''}`}><LayoutDashboard size={20} /> <span>Panel</span></Link>
                     <Link to="/usuarios" className={`navItem ${location.pathname === '/usuarios' ? 'active' : ''}`}><Users size={20} /> <span>Usuarios</span><ChevronDown size={16} className="FlechaSidebar" /></Link>
-                    
                     <Link to="/conductores" className={`navItem ${location.pathname === '/conductores' ? 'active' : ''}`}><UserCheck size={20} /> <span>Conductores</span></Link>
-                    
                     <Link to="/vehiculos" className={`navItem ${location.pathname === '/vehiculos' ? 'active' : ''}`}><Car size={20} /> <span>Vehículos</span></Link>
-                    
                     <Link to="/reservas" className={`navItem ${location.pathname === '/reservas' ? 'active' : ''}`}><Calendar size={20} /> <span>Reservas</span><ChevronDown size={16} className="FlechaSidebar" /></Link>
-                    
                     <Link to="/pagos" className={`navItem ${location.pathname === '/pagos' ? 'active' : ''}`}><CreditCard size={20} /> <span>Pagos</span></Link>
-                    
                     <Link to="/notificaciones" className={`navItem ${location.pathname === '/notificaciones' ? 'active' : ''}`}><Bell size={20} /> <span>Notificaciones</span></Link>
-                    
                     <Link to="/quejas" className={`navItem ${location.pathname === '/quejas' ? 'active' : ''}`}><AlertCircle size={20} /> <span>Quejas</span></Link>
-                    
                     <Link to="/auditoria" className={`navItem ${location.pathname === '/auditoria' ? 'active' : ''}`}><ShieldCheck size={20} /> <span>Auditoría</span></Link>
-                    
                     <Link to="/configuracion" className={`navItem ${location.pathname === '/configuracion' ? 'active' : ''}`}><Settings size={20} /> <span>Configuración</span></Link>
                 </nav>
 
-                {/* PERFIL DEL USUARIO */}
                 <div className="sidebarPerfil">
-
                     <img src={getDefaultImagen(user?.profileImage)} alt="Admin" className="FotoPerfil" />
-
                     <div className="PerfilInfo">
-
                         <span className="NombrePerfil">{user?.name || 'Admin'}</span>
                         <span className="RolPerfil">Super Administrador</span>
                     </div>
-                    <ChevronDown size={16} className="FlechaPerfil" onClick={cerrarSesion} style={{cursor: 'pointer'}} />
+                    <ChevronDown size={16} className="FlechaPerfil" onClick={handleLogout} style={{cursor: 'pointer'}} />
                 </div>
             </aside>
 
-
-
-            {/* --- CONTENIDO PRINCIPAL --- */}
-
             <main>
-
-                {/* HEADER */}
                 <header>
-
                     <div className="headerIzquierdo">
-
                         <div className="buscadorContainer">
                             <Search size={18} className="buscadorIcono" />
-
                             <input type="text" placeholder="Buscar en el sistema..." />
                         </div>
                     </div>
-                    
                     <div className="headerDerecho">
-
                         <div className='userInfo'>
-
                             <span>Bienvenido/a, {user?.name || 'Admin'}</span>
                             <ChevronDown size={16} />
                         </div>
-
                         <div className="notificacionCampana">
                             <Bell size={20} />
-
                             <span className="notificacionBadge">8</span>
                         </div>
-
                         <div className="userInfo">
-
                             <img src={getDefaultImagen(user?.profileImage)} alt="Admin" />
                         </div>
-                        
                         <Menu size={22} className="IconMenu" />
                     </div>
                 </header>
 
-
-                {/* MAIN */}
                 <div className="dashboardBody">
-
                     <div id="encabezadoPagina" className="page-header">
-
                         <div>
-
                             <h1>Dashboard</h1>
                             <p>Resumen general de la plataforma</p>
                         </div>
-
                         <div className="date-picker-btn">
-
                             <Calendar size={16} />
                             <span>20 de mayo, 2025</span>
                             <ChevronDown size={14} />
                         </div>
                     </div>
 
-                    {/* Stats Grid */}
                     <div id="cuadriculaEstadisticas" className="graficosGrid">
                         <TarjetaEstadistica icon={<Users size={20} className="color-purple" />} title="Usuarios totales" value={totalUsuarios.toLocaleString()} change="12.5%" isPositive={true} subtitle="vs mes anterior" />
                         <TarjetaEstadistica icon={<Car size={20} className="color-green" />} title="Conductores aprobados" value={totalConductores.toLocaleString()} change="8.2%" isPositive={true} subtitle="vs mes anterior" />
@@ -262,7 +186,6 @@ const Dashboard = () => {
                         <TarjetaEstadistica icon={<CreditCard size={20} className="color-green-dark" />} title="Pagos fallidos" value="7" change="2.1%" isPositive={true} subtitle="vs mes anterior" />
                     </div>
 
-                    {/* Charts Grid */}
                     <div id="cuadriculaGraficos" className="charts-grid">
                         <div className="chart-card">
                             <div className="chart-header">
@@ -353,9 +276,7 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    {/* Lists Grid */}
                     <div id="cuadriculaListas" className="lists-grid">
-                        {/* Actividad reciente */}
                         <div className="list-card">
                             <div className="list-header">
                                 <h3>Actividad reciente</h3>
@@ -393,7 +314,6 @@ const Dashboard = () => {
                             </div>
                         </div>
 
-                        {/* Reservas recientes */}
                         <div className="list-card">
                             <div className="list-header">
                                 <h3>Reservas recientes</h3>
@@ -422,7 +342,6 @@ const Dashboard = () => {
                             </div>
                         </div>
 
-                        {/* Quejas recientes (Usuarios recientes como fallback si no hay quejas) */}
                         <div className="list-card">
                             <div className="list-header">
                                 <h3>Usuarios recientes</h3>
