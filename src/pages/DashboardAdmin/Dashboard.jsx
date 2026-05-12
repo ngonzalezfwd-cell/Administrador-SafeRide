@@ -85,44 +85,45 @@ const Dashboard = () => {
 
 
     const ObtenerColorPorEstado = (status) => {
-
-        switch(status?.toLowerCase()) {
-            case 'completada': return 'status-green';
-            case 'confirmada': return 'status-blue';
-            case 'pendiente': return 'status-yellow';
-            case 'cancelada': return 'status-red';
+        switch (status?.toLowerCase()) {
+            case 'completada':
+            case 'completed': return 'estadoVerde';
+            case 'confirmada':
+            case 'confirmed': return 'estadoAzul';
+            case 'pendiente':
+            case 'pending':   return 'estadoAmarillo';
+            case 'cancelada':
+            case 'cancelled': return 'estadoRojo';
             default: return '';
         }
     };
 
-    const totalUsuarios = metricas.totalUsuarios || 0;
-    const totalConductores = metricas.totalConductores || 0;
-    const totalPasajeros = metricas.totalPasajeros || 0;
-    const totalViajes = metricas.totalViajes || 0;
-    
-    const pieDataRoles = [
+    const totalUsuarios = metricas.totalUsers || 0;
+    const totalConductores = metricas.totalDrivers || 0;
+    const totalViajes = metricas.totalRides || 0;
+    const totalPasajeros = metricas.totalPassengers || 0;
+    const totalAdmins = metricas.totalAdmins || 0;
 
-        { name: 'Pasajeros', value: totalPasajeros > 0 ? totalPasajeros : 892, color: '#3B82F6' },
-        { name: 'Conductores', value: totalConductores > 0 ? totalConductores : 342, color: '#10B981' },
-        { name: 'Moderadores', value: (totalUsuarios - totalPasajeros - totalConductores) > 0 ? (totalUsuarios - totalPasajeros - totalConductores) : 14, color: '#8B5CF6' },
+    const pieDataRoles = [
+        { name: 'Pasajeros', value: totalPasajeros, color: '#3B82F6' },
+        { name: 'Conductores', value: totalConductores, color: '#10B981' },
+        { name: 'Administradores', value: totalAdmins, color: '#8B5CF6' },
     ];
 
     const pieDataPagos = [
-
-        { name: 'Pagados', value: 100, color: '#10B981' },
-        { name: 'Pendientes', value: 100, color: '#F59E0B' },
-        { name: 'Fallidos', value: 100, color: '#EF4444' },
+        { name: 'Pagados', value: Math.floor(totalViajes * 0.7) || 10, color: '#10B981' },
+        { name: 'Pendientes', value: Math.floor(totalViajes * 0.2) || 3, color: '#F59E0B' },
+        { name: 'Fallidos', value: Math.floor(totalViajes * 0.1) || 1, color: '#EF4444' },
     ];
 
     const lineData = [
-
-        { name: '14 May', value: 30 },
-        { name: '15 May', value: 150 },
-        { name: '16 May', value: 120 },
-        { name: '17 May', value: 70 },
-        { name: '18 May', value: 100 },
-        { name: '19 May', value: Math.floor(totalViajes / 2) || 180 },
-        { name: '20 May', value: totalViajes || 210 },
+        { name: '14 May', value: Math.floor(totalViajes * 0.2) },
+        { name: '15 May', value: Math.floor(totalViajes * 0.4) },
+        { name: '16 May', value: Math.floor(totalViajes * 0.3) },
+        { name: '17 May', value: Math.floor(totalViajes * 0.6) },
+        { name: '18 May', value: Math.floor(totalViajes * 0.5) },
+        { name: '19 May', value: Math.floor(totalViajes * 0.8) },
+        { name: '20 May', value: totalViajes },
     ];
 
 
@@ -149,21 +150,21 @@ const Dashboard = () => {
                     <Link to="/inicio" className={`navItem ${location.pathname === '/inicio' ? 'active' : ''}`}><LayoutDashboard size={20} /> <span>Panel</span></Link>
 
                     <Link to="/usuarios" className={`navItem ${location.pathname === '/usuarios' ? 'active' : ''}`}><Users size={20} /> <span>Usuarios</span><ChevronDown size={16} className="FlechaSidebar" /></Link>
-                    
+
                     <Link to="/conductores" className={`navItem ${location.pathname === '/conductores' ? 'active' : ''}`}><UserCheck size={20} /> <span>Conductores</span></Link>
-                    
+
                     <Link to="/vehiculos" className={`navItem ${location.pathname === '/vehiculos' ? 'active' : ''}`}><Car size={20} /> <span>Vehículos</span></Link>
-                    
+
                     <Link to="/reservas" className={`navItem ${location.pathname === '/reservas' ? 'active' : ''}`}><Calendar size={20} /> <span>Reservas</span><ChevronDown size={16} className="FlechaSidebar" /></Link>
 
                     <Link to="/pagos" className={`navItem ${location.pathname === '/pagos' ? 'active' : ''}`}><CreditCard size={20} /> <span>Pagos</span></Link>
-                    
+
                     <Link to="/notificaciones" className={`navItem ${location.pathname === '/notificaciones' ? 'active' : ''}`}><Bell size={20} /> <span>Notificaciones</span></Link>
-                    
+
                     <Link to="/quejas" className={`navItem ${location.pathname === '/quejas' ? 'active' : ''}`}><AlertCircle size={20} /> <span>Quejas</span></Link>
-                    
+
                     <Link to="/auditoria" className={`navItem ${location.pathname === '/auditoria' ? 'active' : ''}`}><ShieldCheck size={20} /> <span>Auditoría</span></Link>
-                    
+
                     <Link to="/configuracion" className={`navItem ${location.pathname === '/configuracion' ? 'active' : ''}`}><Settings size={20} /> <span>Configuración</span></Link>
 
                 </nav>
@@ -180,7 +181,7 @@ const Dashboard = () => {
                         <span className="RolPerfil">Super Administrador</span>
                     </div>
 
-                    <ChevronDown size={16} className="FlechaPerfil" onClick={cerrarSesion} style={{cursor: 'pointer'}} />
+                    <ChevronDown size={16} className="FlechaPerfil" onClick={cerrarSesion} style={{ cursor: 'pointer' }} />
                 </div>
             </aside>
 
@@ -232,19 +233,19 @@ const Dashboard = () => {
 
                     {/*  1. ESTADISTICAS PRINCIPALES */}
                     <div className="graficosGrid">
-                        
+
                         <TarjetaEstadistica icon={<Users size={20} className="color-purple" />} title="Usuarios totales" value={totalUsuarios.toLocaleString()} change="12.5%" isPositive={true} subtitle="vs mes anterior" />
 
                         <TarjetaEstadistica icon={<Car size={20} className="color-green" />} title="Conductores aprobados" value={totalConductores.toLocaleString()} change="8.2%" isPositive={true} subtitle="vs mes anterior" />
-                        
+
                         <TarjetaEstadistica icon={<Car size={20} className="color-yellow" />} title="Vehículos pendientes" value="24" change="4.3%" isPositive={false} subtitle="vs mes anterior" />
-                        
+
                         <TarjetaEstadistica icon={<Calendar size={20} className="color-blue" />} title="Reservas este mes" value={totalViajes.toLocaleString()} change="15.7%" isPositive={true} subtitle="vs mes anterior" />
-                        
+
                         <TarjetaEstadistica icon={<AlertCircle size={20} className="color-red" />} title="Quejas pendientes" value="18" change="5.6%" isPositive={true} subtitle="vs mes anterior" />
-                        
+
                         <TarjetaEstadistica icon={<CreditCard size={20} className="color-green-dark" />} title="Pagos fallidos" value="7" change="2.1%" isPositive={true} subtitle="vs mes anterior" />
-                        
+
                     </div>
 
 
@@ -257,7 +258,7 @@ const Dashboard = () => {
 
                                 <h3>Reservas por día</h3>
 
-                                <div className="selectorMini">Últimos 7 días <ChevronDown size={14}/></div>
+                                <div className="selectorMini">Últimos 7 días <ChevronDown size={14} /></div>
                             </div>
 
                             <div className="graficoBody">
@@ -265,15 +266,15 @@ const Dashboard = () => {
                                 <ResponsiveContainer width="100%" height="100%">
 
                                     <LineChart data={lineData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                        
+
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
 
-                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#9CA3AF'}} dy={10} />
-                                        
-                                        <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#9CA3AF'}} />
-                                        
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} dy={10} />
+
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} />
+
                                         <RechartsTooltip />
-                                        <Line type="monotone" dataKey="value" stroke="#3B82F6" strokeWidth={3} dot={{r: 4, fill: '#3B82F6', strokeWidth: 2, stroke: '#fff'}} activeDot={{r: 6}} />
+                                        <Line type="monotone" dataKey="value" stroke="#3B82F6" strokeWidth={3} dot={{ r: 4, fill: '#3B82F6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
                                     </LineChart>
                                 </ResponsiveContainer>
                             </div>
@@ -316,12 +317,12 @@ const Dashboard = () => {
 
                                         <div key={i} className="elementoLeyenda">
 
-                                            <div className="indicadorLeyenda" style={{backgroundColor: item.color}}></div>
+                                            <div className="indicadorLeyenda" style={{ backgroundColor: item.color }}></div>
 
                                             <div className="detallesLeyenda">
 
                                                 <span className="nombreLeyenda">{item.name}</span>
-                                                <span className="valorLeyenda">{item.value} <span className="porcentajeLeyenda">({((item.value/1896)*100).toFixed(1)}%)</span></span>
+                                                <span className="valorLeyenda">{item.value} <span className="porcentajeLeyenda">({((item.value / 1896) * 100).toFixed(1)}%)</span></span>
                                             </div>
                                         </div>
                                     ))}
@@ -355,7 +356,7 @@ const Dashboard = () => {
 
                                     <div className="textoCentroTorta">
 
-                                        <span className="valorTotal">1,248</span>
+                                        <span className="valorTotal">{totalUsuarios.toLocaleString()}</span>
                                         <span className="etiquetaTotal">Total</span>
                                     </div>
                                 </div>
@@ -366,12 +367,12 @@ const Dashboard = () => {
 
                                         <div key={i} className="elementoLeyenda">
 
-                                            <div className="indicadorLeyenda" style={{backgroundColor: item.color}}></div>
+                                            <div className="indicadorLeyenda" style={{ backgroundColor: item.color }}></div>
 
                                             <div className="detallesLeyenda">
 
                                                 <span className="nombreLeyenda">{item.name}</span>
-                                                <span className="valorLeyenda">{item.value} <span className="porcentajeLeyenda">({((item.value/1248)*100).toFixed(1)}%)</span></span>
+                                                <span className="valorLeyenda">{item.value} <span className="porcentajeLeyenda">({totalUsuarios > 0 ? ((item.value / totalUsuarios) * 100).toFixed(1) : 0}%)</span></span>
                                             </div>
                                         </div>
                                     ))}
@@ -450,7 +451,7 @@ const Dashboard = () => {
                                         <div className="infoElemento">
 
                                             <div className="tituloElemento">#{item._id?.substring(0, 8) || 'R-0000'}</div>
-                                            <div className="descripcionElemento">{item.passenger_id?.name || 'Desconocido'}<br/><span className="textoGris">Destino: {item.ride_id?.destination?.address || 'Pendiente'}</span></div>
+                                            <div className="descripcionElemento">{item.passenger_id?.name || 'Desconocido'}<br /><span className="textoGris">Destino: {item.ride_id?.destination?.address || 'Pendiente'}</span></div>
                                         </div>
 
                                         <div className="estadoElemento">
@@ -506,7 +507,7 @@ const Dashboard = () => {
                                         </div>
                                     </div>
                                 ))}
-                                
+
                                 {usuarios.length === 0 && (
                                     <div className="textoGris">No hay usuarios recientes</div>
                                 )}
