@@ -15,18 +15,29 @@ import './Dashboard.css';
 import IconSafeRide from '../../imgs/IconSafeRide.png';
 import DefaultImageUser from '../../imgs/DefaultImageUser.png';
 
+// ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
 // ────────────── Función para imagen por defecto de Cloudinary ────────────────────────
 const getDefaultImagen = (url) => (url && url.trim() !== '') ? url : DefaultImageUser;
 
 // ────────────── Tarjeta de estadísticas con iconos ───────────────────────────────────
 const TarjetaEstadistica = ({ icon, title, value, change, isPositive, subtitle }) => (
+
     <div className="tarjetaEstadistica">
+
         <div className="estadisticaHeader">
+
             <div className="estadisticaIcono">{icon}</div>
             <div className="estadisticaValor">{value}</div>
         </div>
+
         <div className="estadisticaTitulo">{title}</div>
+
         <div className="estadisticaFooter">
+
             <span className={"estadisticaCambio " + (isPositive ? 'positive' : 'negative')}>
                 {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
                 {change}
@@ -36,20 +47,23 @@ const TarjetaEstadistica = ({ icon, title, value, change, isPositive, subtitle }
     </div>
 );
 
+
+// ──────────────────────────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+
 const Dashboard = () => {
-    const { user, cerrarSesion, logout } = useAuth();
+    const { user, cerrarSesion } = useAuth();
     const location = useLocation();
     const [metricas, setMetricas] = useState({});
     const [Reservas, setReservas] = useState([]);
     const [usuarios, setUsuarios] = useState([]);
     const [notificaciones, setNotificaciones] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    const handleLogout = cerrarSesion || logout;
 
     useEffect(() => {
         const CargarDatos = async () => {
             try {
+
                 const [metricasRes, reservasRes, usuariosRes, notificacionesRes] = await Promise.all([
                     api.get('/metrics/global').catch(() => ({ data: { data: {} } })),
                     api.get('/bookings?limit=5').catch(() => ({ data: { data: [] } })),
@@ -61,16 +75,17 @@ const Dashboard = () => {
                 setReservas(reservasRes.data?.data || reservasRes.data?.data?.docs || []);
                 setUsuarios(usuariosRes.data?.data || usuariosRes.data?.data?.docs || []);
                 setNotificaciones(notificacionesRes.data?.data || notificacionesRes.data?.data?.docs || []);
+
             } catch (error) {
-                console.error("Error al cargar datos del dashboard:", error);
-            } finally {
-                setLoading(false);
+                console.error("Error al cargar datos del Panel:", error);
             }
         };
         CargarDatos();
     }, []);
 
-    const getStatusClass = (status) => {
+
+    const ObtenerColorPorEstado = (status) => {
+
         switch(status?.toLowerCase()) {
             case 'completada': return 'status-green';
             case 'confirmada': return 'status-blue';
@@ -86,18 +101,21 @@ const Dashboard = () => {
     const totalViajes = metricas.totalViajes || 0;
     
     const pieDataRoles = [
+
         { name: 'Pasajeros', value: totalPasajeros > 0 ? totalPasajeros : 892, color: '#3B82F6' },
         { name: 'Conductores', value: totalConductores > 0 ? totalConductores : 342, color: '#10B981' },
         { name: 'Moderadores', value: (totalUsuarios - totalPasajeros - totalConductores) > 0 ? (totalUsuarios - totalPasajeros - totalConductores) : 14, color: '#8B5CF6' },
     ];
 
     const pieDataPagos = [
+
         { name: 'Pagados', value: 100, color: '#10B981' },
         { name: 'Pendientes', value: 100, color: '#F59E0B' },
         { name: 'Fallidos', value: 100, color: '#EF4444' },
     ];
 
     const lineData = [
+
         { name: '14 May', value: 30 },
         { name: '15 May', value: 150 },
         { name: '16 May', value: 120 },
@@ -107,40 +125,70 @@ const Dashboard = () => {
         { name: '20 May', value: totalViajes || 210 },
     ];
 
-    if (loading) return <div style={{padding: '50px', textAlign: 'center'}}>Cargando métricas...</div>;
 
+
+    // ===================================================================
+    // DASHBOARD PRINCIPAL
+    // ===================================================================
     return (
+
         <div className="dashboardContent">
+
+
+            {/* ========== SIDEBAR ========== */}
             <aside>
+
                 <div className="sidebaLogo">
+
                     <img src={IconSafeRide} alt="Icono" className='IconSafeRide' />
                     <span>RideAdmin</span>
                 </div>
 
                 <nav className="sidebarNav">
+
                     <Link to="/inicio" className={`navItem ${location.pathname === '/inicio' ? 'active' : ''}`}><LayoutDashboard size={20} /> <span>Panel</span></Link>
+
                     <Link to="/usuarios" className={`navItem ${location.pathname === '/usuarios' ? 'active' : ''}`}><Users size={20} /> <span>Usuarios</span><ChevronDown size={16} className="FlechaSidebar" /></Link>
+                    
                     <Link to="/conductores" className={`navItem ${location.pathname === '/conductores' ? 'active' : ''}`}><UserCheck size={20} /> <span>Conductores</span></Link>
+                    
                     <Link to="/vehiculos" className={`navItem ${location.pathname === '/vehiculos' ? 'active' : ''}`}><Car size={20} /> <span>Vehículos</span></Link>
+                    
                     <Link to="/reservas" className={`navItem ${location.pathname === '/reservas' ? 'active' : ''}`}><Calendar size={20} /> <span>Reservas</span><ChevronDown size={16} className="FlechaSidebar" /></Link>
+
                     <Link to="/pagos" className={`navItem ${location.pathname === '/pagos' ? 'active' : ''}`}><CreditCard size={20} /> <span>Pagos</span></Link>
+                    
                     <Link to="/notificaciones" className={`navItem ${location.pathname === '/notificaciones' ? 'active' : ''}`}><Bell size={20} /> <span>Notificaciones</span></Link>
+                    
                     <Link to="/quejas" className={`navItem ${location.pathname === '/quejas' ? 'active' : ''}`}><AlertCircle size={20} /> <span>Quejas</span></Link>
+                    
                     <Link to="/auditoria" className={`navItem ${location.pathname === '/auditoria' ? 'active' : ''}`}><ShieldCheck size={20} /> <span>Auditoría</span></Link>
+                    
                     <Link to="/configuracion" className={`navItem ${location.pathname === '/configuracion' ? 'active' : ''}`}><Settings size={20} /> <span>Configuración</span></Link>
+
                 </nav>
 
+
+                {/*  PERFIL */}
                 <div className="sidebarPerfil">
+
                     <img src={getDefaultImagen(user?.profileImage)} alt="Admin" className="FotoPerfil" />
+
                     <div className="PerfilInfo">
+
                         <span className="NombrePerfil">{user?.name || 'Admin'}</span>
                         <span className="RolPerfil">Super Administrador</span>
                     </div>
-                    <ChevronDown size={16} className="FlechaPerfil" onClick={handleLogout} style={{cursor: 'pointer'}} />
+
+                    <ChevronDown size={16} className="FlechaPerfil" onClick={cerrarSesion} style={{cursor: 'pointer'}} />
                 </div>
             </aside>
 
+
+            {/* ========== CONTENIDO PRINCIPAL ========== */}
             <main>
+
+                {/*  HEADER  */}
                 <header>
                     <div className="headerIzquierdo">
                         <div className="buscadorContainer">
@@ -164,7 +212,10 @@ const Dashboard = () => {
                     </div>
                 </header>
 
+
+                {/*  CUERPO  */}
                 <div className="dashboardBody">
+                    
                     <div id="encabezadoPagina" className="page-header">
                         <div>
                             <h1>Dashboard</h1>
@@ -328,7 +379,7 @@ const Dashboard = () => {
                                             <div className="item-desc">{item.passenger_id?.name || 'Desconocido'}<br/><span className="text-gray">Destino: {item.ride_id?.destination?.address || 'Pendiente'}</span></div>
                                         </div>
                                         <div className="item-status">
-                                            <span className={`status-badge ${getStatusClass(item.status)}`}>{item.status || 'Pendiente'}</span>
+                                            <span className={`status-badge ${ObtenerColorPorEstado(item.status)}`}>{item.status || 'Pendiente'}</span>
                                         </div>
                                         <div className="item-price">
                                             <div className="price-val">${item.cost || '0.00'}</div>
