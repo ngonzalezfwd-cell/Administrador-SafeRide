@@ -17,7 +17,7 @@ import {
     TrendingUp, Activity, Star, Eye, Edit, Trash2
 } from 'lucide-react';
 import passengerService from '../../services/passengerService';
-import '../DashboardAdmin/Dashboard.css';
+import '../DashboardPage/Dashboard.css';
 import './Pasajeros.css';
 import IconSafeRide from '../../imgs/IconSafeRide.png';
 import DefaultImageUser from '../../imgs/DefaultImageUser.png';

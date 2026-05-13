@@ -9,7 +9,8 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import PrivateRoute  from '../components/PrivateRoute/PrivateRoute';
 import Login         from '../pages/Login/Login';
-import Dashboard     from '../pages/DashboardAdmin/Dashboard';
+import Dashboard     from '../pages/DashboardPage/Dashboard';
+import PerfilAdmin   from '../pages/PerfilAdminPage/PerfilAdmin';
 import PasajerosPage from '../pages/PasajerosPage/Pasajeros';
 import ConductoresPage from '../pages/ConductoresPage/ConductoresPage';
 
@@ -36,6 +37,7 @@ const Routing = () => (
       {/* ── Rutas Privadas (Admin Only) ───────────────────── */}
       <Route element={<PrivateRoute requiredRole="admin" />}>
         <Route path="/inicio"         element={<Dashboard />} />
+        <Route path="/miPerfil"       element={<PerfilAdmin />} />
         <Route path="/usuarios"       element={<PasajerosPage />} />
         <Route path="/conductores"    element={<ConductoresPage />} />
         <Route path="/vehiculos"      element={<PlaceholderPage title="Gestión de Vehículos" />} />
