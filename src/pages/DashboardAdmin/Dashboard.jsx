@@ -576,29 +576,8 @@ const Dashboard = () => {
 
 
                                 {usuarios.length === 0 && (
-
-                                    <div className="infoElemento">
-
-                                        <div>
-                                            <div className="tituloElemento fuenteNegrita">{item.name}</div>
-                                            <div className="descripcionElemento textoGris">{item.email}</div>
-                                        </div>
-
-                                        <div className="prioridadElemento">
-
-                                            <span className={`textoPrioridad prioridadBaja`}>{item.type}</span>
-                                        </div>
-
-                                        <div className="tiempoElemento textoGris textoChico">
-
-                                            {new Date(item.createdAt || Date.now()).toLocaleDateString()}
-                                        </div>
-                                    </div>
+                                    <div className="textoGris">No hay usuarios recientes</div>
                                 )}
-
-                            {usuarios.length === 0 && (
-                                <div className="textoGris">No hay usuarios recientes</div>
-                            )}
                         </div>
                     </div>
                 </div>
