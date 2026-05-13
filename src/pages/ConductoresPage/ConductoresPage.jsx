@@ -19,7 +19,7 @@ import {
 import driverService from '../../services/driverService';
 import DriverProfileModal from '../../components/DriverProfileModal';
 
-import '../DashboardAdmin/Dashboard.css';
+import '../DashboardPage/Dashboard.css';
 import './ConductoresPage.css';
 import '../PasajerosPage/Pasajeros.css';
 import IconSafeRide from '../../imgs/IconSafeRide.png';

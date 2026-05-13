@@ -659,13 +659,20 @@ header {
 
 .botonVerTodos {
   background: transparent;
-  border: 1px solid #E2E8F0;
+  border: 1px solid #ced4db;
   color: #64748B;
   padding: 6px 12px;
   border-radius: 6px;
-  font-size: 0.8rem;
+  font-size: 13px;
   font-weight: 500;
+  text-decoration: none;
   cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.botonVerTodos:hover {
+  background-color: #f0f0f0;
+  color: #64748B;
 }
 
 /* Table styles for list */

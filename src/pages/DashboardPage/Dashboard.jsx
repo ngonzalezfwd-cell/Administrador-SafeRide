@@ -19,7 +19,6 @@ import DefaultImageUser from '../../imgs/DefaultImageUser.png';
 // ──────────────────────────────────────────────────────────────────────────────────────────────────
 
 
-
 // ────────────── Función para imagen por defecto de Cloudinary ────────────────────────
 const getDefaultImagen = (url) => (url && url.trim() !== '') ? url : DefaultImageUser;
 
@@ -256,7 +255,7 @@ const Dashboard = () => {
 
                                     <div className="menuDivider"></div>
 
-                                    <Link to="/perfil" className="menuItem" onClick={() => setMenuAbierto(false)}>
+                                    <Link to="/miPerfil" className="menuItem" onClick={() => setMenuAbierto(false)}>
 
                                         <User size={18} /> <span>Mi Perfil</span>
                                     </Link>
@@ -503,9 +502,9 @@ const Dashboard = () => {
 
                                 <h3>Reservas recientes</h3>
 
-                                <button className="botonVerTodos">Ver todas</button>
-
+                                <Link to="/reservas" className='botonVerTodos'><span>Ver todas</span></Link>
                             </div>
+
                             <div className="cuerpoLista">
 
                                 {Reservas.slice(0, 4).map((item, i) => (
@@ -545,7 +544,7 @@ const Dashboard = () => {
 
                                 <h3>Usuarios recientes</h3>
 
-                                <button className="botonVerTodos">Ver todos</button>
+                                <Link to="/usuarios" className='botonVerTodos'><span>Ver todas</span></Link>
                             </div>
 
                             <div className="cuerpoLista">
