@@ -5,7 +5,7 @@ import api from '../../services/api';
 import {
     LayoutDashboard, Users, UserCheck, Car, Calendar, CreditCard,
     Bell, AlertCircle, ShieldCheck, Settings, Search, LogOut,
-    ArrowUpRight, ArrowDownRight, Menu, ChevronDown
+    ArrowUpRight, ArrowDownRight, Menu, ChevronDown, User, HelpCircle
 } from 'lucide-react';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -59,6 +59,19 @@ const Dashboard = () => {
     const [Reservas, setReservas] = useState([]);
     const [usuarios, setUsuarios] = useState([]);
     const [notificaciones, setNotificaciones] = useState([]);
+    const [MenuAbierto, setMenuAbierto] = useState(false);
+
+    // Cerrar menú al hacer clic fuera
+    useEffect(() => {
+        const ClickFueraMenu = (event) => {
+            if (MenuAbierto && !event.target.closest('.menuDesplegableContainer')) {
+                setMenuAbierto(false);
+            }
+        };
+        
+        document.addEventListener('mousedown', ClickFueraMenu);
+        return () => document.removeEventListener('mousedown', ClickFueraMenu);
+    }, [MenuAbierto]);
 
     useEffect(() => {
         const CargarDatos = async () => {
@@ -100,14 +113,15 @@ const Dashboard = () => {
 
     const totalUsuarios = metricas.totalUsers || 0;
     const totalConductores = metricas.totalDrivers || 0;
+    const totalPasajeros = totalUsuarios > 0 ? totalUsuarios - totalConductores - 3 : 0;
     const totalViajes = metricas.totalRides || 0;
-    const totalPasajeros = metricas.totalPassengers || 0;
-    const totalAdmins = metricas.totalAdmins || 0;
-
+    const totalKM = metricas.totalKilometers || 0;
+    const totalCarbon = metricas.totalCarbonSaved || 0;
+    
     const pieDataRoles = [
         { name: 'Pasajeros', value: totalPasajeros, color: '#3B82F6' },
         { name: 'Conductores', value: totalConductores, color: '#10B981' },
-        { name: 'Administradores', value: totalAdmins, color: '#8B5CF6' },
+        { name: 'Administradores', value: 3, color: '#8B5CF6' },
     ];
 
     const pieDataPagos = [
@@ -191,25 +205,82 @@ const Dashboard = () => {
 
                 {/*  HEADER  */}
                 <header>
+
                     <div className="headerIzquierdo">
+
                         <div className="buscadorContainer">
+
                             <Search size={18} className="buscadorIcono" />
                             <input type="text" placeholder="Buscar en el sistema..." />
                         </div>
                     </div>
+
                     <div className="headerDerecho">
+
                         <div className='userInfo'>
+
                             <span>Bienvenido/a, {user?.name || 'Admin'}</span>
                             <ChevronDown size={16} />
                         </div>
+
                         <div className="notificacionCampana">
+
                             <Bell size={20} />
                             <span className="notificacionBadge">8</span>
                         </div>
-                        <div className="userInfo">
-                            <img src={getDefaultImagen(user?.profileImage)} alt="Admin" />
+
+                        <img src={getDefaultImagen(user?.profileImage)} alt="Admin" className="FotoPerfilHeader" />
+
+                        <div className="menuDesplegableContainer">
+
+                            <Menu 
+                                size={25} 
+                                className={`IconMenu ${MenuAbierto ? 'active' : ''}`} 
+                                onClick={() => setMenuAbierto(!MenuAbierto)}
+                                style={{ cursor: 'pointer' }}
+                            />
+                            
+                            {MenuAbierto && (
+
+                                <div className="menuDesplegable animate-slide-down">
+
+                                    <div className="menuHeader">
+
+                                        <img src={getDefaultImagen(user?.profileImage)} alt="Admin" className="menuUserAvatar" />
+
+                                        <div className="menuUserInfo">
+
+                                            <span className="menuUserName">{user?.name}</span>
+                                            <span className="menuUserEmail">{user?.email}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="menuDivider"></div>
+
+                                    <Link to="/perfil" className="menuItem" onClick={() => setMenuAbierto(false)}>
+                                    
+                                        <User size={18} /> <span>Mi Perfil</span>
+                                    </Link>
+
+                                    <Link to="/configuracion" className="menuItem" onClick={() => setMenuAbierto(false)}>
+                                    
+                                        <Settings size={18} /> <span>Configuración</span>
+                                    </Link>
+                                    
+                                    <Link to="/ayuda" className="menuItem" onClick={() => setMenuAbierto(false)}>
+                                    
+                                        <HelpCircle size={18} /> <span>Ayuda</span>
+                                    </Link>
+                                    
+                                    <div className="menuDivider"></div>
+                                    
+                                    <button className="menuItem logout" onClick={() => { cerrarSesion(); setMenuAbierto(false); }}>
+                                    
+                                        <LogOut size={18} /> <span>Cerrar Sesión</span>
+                                    </button>
+                                </div>
+                            )}
                         </div>
-                        <Menu size={22} className="IconMenu" />
                     </div>
                 </header>
 
@@ -232,27 +303,23 @@ const Dashboard = () => {
 
 
                     {/*  1. ESTADISTICAS PRINCIPALES */}
-                    <div className="graficosGrid">
+                    <div className="graficosGrid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+                        
+                        <TarjetaEstadistica icon={<Users size={20} className="color-purple" />} title="Usuarios Totales" value={totalUsuarios.toLocaleString()} change="12.5%" isPositive={true} subtitle="Crecimiento" />
 
-                        <TarjetaEstadistica icon={<Users size={20} className="color-purple" />} title="Usuarios totales" value={totalUsuarios.toLocaleString()} change="12.5%" isPositive={true} subtitle="vs mes anterior" />
-
-                        <TarjetaEstadistica icon={<Car size={20} className="color-green" />} title="Conductores aprobados" value={totalConductores.toLocaleString()} change="8.2%" isPositive={true} subtitle="vs mes anterior" />
-
-                        <TarjetaEstadistica icon={<Car size={20} className="color-yellow" />} title="Vehículos pendientes" value="24" change="4.3%" isPositive={false} subtitle="vs mes anterior" />
-
-                        <TarjetaEstadistica icon={<Calendar size={20} className="color-blue" />} title="Reservas este mes" value={totalViajes.toLocaleString()} change="15.7%" isPositive={true} subtitle="vs mes anterior" />
-
-                        <TarjetaEstadistica icon={<AlertCircle size={20} className="color-red" />} title="Quejas pendientes" value="18" change="5.6%" isPositive={true} subtitle="vs mes anterior" />
-
-                        <TarjetaEstadistica icon={<CreditCard size={20} className="color-green-dark" />} title="Pagos fallidos" value="7" change="2.1%" isPositive={true} subtitle="vs mes anterior" />
-
+                        <TarjetaEstadistica icon={<Calendar size={20} className="color-blue" />} title="Viajes Completados" value={totalViajes.toLocaleString()} change="15.7%" isPositive={true} subtitle="Éxito" />
+                        
+                        <TarjetaEstadistica icon={<Car size={20} className="color-yellow" />} title="KM Totales" value={`${totalKM.toLocaleString()} km`} change="4.3%" isPositive={true} subtitle="Alcance de red" />
+                        
+                        <TarjetaEstadistica icon={<AlertCircle size={20} className="color-green" />} title="Carbono Ahorrado" value={`${totalCarbon.toFixed(1)} kg`} change="5.6%" isPositive={true} subtitle="Sostenibilidad" />
+                        
                     </div>
 
 
                     {/*  2. GRAFICOS  */}
                     <div className="graficoGrid">
 
-                        <div className="graficos">
+                        <div className="graficos graficoFilaCompleta">
 
                             <div className="graficoHeader">
 
@@ -461,7 +528,7 @@ const Dashboard = () => {
 
                                         <div className="precioElemento">
 
-                                            <div className="valorPrecio">${item.cost || '0.00'}</div>
+                                            <div className="valorPrecio">${item.ride_id?.price || '0.00'}</div>
                                             <div className="tiempoPrecio">{new Date(item.createdAt || Date.now()).toLocaleDateString()}</div>
                                         </div>
                                     </div>
