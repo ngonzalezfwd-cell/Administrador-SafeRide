@@ -68,7 +68,7 @@ const Dashboard = () => {
                 setMenuAbierto(false);
             }
         };
-        
+
         document.addEventListener('mousedown', ClickFueraMenu);
         return () => document.removeEventListener('mousedown', ClickFueraMenu);
     }, [MenuAbierto]);
@@ -98,15 +98,12 @@ const Dashboard = () => {
 
 
     const ObtenerColorPorEstado = (status) => {
+
         switch (status?.toLowerCase()) {
-            case 'completada':
-            case 'completed': return 'estadoVerde';
-            case 'confirmada':
-            case 'confirmed': return 'estadoAzul';
-            case 'pendiente':
-            case 'pending':   return 'estadoAmarillo';
-            case 'cancelada':
-            case 'cancelled': return 'estadoRojo';
+            case 'completada': return 'status-green';
+            case 'confirmada': return 'status-blue';
+            case 'pendiente': return 'status-yellow';
+            case 'cancelada': return 'status-red';
             default: return '';
         }
     };
@@ -117,27 +114,30 @@ const Dashboard = () => {
     const totalViajes = metricas.totalRides || 0;
     const totalKM = metricas.totalKilometers || 0;
     const totalCarbon = metricas.totalCarbonSaved || 0;
-    
+
     const pieDataRoles = [
-        { name: 'Pasajeros', value: totalPasajeros, color: '#3B82F6' },
-        { name: 'Conductores', value: totalConductores, color: '#10B981' },
-        { name: 'Administradores', value: 3, color: '#8B5CF6' },
+
+        { name: 'Pasajeros', value: totalPasajeros > 0 ? totalPasajeros : 892, color: '#3B82F6' },
+        { name: 'Conductores', value: totalConductores > 0 ? totalConductores : 342, color: '#10B981' },
+        { name: 'Moderadores', value: (totalUsuarios - totalPasajeros - totalConductores) > 0 ? (totalUsuarios - totalPasajeros - totalConductores) : 14, color: '#8B5CF6' },
     ];
 
     const pieDataPagos = [
-        { name: 'Pagados', value: Math.floor(totalViajes * 0.7) || 10, color: '#10B981' },
-        { name: 'Pendientes', value: Math.floor(totalViajes * 0.2) || 3, color: '#F59E0B' },
-        { name: 'Fallidos', value: Math.floor(totalViajes * 0.1) || 1, color: '#EF4444' },
+
+        { name: 'Pagados', value: 100, color: '#10B981' },
+        { name: 'Pendientes', value: 100, color: '#F59E0B' },
+        { name: 'Fallidos', value: 100, color: '#EF4444' },
     ];
 
     const lineData = [
-        { name: '14 May', value: Math.floor(totalViajes * 0.2) },
-        { name: '15 May', value: Math.floor(totalViajes * 0.4) },
-        { name: '16 May', value: Math.floor(totalViajes * 0.3) },
-        { name: '17 May', value: Math.floor(totalViajes * 0.6) },
-        { name: '18 May', value: Math.floor(totalViajes * 0.5) },
-        { name: '19 May', value: Math.floor(totalViajes * 0.8) },
-        { name: '20 May', value: totalViajes },
+
+        { name: '14 May', value: 30 },
+        { name: '15 May', value: 150 },
+        { name: '16 May', value: 120 },
+        { name: '17 May', value: 70 },
+        { name: '18 May', value: 100 },
+        { name: '19 May', value: Math.floor(totalViajes / 2) || 180 },
+        { name: '20 May', value: totalViajes || 210 },
     ];
 
 
@@ -195,7 +195,6 @@ const Dashboard = () => {
                         <span className="RolPerfil">Super Administrador</span>
                     </div>
 
-                    <ChevronDown size={16} className="FlechaPerfil" onClick={cerrarSesion} style={{ cursor: 'pointer' }} />
                 </div>
             </aside>
 
@@ -233,13 +232,13 @@ const Dashboard = () => {
 
                         <div className="menuDesplegableContainer">
 
-                            <Menu 
-                                size={25} 
-                                className={`IconMenu ${MenuAbierto ? 'active' : ''}`} 
+                            <Menu
+                                size={25}
+                                className={`IconMenu ${MenuAbierto ? 'active' : ''}`}
                                 onClick={() => setMenuAbierto(!MenuAbierto)}
                                 style={{ cursor: 'pointer' }}
                             />
-                            
+
                             {MenuAbierto && (
 
                                 <div className="menuDesplegable animate-slide-down">
@@ -254,28 +253,28 @@ const Dashboard = () => {
                                             <span className="menuUserEmail">{user?.email}</span>
                                         </div>
                                     </div>
-                                    
+
                                     <div className="menuDivider"></div>
 
                                     <Link to="/perfil" className="menuItem" onClick={() => setMenuAbierto(false)}>
-                                    
+
                                         <User size={18} /> <span>Mi Perfil</span>
                                     </Link>
 
                                     <Link to="/configuracion" className="menuItem" onClick={() => setMenuAbierto(false)}>
-                                    
+
                                         <Settings size={18} /> <span>Configuración</span>
                                     </Link>
-                                    
+
                                     <Link to="/ayuda" className="menuItem" onClick={() => setMenuAbierto(false)}>
-                                    
+
                                         <HelpCircle size={18} /> <span>Ayuda</span>
                                     </Link>
-                                    
+
                                     <div className="menuDivider"></div>
-                                    
+
                                     <button className="menuItem logout" onClick={() => { cerrarSesion(); setMenuAbierto(false); }}>
-                                    
+
                                         <LogOut size={18} /> <span>Cerrar Sesión</span>
                                     </button>
                                 </div>
@@ -304,15 +303,15 @@ const Dashboard = () => {
 
                     {/*  1. ESTADISTICAS PRINCIPALES */}
                     <div className="graficosGrid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-                        
+
                         <TarjetaEstadistica icon={<Users size={20} className="color-purple" />} title="Usuarios Totales" value={totalUsuarios.toLocaleString()} change="12.5%" isPositive={true} subtitle="Crecimiento" />
 
                         <TarjetaEstadistica icon={<Calendar size={20} className="color-blue" />} title="Viajes Completados" value={totalViajes.toLocaleString()} change="15.7%" isPositive={true} subtitle="Éxito" />
-                        
+
                         <TarjetaEstadistica icon={<Car size={20} className="color-yellow" />} title="KM Totales" value={`${totalKM.toLocaleString()} km`} change="4.3%" isPositive={true} subtitle="Alcance de red" />
-                        
+
                         <TarjetaEstadistica icon={<AlertCircle size={20} className="color-green" />} title="Carbono Ahorrado" value={`${totalCarbon.toFixed(1)} kg`} change="5.6%" isPositive={true} subtitle="Sostenibilidad" />
-                        
+
                     </div>
 
 
@@ -439,7 +438,7 @@ const Dashboard = () => {
                                             <div className="detallesLeyenda">
 
                                                 <span className="nombreLeyenda">{item.name}</span>
-                                                <span className="valorLeyenda">{item.value} <span className="porcentajeLeyenda">({totalUsuarios > 0 ? ((item.value / totalUsuarios) * 100).toFixed(1) : 0}%)</span></span>
+                                                <span className="valorLeyenda">{item.value} <span className="porcentajeLeyenda">({((item.value / 1248) * 100).toFixed(1)}%)</span></span>
                                             </div>
                                         </div>
                                     ))}
@@ -575,15 +574,37 @@ const Dashboard = () => {
                                     </div>
                                 ))}
 
+
                                 {usuarios.length === 0 && (
-                                    <div className="textoGris">No hay usuarios recientes</div>
+
+                                    <div className="infoElemento">
+
+                                        <div>
+                                            <div className="tituloElemento fuenteNegrita">{item.name}</div>
+                                            <div className="descripcionElemento textoGris">{item.email}</div>
+                                        </div>
+
+                                        <div className="prioridadElemento">
+
+                                            <span className={`textoPrioridad prioridadBaja`}>{item.type}</span>
+                                        </div>
+
+                                        <div className="tiempoElemento textoGris textoChico">
+
+                                            {new Date(item.createdAt || Date.now()).toLocaleDateString()}
+                                        </div>
+                                    </div>
                                 )}
-                            </div>
+
+                            {usuarios.length === 0 && (
+                                <div className="textoGris">No hay usuarios recientes</div>
+                            )}
                         </div>
                     </div>
                 </div>
-            </main>
         </div>
+            </main >
+        </div >
     );
 };
 
