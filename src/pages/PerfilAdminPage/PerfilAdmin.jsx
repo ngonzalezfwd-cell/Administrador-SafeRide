@@ -72,12 +72,14 @@ const PerfilAdmin = () => {
         });
     };
 
+    // -----------------------------------------------
     const toggleAjuste = (key) => {
         setAjustes({
             ...ajustes,
             [key]: !ajustes[key]
         });
     };
+    // -----------------------------------------------
 
     const guardarCambios = async () => {
         setCargando(true);
@@ -95,9 +97,34 @@ const PerfilAdmin = () => {
                 profileImage: profileImageUrl
             });
 
+
+            // ───────────────── VALIDACIONES DEL POST ─────────────────
+
+            if (datosPerfil.name == user.name && datosPerfil.email == user.email && datosPerfil.phone == user.phone && datosPerfil.company == user.company && datosPerfil.status == user.isActive && !nuevaFoto) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Sin Cambios',
+                    text: 'No se han realizado cambios en el perfil.',
+                    confirmButtonText: 'De acuerdo',
+                    confirmButtonColor: '#2563EB'
+                });
+                return;
+            }
+
+            if (!datosPerfil.name || !datosPerfil.email) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Nombre y correo son obligatorios',
+                    confirmButtonText: 'De acuerdo',
+                    confirmButtonColor: '#2563EB'
+                });
+                return;
+            }
+
             if (response.data.success) {
-                // 3. Actualizar estado global
-                if (setUser) setUser(response.data.data);
+
+                if (setUser) setUser(PerfilCambiado);
 
                 Swal.fire({
                     icon: 'success',
@@ -127,8 +154,16 @@ const PerfilAdmin = () => {
 
     if (!user) return <div className="contenedorPerfil">Cargando...</div>;
 
+
+    // ─────────────────────────────────────────────────────────────────────────────────────────────────
+    // ────────────────────────────────────────────
+
+    /* ==================================================
+    *  INFORMACIÓN DEL USUARIO
+    *  ================================================== */ 
+
     return (
-        <div id="paginaPerfilAdmin" className="contenedorPerfil animate-fade-in">
+        <div className="contenedorPerfil">
             
             {/* ENLACE PARA REGRESAR AL PANEL */}
             <Link to="/inicio" className="enlaceVolver">
@@ -136,9 +171,11 @@ const PerfilAdmin = () => {
                 Volver al Panel
             </Link>
 
-            {/* INFORMACIÓN DEL USUARIO (HERO) */}
-            <div id="heroPerfil" className="tarjetaPrincipal">
+            {/* INFORMACIÓN DEL USUARIO */}
+            <div className="tarjetaPrincipal">
+
                 <div className="contenedorIzquierdo">
+
                     <div className="contenedorUser">
                         <img 
                             src={user.profileImage || DefaultImageUser} 
@@ -149,7 +186,9 @@ const PerfilAdmin = () => {
                             <Check size={14} />
                         </div>
                     </div>
+
                     <div className="conteinerInfo">
+
                         <h1 id="nombreAdmin">
                             {datosPerfil.name}
                             {datosPerfil.status === false ? (
@@ -158,11 +197,15 @@ const PerfilAdmin = () => {
                                 <span className="insigniaEstado" style={{ background: '#cbffddff', color: '#2e834eff' }}>Activo</span>
                             )}
                         </h1>
+
                         <p className="PuestoAdmin">Administrador Senior</p>
+
                         <div className="DetallesInfo">
+
                             <div className="detalleItem">
                                 <Mail size={16} />
                                 <span>{datosPerfil.email}</span>
+
                             </div>
                             <div className="detalleItem">
                                 <Building2 size={18} />
@@ -171,6 +214,7 @@ const PerfilAdmin = () => {
                         </div>
                     </div>
                 </div>
+
                 <button 
                     onClick={() => setEditActivo(true)} 
                     className="botonEditPerfil"
@@ -179,28 +223,37 @@ const PerfilAdmin = () => {
                 </button>
             </div>
 
-            {/* MODAL DE EDICIÓN (OVERLAY) */}
+            {/* MODAL DE EDICIÓN */}
+            {/* ─────────────────────────────────────────────────────────────── */}
+
             {EditActivo && (
-                <div id="modalEdicion" className="overlayModal" onClick={(e) => e.target.id === 'modalEdicion' && setEditActivo(false)}>
+                <div className="overlayModal" onClick={(e) => e.target.id === 'modalEdicion' && setEditActivo(false)}>
+
                     <div className="modalContenido">
-                        <div className="encabezadoTarjeta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+
+                        <div className="encabezadoTarjeta">
                             <div>
-                                <h2>Editar Perfil de Usuario</h2>
+
+                                <h2>Editar Perfil</h2>
                                 <p>Actualiza tu información personal y foto de perfil</p>
                             </div>
-                            <button onClick={() => setEditActivo(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
+                            
+                            <button onClick={() => setEditActivo(false)}>
                                 <X size={24} />
                             </button>
                         </div>
                         
                         <div className="contenidoTarjeta">
+
                             {/* Sección de Foto */}
                             <div className="seccionFotoModal">
-                                <div className="contenedorFotoGrande">
+
+                                <div className="contenedorFoto">
+
                                     <img 
                                         src={previewFoto || DefaultImageUser} 
                                         alt="Preview" 
-                                        className="fotoGrande" 
+                                        className="foto" 
                                     />
                                     <label htmlFor="inputFoto" className="btnCambiarFoto">
                                         <Camera size={18} />
@@ -209,16 +262,19 @@ const PerfilAdmin = () => {
                                             id="inputFoto" 
                                             style={{ display: 'none' }} 
                                             onChange={manejarSeleccionFoto}
-                                            accept="image/*"
+                                            accept="image/jpeg, image/png, image/jpg, image/gif, image/webp, image/avif"
                                         />
                                     </label>
                                 </div>
-                                <p style={{ fontSize: '0.8rem', color: '#64748B' }}>Formatos permitidos: JPG, PNG. Máx 2MB</p>
+
+                                <p>Formatos permitidos: JPEG, JPG, PNG, GIF, WEBP, AVIF.</p>
                             </div>
 
                             {/* Campos del Formulario */}
                             <div className="cuadriculaCampos">
+
                                 <div className="grupoInput">
+
                                     <label className="labelInput">Nombre Completo</label>
                                     <input 
                                         type="text" 
@@ -228,7 +284,9 @@ const PerfilAdmin = () => {
                                         onChange={manejarCambioPerfil} 
                                     />
                                 </div>
+
                                 <div className="grupoInput">
+
                                     <label className="labelInput">Correo Electrónico</label>
                                     <input 
                                         type="email" 
@@ -238,7 +296,9 @@ const PerfilAdmin = () => {
                                         onChange={manejarCambioPerfil} 
                                     />
                                 </div>
+
                                 <div className="grupoInput">
+
                                     <label className="labelInput">Teléfono</label>
                                     <div style={{ position: 'relative' }}>
                                         <input 
@@ -252,7 +312,9 @@ const PerfilAdmin = () => {
                                         <Phone size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: '#94A3B8' }} />
                                     </div>
                                 </div>
+
                                 <div className="grupoInput">
+                                    
                                     <label className="labelInput">Empresa</label>
                                     <div style={{ position: 'relative' }}>
                                         <input 
