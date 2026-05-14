@@ -5,7 +5,8 @@ import api from '../../services/api';
 import {
     LayoutDashboard, Users, UserCheck, Car, Calendar, CreditCard,
     Bell, AlertCircle, ShieldCheck, Settings, Search, LogOut,
-    ArrowUpRight, ArrowDownRight, Menu, ChevronDown, User, HelpCircle
+    ArrowUpRight, ArrowDownRight, Menu, ChevronDown, User, HelpCircle,
+    Activity, Zap
 } from 'lucide-react';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -445,56 +446,103 @@ const Dashboard = () => {
                             </div>
                         </div>
                     </div>
-
-                    <div className="cuadriculaListas">
-
-                        <div className="tarjetaLista">
-
-                            <div className="encabezadoLista">
-
-                                <h3>Actividad reciente</h3>
-                                <button className="botonVerTodos">Ver todas</button>
+                    
+                    {/*  3. MONITOREO Y ALERTAS (NUEVO) */}
+                    <div id="seccionMonitoreoAlertas" className="graficoGrid">
+                        <div id="centroMonitoreoEnVivo" className="graficos graficoFilaCompleta tarjetaMonitoreo">
+                            <div className="graficoHeader">
+                                <div className="tituloConIcono">
+                                    <Activity size={20} className="color-green-dark" />
+                                    <h3>Centro de Monitoreo en Tiempo Real</h3>
+                                </div>
+                                <div className="indicadorEnVivo">
+                                    <span className="puntoPulso"></span>
+                                    Sincronizado
+                                </div>
                             </div>
-
-                            <div className="tablaResponsiva">
-
-                                <table className="tablaData">
-
-                                    <thead>
-
-                                        <tr>
-                                            <th>Actividad</th>
-                                            <th>Usuario</th>
-                                            <th>Fecha</th>
-                                            <th>Acción</th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody>
-                                        {notificaciones.slice(0, 5).map((item, idx) => (
-
-                                            <tr key={item._id || idx}>
-                                                <td>
-                                                    <div className="celdaActividad">
-                                                        <div className={`cajaIcono iconoAzul`}><Bell size={16} /></div>
-                                                        <span>{item.message || 'Notificación del sistema'}</span>
-                                                    </div>
-                                                </td>
-
-                                                <td>{item.user_id?.name || 'Sistema'}</td>
-
-                                                <td><span className="textoGris">{new Date(item.createdAt || Date.now()).toLocaleDateString()}</span></td>
-                                                <td><button className="botonAccion">Ver</button></td>
-                                            </tr>
-                                        ))}
-
-                                        {notificaciones.length === 0 && (
-                                            <tr><td colSpan="4" className="textoGris">No hay actividad reciente</td></tr>
-                                        )}
-                                    </tbody>
-                                </table>
+                            <div className="cuerpoMonitoreo">
+                                <div id="mapaSimulado" className="mapaPlaceholder">
+                                    <div className="marcadorVehiculo v1" style={{ top: '30%', left: '40%' }}>
+                                        <Car size={16} />
+                                        <span className="etiquetaVehiculo">SafeRide #102</span>
+                                    </div>
+                                    <div className="marcadorVehiculo v2" style={{ top: '60%', left: '70%' }}>
+                                        <Car size={16} />
+                                        <span className="etiquetaVehiculo">SafeRide #045</span>
+                                    </div>
+                                    <div className="marcadorVehiculo v3" style={{ top: '45%', left: '20%' }}>
+                                        <Car size={16} />
+                                        <span className="etiquetaVehiculo">SafeRide #089</span>
+                                    </div>
+                                    <div className="overlayMapa">
+                                        <p>Visualizando 8 vehículos activos en la zona metropolitana</p>
+                                    </div>
+                                </div>
+                                <div className="estadisticasRapidas">
+                                    <div className="itemMiniEstadistica">
+                                        <span className="valorMini">{metricas.totalRides || 12}</span>
+                                        <span className="etiquetaMini">Viajes en curso</span>
+                                    </div>
+                                    <div className="itemMiniEstadistica">
+                                        <span className="valorMini">98%</span>
+                                        <span className="etiquetaMini">Cumplimiento</span>
+                                    </div>
+                                    <div className="itemMiniEstadistica">
+                                        <span className="valorMini">4.2 min</span>
+                                        <span className="etiquetaMini">Espera prom.</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+
+                        <div id="panelAlertasCriticas" className="graficos tarjetaAlertas">
+                            <div className="graficoHeader">
+                                <div className="tituloConIcono">
+                                    <AlertCircle size={20} className="color-red" />
+                                    <h3>Alertas de Seguridad (SOS)</h3>
+                                </div>
+                            </div>
+                            <div className="cuerpoAlertas">
+                                <div className="alertaItem critica">
+                                    <div className="alertaIcono"><Zap size={16} /></div>
+                                    <div className="alertaInfo">
+                                        <h4>Botón SOS Activado</h4>
+                                        <p>Conductor: Roberto M. · Ruta 14-B</p>
+                                        <span className="tiempoAlerta">Hace 2 min</span>
+                                    </div>
+                                    <button className="botonAtender">Atender</button>
+                                </div>
+                                <div className="alertaItem advertencia">
+                                    <div className="alertaIcono"><AlertCircle size={16} /></div>
+                                    <div className="alertaInfo">
+                                        <h4>Retraso por Tráfico Alto</h4>
+                                        <p>Zona Norte · 5 funcionarios afectados</p>
+                                        <span className="tiempoAlerta">Hace 15 min</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="panelMetasVerdes" className="graficos tarjetaMetas">
+                            <div className="graficoHeader">
+                                <div className="tituloConIcono">
+                                    <ShieldCheck size={20} className="color-green" />
+                                    <h3>Meta Mensual SafeRide</h3>
+                                </div>
+                            </div>
+                            <div className="cuerpoMeta">
+                                <div className="progresoMeta">
+                                    <div className="barraProgreso">
+                                        <div className="progresoLleno" style={{ width: '75%' }}></div>
+                                    </div>
+                                    <span className="porcentajeMeta">75%</span>
+                                </div>
+                                <p className="descripcionMeta">Faltan <strong>12.5 kg</strong> de CO₂ para alcanzar la meta de sostenibilidad institucional.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="cuadriculaListas">
 
                         <div className="tarjetaLista">
 
