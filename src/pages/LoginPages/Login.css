@@ -1,107 +1,117 @@
 /* =============================================
-   Login.css
+   Login.css - Diseño Premium SafeRide
    ============================================= */
+
+:root {
+    --azul-primario: #2563EB;
+    --azul-oscuro: #1E3A8A;
+    --fondo-oscuro: #0F172A;
+    --texto-principal: #1E293B;
+    --texto-secundario: #64748B;
+    --borde-suave: #E2E8F0;
+    --blanco-puro: #FFFFFF;
+    --error: #EF4444;
+}
 
 .pantallaLogin {
     display: flex;
     height: 100vh;
     width: 100vw;
     overflow: hidden;
-    background-color: #ffffff;
+    background-color: var(--blanco-puro);
     font-family: 'Inter', sans-serif;
 }
 
-/* --- SECCIÓN IZQUIERDA: IMAGEN --- */
+/* --- LATERAL IZQUIERDO (IMAGEN) --- */
 .ImagenLateral {
     flex: 1.2;
     background-image: url("../../imgs/ImagenFondoLogin.jpg");
-    position: relative;
-    display: flex;
-    align-items: flex-end;
-    padding: 60px;
     background-size: cover;
     background-position: center;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .capaSuperpuestaImagen {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(to top, rgba(10, 14, 26, 0.918) 0%, rgba(15, 23, 42, 0.137) 70%);
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.4) 100%);
     display: flex;
-    align-items: flex-end;
-    padding: 30px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
 }
 
 .marcaSeguridad {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1;
     text-align: center;
+    animation: fadeInScale 1s ease-out;
 }
 
 .marcaSeguridad img {
-    margin-bottom: 10px;
-    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.329));
+    width: 180px;
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3));
+    margin-bottom: 20px;
 }
 
 .marcaSeguridad h1 {
-    font-size: 45px;
-    font-weight: 600;
-    color: #ffffff;
-    margin-bottom: 15px;
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: white;
     letter-spacing: -2px;
+    margin: 0;
 }
 
 .marcaSeguridad p {
-    font-size: 17px;
-    color: #c2d1e6;
-    max-width: 450px;
+    color: #94A3B8;
+    font-size: 1.1rem;
+    max-width: 380px;
+    margin: 15px auto 0;
     line-height: 1.6;
 }
 
-
-/* --- SECCIÓN DERECHA: FORMULARIO --- */
+/* --- LATERAL DERECHO (FORMULARIO) --- */
 .seccionFormularioLateral {
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #ffffff;
-    padding: 30px;
+    background: #F8FAFC;
+    padding: 40px;
 }
 
 .contenedorCajaLogin {
     width: 100%;
     max-width: 420px;
+    background: white;
     padding: 40px;
+    border-radius: 24px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
 }
 
 .encabezadoLogin {
-    margin-bottom: 40px;
+    margin-bottom: 35px;
 }
 
 .encabezadoLogin h2 {
-    font-size: 34px;
+    font-size: 2rem;
     font-weight: 700;
-    color: #2666c5;
-    margin-bottom: 12px;
+    color: var(--fondo-oscuro);
+    margin-bottom: 10px;
 }
 
 .encabezadoLogin p {
-    color: #556172;
-    font-size: 15px;
+    color: var(--texto-secundario);
+    font-size: 0.95rem;
 }
 
-/* --- ESTILOS DEL FORMULARIO --- */
+/* --- FORM STYLES --- */
 .formularioLoginEstilo {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 20px;
 }
 
 .grupoEntradaLogin {
@@ -111,9 +121,10 @@
 }
 
 .grupoEntradaLogin label {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 600;
-    color: #334155;
+    color: var(--texto-principal);
+    margin-left: 4px;
 }
 
 .envolturaEntrada {
@@ -125,103 +136,109 @@
 .iconoEntrada {
     position: absolute;
     left: 16px;
-    color: #94A3B8;
+    color: var(--texto-secundario);
+    transition: color 0.3s;
 }
 
 .envolturaEntrada input {
     width: 100%;
     padding: 14px 16px 14px 48px;
     border: 2px solid #F1F5F9;
-    border-radius: 12px;
-    background-color: #F8FAFC;
+    border-radius: 14px;
+    background: #F8FAFC;
     font-size: 1rem;
-    color: #1E293B;
-    transition: all 0.3s ease;
-    outline: none;
+    color: var(--texto-principal);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .envolturaEntrada input:focus {
-    border-color: #2563EB;
-    background-color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+    border-color: var(--azul-primario);
+    background: white;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+    outline: none;
 }
 
-/* --- BOTÓN DE ENVÍO --- */
+.envolturaEntrada input:focus + .iconoEntrada {
+    color: var(--azul-primario);
+}
+
+/* --- BOTONES --- */
 .botonEnviarLogin {
     margin-top: 10px;
-    background-color: #2563EB;
+    background: var(--azul-primario);
     color: white;
     border: none;
     padding: 16px;
-    border-radius: 12px;
+    border-radius: 14px;
     font-size: 1rem;
     font-weight: 700;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    transition: all 0.3s ease;
+    gap: 10px;
+    transition: all 0.3s;
 }
 
-.botonEnviarLogin:hover {
-    background-color: #1D4ED8;
+.botonEnviarLogin:hover:not(:disabled) {
+    background: var(--azul-oscuro);
     transform: translateY(-2px);
     box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
 }
 
-.botonEnviarLogin:active {
-    transform: translateY(0);
+.botonEnviarLogin:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
-.mensajeErrorLogin {
-    background-color: #FEF2F2;
-    color: #EF4444;
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    border: 1px solid #FEE2E2;
-}
-
+/* --- PIE DE PÁGINA --- */
 .enlacesPieLogin {
+    margin-top: 25px;
     text-align: center;
-    margin-top: 20px;
 }
 
-.enlacesPieLogin a {
-    color: #2563EB;
+.enlacesPieLogin a, .botonRegresar {
+    color: var(--azul-primario);
+    text-decoration: none;
     font-size: 0.9rem;
     font-weight: 600;
-    text-decoration: none;
+    transition: color 0.3s;
 }
 
 .enlacesPieLogin a:hover {
+    color: var(--azul-oscuro);
     text-decoration: underline;
+}
+
+.botonRegresar {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 25px;
 }
 
 /* --- ANIMACIONES --- */
 .animacionEntradaSuave {
-    animation: entradaSuave 0.8s ease-out forwards;
+    animation: slideUpFade 0.6s ease-out forwards;
 }
 
-@keyframes entradaSuave {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+@keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- RESPONSIVIDAD --- */
-@media (max-width: 900px) {
-    .seccionImagenLateral {
-        display: none;
-    }
-    .seccionFormularioLateral {
-        flex: 1;
-    }
+@keyframes fadeInScale {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 1024px) {
+    .ImagenLateral { flex: 1; }
+}
+
+@media (max-width: 800px) {
+    .ImagenLateral { display: none; }
+    .seccionFormularioLateral { padding: 20px; }
+    .contenedorCajaLogin { padding: 30px; }
 }
