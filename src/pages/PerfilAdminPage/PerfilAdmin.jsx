@@ -6,9 +6,9 @@ import api from '../../services/api';
 import { Link } from 'react-router-dom';
 
 // DISEÑOS E ICONOS
-import { 
-    User, Mail, Building2, Check, BarChart2, Zap, Shield, Users, 
-    ArrowLeft, Camera, X, Phone
+import {
+    User, FileUser, Mail, Building2, Check, Users,
+    ArrowLeft, Camera, X, Phone, Car, Leaf, MapPin
 } from 'lucide-react';
 import './PerfilAdmin.css';
 import Swal from 'sweetalert2';
@@ -19,14 +19,23 @@ import Swal from 'sweetalert2';
 
 const PerfilAdmin = () => {
     const { user, setUser } = useAuth();
+    const [empresas, setEmpresas] = useState([]);
     const [cargando, setCargando] = useState(false);
     const [EditActivo, setEditActivo] = useState(false);
     const [nuevaFoto, setNuevaFoto] = useState(null);
     const [previewFoto, setPreviewFoto] = useState(null);
-    
+    const [estadisticas, setEstadisticas] = useState({
+        totalRides: 0,
+        totalDrivers: 0,
+        totalPassengers: 0,
+        totalCarbonSaved: 0
+    });
+    const [notificaciones, setNotificaciones] = useState([]);
+
     // Estado para los datos del perfil
     const [datosPerfil, setDatosPerfil] = useState({
         name: '',
+        username: '',
         email: '',
         phone: '',
         company: '',
@@ -35,23 +44,50 @@ const PerfilAdmin = () => {
 
     // Opciones de configuración (Aun simuladas)
     const [ajustes, setAjustes] = useState({
-        dobleFactor: true,
-        notificacionesEmail: true,
-        tiempoSesion: '30 Minutos'
+        alertasEmergencia: true,
+        reportesDiarios: true,
+        monitoreoTiempoReal: false,
+        notificacionesEmail: true
     });
 
     useEffect(() => {
         if (user) {
             setDatosPerfil({
                 name: user.name || '',
+                username: user.username || '',
                 email: user.email || '',
-                phone: user.phone || '',
+                phone: user.phone ? `${user.phone.slice(0, 4)}-${user.phone.slice(4, 8)}` : '',
                 company: user.company || '',
                 status: user.isActive || ''
             });
             setPreviewFoto(user.profileImage || DefaultImageUser);
         }
     }, [user]);
+
+    useEffect(() => {
+        // Cargar lista de empresas
+        api.get('/users/companies')
+            .then(res => setEmpresas(res.data.data))
+            .catch(err => console.error(err));
+
+        // Cargar estadísticas globales
+        api.get('/metrics/global')
+            .then(res => {
+                if (res.data.success) {
+                    setEstadisticas(res.data.data);
+                }
+            })
+            .catch(err => console.error("Error al cargar estadísticas:", err));
+
+        // Cargar actividad reciente (notificaciones)
+        api.get('/notifications')
+            .then(res => {
+                if (res.data.success) {
+                    setNotificaciones(res.data.data.slice(0, 3));
+                }
+            })
+            .catch(err => console.error("Error al cargar actividad:", err));
+    }, []);
 
     const manejarSeleccionFoto = (e) => {
         const file = e.target.files[0];
@@ -66,10 +102,28 @@ const PerfilAdmin = () => {
     };
 
     const manejarCambioPerfil = (e) => {
-        setDatosPerfil({
-            ...datosPerfil,
-            [e.target.name]: e.target.value
-        });
+        const { name, value } = e.target;
+        
+        if (name === 'phone') {
+            // Eliminar cualquier caracter que no sea dígito
+            const soloNumeros = value.replace(/\D/g, '');
+            let valorFormateado = soloNumeros;
+            
+            // Aplicar formato 0000-0000
+            if (soloNumeros.length > 4) {
+                valorFormateado = `${soloNumeros.slice(0, 4)}-${soloNumeros.slice(4, 8)}`;
+            }
+            
+            setDatosPerfil({
+                ...datosPerfil,
+                [name]: valorFormateado
+            });
+        } else {
+            setDatosPerfil({
+                ...datosPerfil,
+                [name]: value
+            });
+        }
     };
 
     // -----------------------------------------------
@@ -83,6 +137,7 @@ const PerfilAdmin = () => {
 
     const guardarCambios = async () => {
         setCargando(true);
+
         try {
             let profileImageUrl = user.profileImage;
 
@@ -91,16 +146,17 @@ const PerfilAdmin = () => {
                 profileImageUrl = await uploadToCloudinary(nuevaFoto);
             }
 
-            // 2. Guardar en el backend
+            // 2. Guardar en el backend (Limpiamos el teléfono de guiones antes de enviar)
             const response = await api.put('/users/profile', {
                 ...datosPerfil,
+                phone: datosPerfil.phone.replace(/-/g, ''),
                 profileImage: profileImageUrl
             });
 
 
             // ───────────────── VALIDACIONES DEL POST ─────────────────
 
-            if (datosPerfil.name == user.name && datosPerfil.email == user.email && datosPerfil.phone == user.phone && datosPerfil.company == user.company && datosPerfil.status == user.isActive && !nuevaFoto) {
+            if (datosPerfil.username === user.username && datosPerfil.name == user.name && datosPerfil.email == user.email && datosPerfil.phone == user.phone && datosPerfil.company == user.company && !nuevaFoto) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Sin Cambios',
@@ -111,11 +167,33 @@ const PerfilAdmin = () => {
                 return;
             }
 
-            if (!datosPerfil.name || !datosPerfil.email) {
+            if (datosPerfil.username === '' || datosPerfil.name.trim() === '' || datosPerfil.phone.trim() === '' || datosPerfil.email.trim() === '' || datosPerfil.company.trim() === '') {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
-                    text: 'Nombre y correo son obligatorios',
+                    text: 'Los campos no pueden estar vacios',
+                    confirmButtonText: 'De acuerdo',
+                    confirmButtonColor: '#2563EB'
+                });
+                return;
+            }
+
+            if (!/[a-z A-Z]/.test(datosPerfil.name)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'El nombre solo puede contener letras.',
+                    confirmButtonText: 'De acuerdo',
+                    confirmButtonColor: '#2563EB'
+                });
+                return;
+            }
+
+            if (!/^[0-9]/.test(datosPerfil.phone)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'El teléfono solo puede contener números.',
                     confirmButtonText: 'De acuerdo',
                     confirmButtonColor: '#2563EB'
                 });
@@ -124,7 +202,7 @@ const PerfilAdmin = () => {
 
             if (response.data.success) {
 
-                if (setUser) setUser(PerfilCambiado);
+                if (setUser) setUser(response.data.data.user);
 
                 Swal.fire({
                     icon: 'success',
@@ -160,11 +238,11 @@ const PerfilAdmin = () => {
 
     /* ==================================================
     *  INFORMACIÓN DEL USUARIO
-    *  ================================================== */ 
+    *  ================================================== */
 
     return (
         <div className="contenedorPerfil">
-            
+
             {/* ENLACE PARA REGRESAR AL PANEL */}
             <Link to="/inicio" className="enlaceVolver">
                 <ArrowLeft size={18} />
@@ -177,10 +255,10 @@ const PerfilAdmin = () => {
                 <div className="contenedorIzquierdo">
 
                     <div className="contenedorUser">
-                        <img 
-                            src={user.profileImage || DefaultImageUser} 
-                            alt="Avatar" 
-                            className="imagenUser" 
+                        <img
+                            src={user.profileImage || DefaultImageUser}
+                            alt="Avatar"
+                            className="imagenUser"
                         />
                         <div className="checkVerificado">
                             <Check size={14} />
@@ -203,9 +281,19 @@ const PerfilAdmin = () => {
                         <div className="DetallesInfo">
 
                             <div className="detalleItem">
+                                <FileUser size={16} />
+                                <span>{datosPerfil.username}</span>
+                            </div>
+
+                            <div className="detalleItem">
                                 <Mail size={16} />
                                 <span>{datosPerfil.email}</span>
 
+                            </div>
+
+                            <div className="detalleItem">
+                                <Phone size={16} />
+                                <span>{datosPerfil.phone || "Sin teléfono"}</span>
                             </div>
                             <div className="detalleItem">
                                 <Building2 size={18} />
@@ -215,8 +303,8 @@ const PerfilAdmin = () => {
                     </div>
                 </div>
 
-                <button 
-                    onClick={() => setEditActivo(true)} 
+                <button
+                    onClick={() => setEditActivo(true)}
                     className="botonEditPerfil"
                 >
                     Editar Perfil
@@ -237,12 +325,12 @@ const PerfilAdmin = () => {
                                 <h2>Editar Perfil</h2>
                                 <p>Actualiza tu información personal y foto de perfil</p>
                             </div>
-                            
+
                             <button onClick={() => setEditActivo(false)}>
                                 <X size={24} />
                             </button>
                         </div>
-                        
+
                         <div className="contenidoTarjeta">
 
                             {/* Sección de Foto */}
@@ -250,17 +338,17 @@ const PerfilAdmin = () => {
 
                                 <div className="contenedorFoto">
 
-                                    <img 
-                                        src={previewFoto || DefaultImageUser} 
-                                        alt="Preview" 
-                                        className="foto" 
+                                    <img
+                                        src={previewFoto || DefaultImageUser}
+                                        alt="Preview"
+                                        className="foto"
                                     />
                                     <label htmlFor="inputFoto" className="btnCambiarFoto">
                                         <Camera size={18} />
-                                        <input 
-                                            type="file" 
-                                            id="inputFoto" 
-                                            style={{ display: 'none' }} 
+                                        <input
+                                            type="file"
+                                            id="inputFoto"
+                                            style={{ display: 'none' }}
                                             onChange={manejarSeleccionFoto}
                                             accept="image/jpeg, image/png, image/jpg, image/gif, image/webp, image/avif"
                                         />
@@ -271,60 +359,75 @@ const PerfilAdmin = () => {
                             </div>
 
                             {/* Campos del Formulario */}
+
+                            <div className="contenedorUsername">
+
+                                <div className="grupoInput">
+                                    <label className="labelInput">Nombre de Usuario</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <input
+                                            type="text"
+                                            name="username"
+                                            className="inputEstilizado"
+                                            value={datosPerfil.username}
+                                            onChange={manejarCambioPerfil}
+                                            style={{ paddingLeft: '40px', width: '100%' }}
+                                        />
+                                        <FileUser size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: '#94A3B8' }} />
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="cuadriculaCampos">
 
                                 <div className="grupoInput">
-
                                     <label className="labelInput">Nombre Completo</label>
-                                    <input 
-                                        type="text" 
-                                        name="name" 
-                                        className="inputEstilizado" 
-                                        value={datosPerfil.name} 
-                                        onChange={manejarCambioPerfil} 
-                                    />
-                                </div>
-
-                                <div className="grupoInput">
-
-                                    <label className="labelInput">Correo Electrónico</label>
-                                    <input 
-                                        type="email" 
-                                        name="email" 
-                                        className="inputEstilizado" 
-                                        value={datosPerfil.email} 
-                                        onChange={manejarCambioPerfil} 
-                                    />
+                                    <div style={{ position: 'relative' }}>
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            className="inputEstilizado"
+                                            value={datosPerfil.name}
+                                            onChange={manejarCambioPerfil}
+                                            style={{ paddingLeft: '40px', width: '100%' }}
+                                        />
+                                        <User size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: '#94A3B8' }} />
+                                    </div>
                                 </div>
 
                                 <div className="grupoInput">
 
                                     <label className="labelInput">Teléfono</label>
                                     <div style={{ position: 'relative' }}>
-                                        <input 
-                                            type="text" 
-                                            name="phone" 
-                                            className="inputEstilizado" 
-                                            value={datosPerfil.phone} 
-                                            onChange={manejarCambioPerfil} 
+                                        <input
+                                            type="tel"
+                                            name="phone"
+                                            className="inputEstilizado"
+                                            placeholder="0000-0000"
+                                            maxLength={9}
+                                            value={datosPerfil.phone}
+                                            onChange={manejarCambioPerfil}
                                             style={{ paddingLeft: '40px' }}
                                         />
                                         <Phone size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: '#94A3B8' }} />
                                     </div>
                                 </div>
 
-                                <div className="grupoInput">
-                                    
+                                <div className="grupoInputEmpresa">
+
                                     <label className="labelInput">Empresa</label>
-                                    <div style={{ position: 'relative' }}>
-                                        <input 
-                                            type="text" 
-                                            name="company" 
-                                            className="inputEstilizado" 
-                                            value={datosPerfil.company} 
-                                            onChange={manejarCambioPerfil} 
-                                            style={{ paddingLeft: '40px' }}
-                                        />
+                                    <div className="contenedorSelectEmpresa">
+                                        <select
+                                            name="company"
+                                            className="selectEstilizado"
+                                            value={datosPerfil.company}
+                                            onChange={manejarCambioPerfil}
+                                            style={{ paddingLeft: '40px', width: '100%' }}
+                                        >
+                                            {empresas.map(emp => (
+                                                <option key={emp} value={emp}>{emp}</option>
+                                            ))}
+                                        </select>
                                         <Building2 size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: '#94A3B8' }} />
                                     </div>
                                 </div>
@@ -343,68 +446,94 @@ const PerfilAdmin = () => {
                 </div>
             )}
 
+
             {/* FILA DE ESTADÍSTICAS */}
-            <div id="filaEstadisticas" className="filaEstadisticas">
+            <div className="filaEstadisticas">
+
                 <div className="tarjetaEstadistica">
+
                     <div className="estadisticaEncabezado">
-                        <div className="iconoEstadistica"><BarChart2 size={20} /></div>
-                        <span className="cambioPositivo">+12%</span>
+
+                        <div className="iconoEstadistica"><MapPin size={20} /></div>
                     </div>
-                    <p className="estadisticaEtiqueta">Total de Acciones</p>
-                    <h3 className="estadisticaValor">14,282</h3>
+
+                    <p className="estadisticaEtiqueta">Viajes Corporativos</p>
+                    <h3 className="estadisticaValor">{estadisticas.totalRides.toLocaleString()}</h3>
                 </div>
+
                 <div className="tarjetaEstadistica">
+
                     <div className="estadisticaEncabezado">
-                        <div className="iconoEstadistica"><Zap size={20} /></div>
-                        <span className="cambioPositivo" style={{ color: '#64748B' }}>Estable</span>
+
+                        <div className="iconoEstadistica"><Car size={20} /></div>
                     </div>
-                    <p className="estadisticaEtiqueta">Tiempo en Línea</p>
-                    <h3 className="estadisticaValor">99.98%</h3>
+
+                    <p className="estadisticaEtiqueta">Conductores Registrados</p>
+                    <h3 className="estadisticaValor">{estadisticas.totalDrivers}</h3>
                 </div>
+
                 <div className="tarjetaEstadistica">
+
                     <div className="estadisticaEncabezado">
-                        <div className="iconoEstadistica"><Shield size={20} /></div>
-                        <span className="cambioPositivo" style={{ color: '#EF4444' }}>Alto</span>
-                    </div>
-                    <p className="estadisticaEtiqueta">Puntaje de Seguridad</p>
-                    <h3 className="estadisticaValor">98/100</h3>
-                </div>
-                <div className="tarjetaEstadistica">
-                    <div className="estadisticaEncabezado">
+
                         <div className="iconoEstadistica"><Users size={20} /></div>
-                        <span className="cambioPositivo" style={{ color: '#64748B' }}>Gestionados</span>
                     </div>
-                    <p className="estadisticaEtiqueta">Usuarios Gestionados</p>
-                    <h3 className="estadisticaValor">1,240</h3>
+
+                    <p className="estadisticaEtiqueta">Funcionarios Beneficiados</p>
+                    <h3 className="estadisticaValor">{estadisticas.totalPassengers.toLocaleString()}</h3>
+                </div>
+
+                <div className="tarjetaEstadistica">
+
+                    <div className="estadisticaEncabezado">
+
+                        <div className="iconoEstadistica" style={{ background: '#ecfdf5', color: '#10b981' }}><Leaf size={20} /></div>
+                    </div>
+
+                    <p className="estadisticaEtiqueta">CO₂ Ahorrado (kg)</p>
+                    <h3 className="estadisticaValor">{estadisticas.totalCarbonSaved?.toFixed(1) || 0}</h3>
                 </div>
             </div>
 
             {/* CUERPO DEL PERFIL */}
             <div className="cuerpoPerfil">
+
                 <div className="columnaIzquierda">
+
                     <div className="tarjetaFormulario">
+
                         <div className="encabezadoTarjeta">
-                            <h2>Seguridad y Ajustes de Cuenta</h2>
-                            <p>Configura tus preferencias de privacidad y operativas.</p>
+                            <h2>Preferencias Operativas</h2>
+                            <p>Configura cómo deseas supervisar la logística de SafeRide.</p>
                         </div>
                         <div className="contenidoTarjeta">
                             <div className="itemAjuste">
                                 <div className="infoAjuste">
-                                    <h4>Autenticación de Dos Factores</h4>
-                                    <p>Añade una capa extra de seguridad a tu cuenta de administrador.</p>
+                                    <h4>Alertas de Emergencia (SOS)</h4>
+                                    <p>Recibe notificaciones críticas cuando un conductor reporte un incidente.</p>
                                 </div>
                                 <label className="switch">
-                                    <input type="checkbox" checked={ajustes.dobleFactor} onChange={() => toggleAjuste('dobleFactor')} />
+                                    <input type="checkbox" checked={ajustes.alertasEmergencia} onChange={() => toggleAjuste('alertasEmergencia')} />
                                     <span className="slider"></span>
                                 </label>
                             </div>
                             <div className="itemAjuste">
                                 <div className="infoAjuste">
-                                    <h4>Notificaciones por Correo</h4>
-                                    <p>Recibe alertas sobre eventos críticos del sistema por correo electrónico.</p>
+                                    <h4>Reportes Diarios Automáticos</h4>
+                                    <p>Recibe un resumen del total de viajes y ahorro de CO₂ al finalizar el día.</p>
                                 </div>
                                 <label className="switch">
-                                    <input type="checkbox" checked={ajustes.notificacionesEmail} onChange={() => toggleAjuste('notificacionesEmail')} />
+                                    <input type="checkbox" checked={ajustes.reportesDiarios} onChange={() => toggleAjuste('reportesDiarios')} />
+                                    <span className="slider"></span>
+                                </label>
+                            </div>
+                            <div className="itemAjuste">
+                                <div className="infoAjuste">
+                                    <h4>Monitoreo en Tiempo Real</h4>
+                                    <p>Activa la actualización de alta frecuencia para el mapa de seguimiento.</p>
+                                </div>
+                                <label className="switch">
+                                    <input type="checkbox" checked={ajustes.monitoreoTiempoReal} onChange={() => toggleAjuste('monitoreoTiempoReal')} />
                                     <span className="slider"></span>
                                 </label>
                             </div>
@@ -414,24 +543,40 @@ const PerfilAdmin = () => {
 
                 <div className="columnaDerecha">
                     <div className="tarjetaActividad">
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0F172A', margin: 0 }}>Actividad Reciente</h2>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0F172A', margin: 0 }}>Logística Reciente</h2>
                         <div className="lineaTiempo">
-                            <div className="eventoTiempo azul">
-                                <div className="infoEvento">
-                                    <h4>Claves del sistema actualizadas</h4>
-                                    <p>Protocolo de Seguridad Global v4.2</p>
-                                    <span className="tagTiempo">HACE 2 HORAS</span>
-                                </div>
-                            </div>
-                            <div className="eventoTiempo rojo">
-                                <div className="infoEvento">
-                                    <h4>IP no autorizada bloqueada</h4>
-                                    <p>192.168.1.105 - Fallos de inicio de sesión repetidos</p>
-                                    <span className="tagTiempo">HACE 2 DÍAS</span>
-                                </div>
-                            </div>
+                            {notificaciones.length > 0 ? (
+                                notificaciones.map((notif, index) => (
+                                    <div key={notif._id} className={`eventoTiempo ${index % 2 === 0 ? 'azul' : 'verde'}`}>
+                                        <div className="infoEvento">
+                                            <h4>{notif.type.replace(/_/g, ' ').toUpperCase()}</h4>
+                                            <p>{notif.message}</p>
+                                            <span className="tagTiempo">
+                                                {new Date(notif.date).toLocaleDateString()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <>
+                                    <div className="eventoTiempo azul">
+                                        <div className="infoEvento">
+                                            <h4>Nuevo conductor validado</h4>
+                                            <p>Licencia y documentación de Roberto Gómez verificada.</p>
+                                            <span className="tagTiempo">HACE 45 MINUTOS</span>
+                                        </div>
+                                    </div>
+                                    <div className="eventoTiempo verde">
+                                        <div className="infoEvento">
+                                            <h4>Meta de CO₂ alcanzada</h4>
+                                            <p>Se han ahorrado 500kg de CO₂ este mes en la zona norte.</p>
+                                            <span className="tagTiempo">HACE 3 HORAS</span>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
-                        <button className="botonVerLogs">Ver Todos los Registros</button>
+                        <button className="botonVerLogs">Ver Historial de Logística</button>
                     </div>
                 </div>
             </div>
