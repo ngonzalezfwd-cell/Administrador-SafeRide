@@ -2,46 +2,47 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, Upload, User, Truck, Mail, AtSign, Calendar, Users, Palette, CheckCircle, AlertCircle } from 'lucide-react';
 import driverService from '../services/driverService';
 import api from '../services/api';
+import { toast } from 'react-hot-toast';
 import './DriverProfileModal.css';
 
 const CAR_DATA = {
-    Acura: ['MDX', 'RDX', 'TLX', 'TSX', 'Integra'],
-    Audi: ['A3', 'A4', 'Q3', 'Q5', 'Q7'],
-    BMW: ['Serie 1', 'Serie 3', 'Serie 5', 'X1', 'X3', 'X5'],
-    BYD: ['S1 Pro', 'Yuan Plus', 'Tang', 'Song Plus', 'F3', 'Dolphin'],
-    Chery: ['Tiggo 2 Pro', 'Tiggo 4 Pro', 'Tiggo 7 Pro', 'Tiggo 8 Pro', 'QQ'],
-    Chevrolet: ['Colorado', 'Tracker', 'Spark', 'Aveo', 'Captiva', 'Groove'],
-    Citroen: ['C3', 'C4 Cactus', 'C5 Aircross', 'Berlingo', 'Jumpy'],
-    Daihatsu: ['Terios', 'Bego', 'Sirion', 'Delta', 'Gran Max'],
-    Dodge: ['RAM 1500', 'RAM 2500', 'Journey', 'Durango', 'Dakota'],
-    Fiat: ['Strada', 'Fiorino', 'Pulse', 'Uno', '500', 'Fastback'],
-    Ford: ['Ranger', 'Everest', 'Explorer', 'EcoSport', 'F-150', 'Focus'],
-    Geely: ['Coolray', 'Azkarra', 'Okavango', 'GX3 Pro', 'Geometry C'],
-    GMC: ['Sierra', 'Acadia', 'Terrain', 'Yukon', 'Canyon'],
-    GreatWall: ['Wingle 5', 'Wingle 7', 'Poer', 'Haval M4', 'Voleex'],
-    Haval: ['H6', 'Jolion', 'H2', 'H9', 'M4'],
-    Honda: ['CR-V', 'Civic', 'HR-V', 'Accord', 'Fit', 'Pilot'],
-    Hyundai: ['Tucson', 'Accent Blue', 'Elantra', 'Creta', 'Grand i10', 'Santa Fe', 'Kona'],
-    Isuzu: ['D-Max', 'MU-X', 'NLR', 'NPR', 'FTR'],
-    JAC: ['T8', 'JS2', 'JS4', 'S2', 'Sunray', 'E10X'],
-    Jeep: ['Grand Cherokee', 'Wrangler', 'Compass', 'Renegade', 'Cherokee'],
-    Jetour: ['Dashing', 'X70 Plus', 'X70', 'X90 Plus'],
-    Kia: ['Sportage', 'Picanto', 'Rio', 'Seltos', 'Sorento', 'Cerato', 'Soluto'],
-    LandRover: ['Defender', 'Discovery', 'Range Rover Evoque', 'Range Rover Sport'],
-    Lexus: ['RX', 'NX', 'UX', 'GX', 'IS'],
-    Mazda: ['CX-5', 'Mazda 3', 'CX-3', 'CX-30', 'BT-50', 'CX-9'],
-    MercedesBenz: ['GLC', 'GLE', 'Clase C', 'Clase A', 'Clase E', 'Vito'],
-    MG: ['ZS', 'HS', 'MG3', 'MG5', 'Marvel R', 'MG4'],
-    Mitsubishi: ['Montero Sport', 'L200', 'Outlander', 'ASX', 'Eclipse Cross', 'Montero'],
-    Nissan: ['Frontier', 'Sentra', 'Qashqai', 'Kicks', 'Versa', 'X-Trail', 'March'],
-    Peugeot: ['2008', '3008', '5008', '208', 'Partner', 'Landtrek'],
-    Renault: ['Kwid', 'Duster', 'Oroch', 'Stepway', 'Koleos', 'Logan'],
-    Subaru: ['XV', 'Forester', 'Outback', 'Impreza', 'Crosstrek'],
-    Suzuki: ['Vitara', 'Swift', 'Jimny', 'S-Presso', 'Ertiga', 'Dzire', 'Baleno'],
-    Tesla: ['Model 3', 'Model Y', 'Model S', 'Model X'],
-    Toyota: ['Hilux', 'Corolla', 'Yaris', 'RAV4', 'Prado', 'Fortuner', 'Rush', 'Agya'],
-    Volkswagen: ['Amarok', 'Tiguan', 'Jetta', 'T-Cross', 'Gol', 'Taos', 'Nivus'],
-    Volvo: ['XC40', 'XC60', 'XC90', 'S60', 'V40', 'C40'],
+  Acura: ['MDX', 'RDX', 'TLX', 'TSX', 'Integra'],
+  Audi: ['A3', 'A4', 'Q3', 'Q5', 'Q7'],
+  BMW: ['Serie 1', 'Serie 3', 'Serie 5', 'X1', 'X3', 'X5'],
+  BYD: ['S1 Pro', 'Yuan Plus', 'Tang', 'Song Plus', 'F3', 'Dolphin'],
+  Chery: ['Tiggo 2 Pro', 'Tiggo 4 Pro', 'Tiggo 7 Pro', 'Tiggo 8 Pro', 'QQ'],
+  Chevrolet: ['Colorado', 'Tracker', 'Spark', 'Aveo', 'Captiva', 'Groove'],
+  Citroen: ['C3', 'C4 Cactus', 'C5 Aircross', 'Berlingo', 'Jumpy'],
+  Daihatsu: ['Terios', 'Bego', 'Sirion', 'Delta', 'Gran Max'],
+  Dodge: ['RAM 1500', 'RAM 2500', 'Journey', 'Durango', 'Dakota'],
+  Fiat: ['Strada', 'Fiorino', 'Pulse', 'Uno', '500', 'Fastback'],
+  Ford: ['Ranger', 'Everest', 'Explorer', 'EcoSport', 'F-150', 'Focus'],
+  Geely: ['Coolray', 'Azkarra', 'Okavango', 'GX3 Pro', 'Geometry C'],
+  GMC: ['Sierra', 'Acadia', 'Terrain', 'Yukon', 'Canyon'],
+  GreatWall: ['Wingle 5', 'Wingle 7', 'Poer', 'Haval M4', 'Voleex'],
+  Haval: ['H6', 'Jolion', 'H2', 'H9', 'M4'],
+  Honda: ['CR-V', 'Civic', 'HR-V', 'Accord', 'Fit', 'Pilot'],
+  Hyundai: ['Tucson', 'Accent Blue', 'Elantra', 'Creta', 'Grand i10', 'Santa Fe', 'Kona'],
+  Isuzu: ['D-Max', 'MU-X', 'NLR', 'NPR', 'FTR'],
+  JAC: ['T8', 'JS2', 'JS4', 'S2', 'Sunray', 'E10X'],
+  Jeep: ['Grand Cherokee', 'Wrangler', 'Compass', 'Renegade', 'Cherokee'],
+  Jetour: ['Dashing', 'X70 Plus', 'X70', 'X90 Plus'],
+  Kia: ['Sportage', 'Picanto', 'Rio', 'Seltos', 'Sorento', 'Cerato', 'Soluto'],
+  LandRover: ['Defender', 'Discovery', 'Range Rover Evoque', 'Range Rover Sport'],
+  Lexus: ['RX', 'NX', 'UX', 'GX', 'IS'],
+  Mazda: ['CX-5', 'Mazda 3', 'CX-3', 'CX-30', 'BT-50', 'CX-9'],
+  MercedesBenz: ['GLC', 'GLE', 'Clase C', 'Clase A', 'Clase E', 'Vito'],
+  MG: ['ZS', 'HS', 'MG3', 'MG5', 'Marvel R', 'MG4'],
+  Mitsubishi: ['Montero Sport', 'L200', 'Outlander', 'ASX', 'Eclipse Cross', 'Montero'],
+  Nissan: ['Frontier', 'Sentra', 'Qashqai', 'Kicks', 'Versa', 'X-Trail', 'March'],
+  Peugeot: ['2008', '3008', '5008', '208', 'Partner', 'Landtrek'],
+  Renault: ['Kwid', 'Duster', 'Oroch', 'Stepway', 'Koleos', 'Logan'],
+  Subaru: ['XV', 'Forester', 'Outback', 'Impreza', 'Crosstrek'],
+  Suzuki: ['Vitara', 'Swift', 'Jimny', 'S-Presso', 'Ertiga', 'Dzire', 'Baleno'],
+  Tesla: ['Model 3', 'Model Y', 'Model S', 'Model X'],
+  Toyota: ['Hilux', 'Corolla', 'Yaris', 'RAV4', 'Prado', 'Fortuner', 'Rush', 'Agya'],
+  Volkswagen: ['Amarok', 'Tiguan', 'Jetta', 'T-Cross', 'Gol', 'Taos', 'Nivus'],
+  Volvo: ['XC40', 'XC60', 'XC90', 'S60', 'V40', 'C40'],
 };
 
 const BRANDS = Object.keys(CAR_DATA);
@@ -49,13 +50,13 @@ const COLORS = ['Blanco', 'Negro', 'Gris', 'Plateado', 'Rojo', 'Azul', 'Verde', 
 const YEARS = Array.from({ length: 30 }, (_, i) => String(new Date().getFullYear() - i));
 
 const COMPANIES = [
-  'Intel', 'Cargill', 'Deloitte', 'Citi', 'Experian', '3M', 
-  'DHL', 'Bill Gosling Outsourcing (BGO)', 'WeWork Costa Rica', 
+  'Intel', 'Cargill', 'Deloitte', 'Citi', 'Experian', '3M',
+  'DHL', 'Bill Gosling Outsourcing (BGO)', 'WeWork Costa Rica',
   'Concentrix', 'Nestlé Costa Rica'
 ];
 
 const SCHEDULES = [
-  '08:00 - 17:00', '07:00 - 16:00', '06:00 - 15:00', 
+  '08:00 - 17:00', '07:00 - 16:00', '06:00 - 15:00',
   '22:00 - 06:00 (Nocturno)', 'Rotativo', 'Fines de semana'
 ];
 
@@ -66,16 +67,16 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved }) => {
   const [form, setForm] = useState({
     name: '', username: '', email: '', phone: '',
     company: COMPANIES[0], work_schedule: SCHEDULES[0],
-    vehicle: { 
-        brand: BRANDS[0], 
-        model: CAR_DATA[BRANDS[0]][0], 
-        license_plate: '', 
-        color: COLORS[0], 
-        year: YEARS[0], 
-        capacity: 4 
+    vehicle: {
+      brand: BRANDS[0],
+      model: CAR_DATA[BRANDS[0]][0],
+      license_plate: '',
+      color: COLORS[0],
+      year: YEARS[0],
+      capacity: 4
     }
   });
-  
+
   const [avatarFile, setAvatarFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -108,13 +109,13 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved }) => {
       setForm({
         name: '', username: '', email: '', phone: '',
         company: COMPANIES[0], work_schedule: SCHEDULES[0],
-        vehicle: { 
-            brand: BRANDS[0], 
-            model: CAR_DATA[BRANDS[0]][0], 
-            license_plate: '', 
-            color: COLORS[0], 
-            year: YEARS[0], 
-            capacity: 4 
+        vehicle: {
+          brand: BRANDS[0],
+          model: CAR_DATA[BRANDS[0]][0],
+          license_plate: '',
+          color: COLORS[0],
+          year: YEARS[0],
+          capacity: 4
         }
       });
       setPreviewUrl('');
@@ -128,11 +129,11 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved }) => {
     if (!val || val.length < 4 || isEditMode) return;
     setUsernameStatus('checking');
     try {
-        const response = await api.get(`/users?search=${val}`);
-        const exists = response.data?.data?.some(u => u.username.toLowerCase() === val.toLowerCase());
-        setUsernameStatus(exists ? 'taken' : 'available');
+      const response = await api.get(`/users?search=${val}`);
+      const exists = response.data?.data?.some(u => u.username.toLowerCase() === val.toLowerCase());
+      setUsernameStatus(exists ? 'taken' : 'available');
     } catch (err) {
-        setUsernameStatus('idle');
+      setUsernameStatus('idle');
     }
   };
 
@@ -165,8 +166,8 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved }) => {
   const handleSubmit = async e => {
     e.preventDefault();
     const error = validate();
-    if (error) return alert(error);
-    
+    if (error) return toast.error(error);
+
     setSubmitting(true);
     try {
       const savedDriverId = driver ? driver._id : null;
@@ -175,56 +176,56 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved }) => {
         setStep('Registrando usuario...');
         const userPayload = { ...form, password: generateTempPassword(), type: 'conductor' };
         delete userPayload.vehicle;
-        
+
         const regRes = await api.post('/auth/register', userPayload);
         const newDriverId = regRes.data?.data?.user?._id;
 
         setStep('Registrando vehículo...');
-        const vehiclePayload = { 
-            ...form.vehicle, 
-            license_plate: form.vehicle.license_plate.toUpperCase(),
-            year: parseInt(form.vehicle.year),
-            capacity: parseInt(form.vehicle.capacity),
-            driver_id: newDriverId 
+        const vehiclePayload = {
+          ...form.vehicle,
+          license_plate: form.vehicle.license_plate.toUpperCase(),
+          year: parseInt(form.vehicle.year),
+          capacity: parseInt(form.vehicle.capacity),
+          driver_id: newDriverId
         };
         await api.post('/vehicles', vehiclePayload);
 
         setStep('Enviando invitación...');
         await api.post('/auth/send-verification-code', { email: form.email });
-        alert('Conductor registrado exitosamente.');
+        toast.success('Conductor registrado exitosamente.');
       } else {
         setStep('Actualizando datos personales...');
         const userUpdatePayload = {
-            name: form.name,
-            phone: form.phone,
-            company: form.company,
-            work_schedule: form.work_schedule
+          name: form.name,
+          phone: form.phone,
+          company: form.company,
+          work_schedule: form.work_schedule
         };
         await driverService.updateDriver(savedDriverId, userUpdatePayload);
-        
+
         const vehicleId = driver.vehicle?._id || driver.vehicle;
         if (vehicleId) {
-            setStep('Actualizando vehículo...');
-            const targetVehicleId = typeof vehicleId === 'object' ? vehicleId._id : vehicleId;
-            const vehicleUpdate = {
-                brand: form.vehicle.brand,
-                model: form.vehicle.model,
-                license_plate: form.vehicle.license_plate.toUpperCase(),
-                color: form.vehicle.color,
-                year: parseInt(form.vehicle.year),
-                capacity: parseInt(form.vehicle.capacity)
-            };
-            await api.put(`/vehicles/${targetVehicleId}`, vehicleUpdate);
+          setStep('Actualizando vehículo...');
+          const targetVehicleId = typeof vehicleId === 'object' ? vehicleId._id : vehicleId;
+          const vehicleUpdate = {
+            brand: form.vehicle.brand,
+            model: form.vehicle.model,
+            license_plate: form.vehicle.license_plate.toUpperCase(),
+            color: form.vehicle.color,
+            year: parseInt(form.vehicle.year),
+            capacity: parseInt(form.vehicle.capacity)
+          };
+          await api.put(`/vehicles/${targetVehicleId}`, vehicleUpdate);
         } else {
-            setStep('Creando vehículo faltante...');
-            const vehiclePayload = { 
-                ...form.vehicle, 
-                license_plate: form.vehicle.license_plate.toUpperCase(),
-                year: parseInt(form.vehicle.year),
-                capacity: parseInt(form.vehicle.capacity),
-                driver_id: savedDriverId 
-            };
-            await api.post('/vehicles', vehiclePayload);
+          setStep('Creando vehículo faltante...');
+          const vehiclePayload = {
+            ...form.vehicle,
+            license_plate: form.vehicle.license_plate.toUpperCase(),
+            year: parseInt(form.vehicle.year),
+            capacity: parseInt(form.vehicle.capacity),
+            driver_id: savedDriverId
+          };
+          await api.post('/vehicles', vehiclePayload);
         }
       }
 
@@ -238,7 +239,7 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved }) => {
     } catch (err) {
       console.error('Save error details:', err.response?.data || err);
       const backendError = err.response?.data?.errors?.[0]?.message || err.response?.data?.message || err.message;
-      alert('Error: ' + backendError);
+      toast.error('Error: ' + backendError);
     } finally {
       setSubmitting(false);
       setStep('');
@@ -249,7 +250,7 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved }) => {
 
   const currentModels = CAR_DATA[form.vehicle.brand] || [];
 
-  
+
   return (
     <div className="modal-backdrop">
       <div className="modal-glass">
@@ -278,14 +279,14 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved }) => {
           <div className="field-group">
             <label>Nombre de Usuario</label>
             <div className="username-input-wrapper">
-                <input name="username" value={form.username} onChange={handleChange} onBlur={(e) => checkUsernameUniqueness(e.target.value)} required readOnly={isEditMode} className={isEditMode ? 'input-readonly' : ''} />
-                {!isEditMode && (
-                    <div className="username-status-icon">
-                        {usernameStatus === 'checking' && <div className="spinner-mini" />}
-                        {usernameStatus === 'available' && <CheckCircle size={16} color="#10B981" />}
-                        {usernameStatus === 'taken' && <AlertCircle size={16} color="#EF4444" />}
-                    </div>
-                )}
+              <input name="username" value={form.username} onChange={handleChange} onBlur={(e) => checkUsernameUniqueness(e.target.value)} required readOnly={isEditMode} className={isEditMode ? 'input-readonly' : ''} />
+              {!isEditMode && (
+                <div className="username-status-icon">
+                  {usernameStatus === 'checking' && <div className="spinner-mini" />}
+                  {usernameStatus === 'available' && <CheckCircle size={16} color="#10B981" />}
+                  {usernameStatus === 'taken' && <AlertCircle size={16} color="#EF4444" />}
+                </div>
+              )}
             </div>
           </div>
 
