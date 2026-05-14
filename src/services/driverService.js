@@ -2,7 +2,7 @@ import api from './api';
 
 export const getAllDrivers = async (params = {}) => {
   const res = await api.get('/users', { params: { ...params, type: 'conductor' } });
-  return res.data.data;
+  return res.data;
 };
 
 export const getVehicleByDriver = async (driverId) => {

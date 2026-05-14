@@ -1,4 +1,5 @@
 14/05/26
+
 Es una actualización del backend para arreglar un error donde la desactivación de usuarios no se guardaba correctamente y además agregar la posibilidad de reactivar conductores.
 Antes:
 Al desactivar un usuario, el backend enviaba dos respuestas HTTP.

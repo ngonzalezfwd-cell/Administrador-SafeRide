@@ -159,14 +159,28 @@ header {
 .buscadorContainer {
   display: flex;
   align-items: center;
-  background-color: #F1F5F9;
-  border-radius: 8px;
+  background-color: white;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
   padding: 8px 16px;
-  width: 320px;
+  width: 350px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.buscadorContainer:focus-within {
+  border-color: #3B82F6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+  width: 380px; /* Se expande sutilmente */
 }
 
 .buscadorIcono {
   color: #94A3B8;
+  transition: color 0.3s;
+}
+
+.buscadorContainer:focus-within .buscadorIcono {
+  color: #3B82F6;
 }
 
 .buscadorContainer input {
@@ -175,8 +189,13 @@ header {
   padding: 0 12px;
   flex: 1;
   outline: none;
-  color: #334155;
+  color: #1E293B;
   font-size: 14px;
+  font-weight: 500;
+}
+
+.buscadorContainer input::placeholder {
+  color: #94A3B8;
 }
 
 .headerDerecho {
