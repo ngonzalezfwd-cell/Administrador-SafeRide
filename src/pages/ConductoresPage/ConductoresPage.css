@@ -50,8 +50,9 @@
   border: 4px solid white;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
   background: #f8fafc;
-  transform: translateY(40px); /* El efecto de sobresalir */
-  z-index: 2;
+  transform: translateY(25px); /* Reducido de 40px a 25px para invadir menos el contenido */
+  z-index: 10;
+  position: relative;
 }
 
 .status-badge {
@@ -80,17 +81,19 @@
 }
 
 /* --- CONTENIDO DE TARJETA --- */
-.card-content {
-  padding: 55px 24px 24px 24px; /* Espacio para la foto que sube */
+.conductor-card .card-content {
+  padding: 115px 24px 24px 24px !important; /* Blindado con !important y selector específico */
   flex-grow: 1;
   text-align: center;
 }
 
-.conductor-name {
+.conductor-card .conductor-name {
   font-size: 1.25rem;
   font-weight: 700;
   color: #1E293B;
-  margin: 0 0 6px 0;
+  margin: 20px 0 6px 0 !important; /* Margen blindado para despejar el nombre */
+  position: relative;
+  z-index: 1;
 }
 
 .conductor-role {
@@ -383,4 +386,16 @@
   .buscadorContainer {
     width: 100% !important;
   }
+}
+
+/* --- ESTADO DE CARGA SUAVE (sin parpadeo) --- */
+.conductoresGrid--loading {
+  opacity: 0.5;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.conductoresGrid--loaded {
+  opacity: 1;
+  transition: opacity 0.25s ease;
 }

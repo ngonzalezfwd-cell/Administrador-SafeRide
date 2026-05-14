@@ -100,19 +100,20 @@ const ConductoresPage = () => {
   const { user, logout, cerrarSesion } = useAuth();
   const location = useLocation();
 
-  const [drivers, setDrivers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cached = driverService.getCachedDrivers();
+  const [drivers, setDrivers] = useState(cached.data || []);
+  const [loading, setLoading] = useState(!cached.data?.length);
   const [searchTerm, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalTab, setModalTab] = useState('info');
   const [selectedDriver, setSelectedDriver] = useState(null);
   const lastRequestId = useRef(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [totalPages, setTotalPages] = useState(cached.pagination?.pages || 1);
   const [stats, setStats] = useState({
-    total: 0,
-    activeNow: 0,
-    avgRating: 0,
+    total: cached.pagination?.total || 0,
+    activeNow: cached.stats?.active || 0,
+    avgRating: cached.stats?.rating || 0,
     onTrip: 0,
   });
   const [selectedLetter, setSelectedLetter] = useState('');
@@ -121,7 +122,6 @@ const ConductoresPage = () => {
   const loadDrivers = async () => {
     const requestId = ++lastRequestId.current;
     setLoading(true);
-    setDrivers([]); // Limpiamos la lista anterior para evitar confusión visual
     try {
       const response = await driverService.getAllDrivers({
         search: searchTerm,
@@ -299,253 +299,182 @@ const ConductoresPage = () => {
   const handleCerrarSesion = logout || cerrarSesion;
 
   return (
-    <div className="dashboardContent">
+    <>
       <Toaster position="top-right" />
 
-      {/* --- SIDEBAR --- */}
-      <aside>
-        <div className="sidebaLogo">
-          <img src={IconSafeRide} alt="Icono" className='IconSafeRide' />
-          <span>RideAdmin</span>
-        </div>
-
-        <nav className="sidebarNav">
-          <Link to="/inicio" className={`navItem ${location.pathname === '/inicio' ? 'active' : ''}`}>
-            <LayoutDashboard size={20} /> <span>Panel</span>
-          </Link>
-          <Link to="/usuarios" className={`navItem ${location.pathname === '/usuarios' ? 'active' : ''}`}>
-            <Users size={20} /> <span>Pasajeros</span>
-          </Link>
-          <Link to="/conductores" className={`navItem ${location.pathname === '/conductores' ? 'active' : ''}`}>
-            <UserCheck size={20} /> <span>Conductores</span>
-          </Link>
-          <Link to="/vehiculos" className={`navItem ${location.pathname === '/vehiculos' ? 'active' : ''}`}>
-            <Car size={20} /> <span>Vehículos</span>
-          </Link>
-          <Link to="/reservas" className={`navItem ${location.pathname === '/reservas' ? 'active' : ''}`}>
-            <Calendar size={20} /> <span>Reservas</span>
-          </Link>
-          <Link to="/pagos" className={`navItem ${location.pathname === '/pagos' ? 'active' : ''}`}>
-            <CreditCard size={20} /> <span>Pagos</span>
-          </Link>
-          <Link to="/notificaciones" className={`navItem ${location.pathname === '/notificaciones' ? 'active' : ''}`}>
-            <Bell size={20} /> <span>Notificaciones</span>
-          </Link>
-          <Link to="/quejas" className={`navItem ${location.pathname === '/quejas' ? 'active' : ''}`}>
-            <AlertCircle size={20} /> <span>Quejas</span>
-          </Link>
-          <Link to="/auditoria" className={`navItem ${location.pathname === '/auditoria' ? 'active' : ''}`}>
-            <ShieldCheck size={20} /> <span>Auditoría</span>
-          </Link>
-          <Link to="/configuracion" className={`navItem ${location.pathname === '/configuracion' ? 'active' : ''}`}>
-            <Settings size={20} /> <span>Configuración</span>
-          </Link>
-        </nav>
-
-        <div className="sidebarPerfil">
-          <img src={getDefaultImagen(user?.profileImage)} alt="Admin" className="FotoPerfil" />
-          <div className="PerfilInfo">
-            <span className="NombrePerfil">{user?.name || 'Admin'}</span>
-            <span className="RolPerfil">Super Administrador</span>
+      <div className="local-header-actions">
+        <div className="buscadorContainer">
+          <Search size={18} className="buscadorIcono" />
+          <input
+            type="text"
+            placeholder="Filtrar conductores..."
+            value={searchTerm}
+            onChange={e => {
+              setSearch(e.target.value);
+              if (e.target.value && selectedLetter) setSelectedLetter('');
+            }}
+          />
+          <button className="btn-search-header" onClick={loadDrivers}>
+            Buscar
+          </button>
+          <div className="search-status-indicator" style={{ right: '85px' }}>
+            {loading && <div className="spinner-mini" />}
           </div>
-          <ChevronDown size={16} className="FlechaPerfil" onClick={handleCerrarSesion} style={{ cursor: 'pointer' }} />
         </div>
-      </aside>
+      </div>
 
-      {/* --- MAIN --- */}
-      <main>
-        <header>
-          <div className="headerIzquierdo">
-            <div className="buscadorContainer">
-              <Search size={18} className="buscadorIcono" />
-              <input
-                type="text"
-                placeholder="Filtrar por nombre o usuario..."
-                value={searchTerm}
-                onChange={e => {
-                  setSearch(e.target.value);
-                  if (e.target.value && selectedLetter) setSelectedLetter('');
-                }}
+      <div id="encabezadoPagina" className="page-header">
+        <div>
+          <h1>Gestión de Conductores</h1>
+          <p>Gestiona y monitorea el rendimiento y disponibilidad de la flota</p>
+        </div>
+        <button className="btn-add-passenger" onClick={() => handleOpenModal(null)}>
+          <Plus size={18} /> Registrar Conductor
+        </button>
+      </div>
+
+      {/* --- ALPHABET FILTER --- */}
+      <div className="alphabet-filter">
+        <button
+          className={`letter-btn ${selectedLetter === '' ? 'active' : ''}`}
+          onClick={() => setSelectedLetter('')}
+        >
+          Todos
+        </button>
+        {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'Ñ', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'].map(letter => (
+          <button
+            key={letter}
+            className={`letter-btn ${selectedLetter === letter ? 'active' : ''}`}
+            onClick={() => {
+              const newLetter = selectedLetter === letter ? '' : letter;
+              setSelectedLetter(newLetter);
+              if (newLetter) setSearch(''); 
+            }}
+          >
+            {letter}
+          </button>
+        ))}
+      </div>
+
+      <div className="graficosGrid">
+        <div className="tarjetaEstadistica">
+          <div className="estadisticaHeader">
+            <div className="estadisticaIcono color-purple"><Users size={20} /></div>
+            <div className="estadisticaValor">{loading ? '—' : stats.total}</div>
+          </div>
+          <div className="estadisticaTitulo">Total Conductores</div>
+          <div className="estadisticaFooter">
+            <span className="estadisticaSubtitulo">Conductores registrados</span>
+          </div>
+        </div>
+
+        <div className="tarjetaEstadistica">
+          <div className="estadisticaHeader">
+            <div className="estadisticaIcono color-green"><Zap size={20} /></div>
+            <div className="estadisticaValor">{loading ? '—' : stats.activeNow}</div>
+          </div>
+          <div className="estadisticaTitulo">Activos Ahora</div>
+          <div className="estadisticaFooter">
+            <span className="estadisticaSubtitulo">Monitoreo en vivo</span>
+          </div>
+        </div>
+
+        <div className="tarjetaEstadistica">
+          <div className="estadisticaHeader">
+            <div className="estadisticaIcono color-yellow"><Star size={20} /></div>
+            <div className="estadisticaValor">{loading ? '—' : stats.avgRating}</div>
+          </div>
+          <div className="estadisticaTitulo">Rating Promedio</div>
+          <div className="estadisticaFooter">
+            <span className="estadisticaSubtitulo">Todas las valoraciones</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="gridConductores" className="passengers-section">
+        {loading && drivers.length === 0 && (
+          <div className="loading-state-dashboard">
+            <div className="spinner-dashboard" />
+            <p>Cargando conductores...</p>
+          </div>
+        )}
+
+        <div className={`conductoresGrid ${loading ? 'conductoresGrid--loading' : 'conductoresGrid--loaded'}`}>
+          {drivers.length > 0 ? (
+            drivers.map(driver => (
+              <DriverCard
+                key={driver._id}
+                driver={driver}
+                onEdit={handleOpenModal}
+                onDelete={handleDelete}
+                onActivate={handleActivate}
+                onView={handleViewTrips}
               />
-              <button className="btn-search-header" onClick={loadDrivers}>
-                Buscar
-              </button>
-              <div className="search-status-indicator" style={{ right: '85px' }}>
-                {loading && <div className="spinner-mini" />}
-              </div>
-            </div>
-          </div>
-
-          <div className="headerDerecho">
-            <div className='userInfo'>
-              <span>Bienvenido/a, {user?.name || 'Admin'}</span>
-              <ChevronDown size={16} />
-            </div>
-            <div className="notificacionCampana">
-              <Bell size={20} />
-              <span className="notificacionBadge">5</span>
-            </div>
-            <div className="userInfo">
-              <img src={getDefaultImagen(user?.profileImage)} alt="Admin" className="FotoPerfilHeader" />
-            </div>
-            <Menu size={22} className="IconMenu" />
-          </div>
-        </header>
-
-        <div className="dashboardBody">
-          <div id="encabezadoPagina" className="page-header">
-            <div>
-              <h1>Gestión de Conductores</h1>
-              <p>Gestiona y monitorea el rendimiento y disponibilidad de la flota</p>
-            </div>
-            <button className="btn-add-passenger" onClick={() => handleOpenModal(null)}>
-              <Plus size={18} /> Registrar Conductor
-            </button>
-          </div>
-
-          {/* --- ALPHABET FILTER --- */}
-          <div className="alphabet-filter">
-            <button
-              className={`letter-btn ${selectedLetter === '' ? 'active' : ''}`}
-              onClick={() => setSelectedLetter('')}
-            >
-              Todos
-            </button>
-            {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'Ñ', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'].map(letter => (
-              <button
-                key={letter}
-                className={`letter-btn ${selectedLetter === letter ? 'active' : ''}`}
-                onClick={() => {
-                  const newLetter = selectedLetter === letter ? '' : letter;
-                  setSelectedLetter(newLetter);
-                  if (newLetter) setSearch(''); // Limpia buscador al elegir letra
-                }}
-              >
-                {letter}
-              </button>
-            ))}
-          </div>
-
-          <div className="graficosGrid">
-            <div className="tarjetaEstadistica">
-              <div className="estadisticaHeader">
-                <div className="estadisticaIcono color-purple"><Users size={20} /></div>
-                <div className="estadisticaValor">{loading ? '—' : stats.total}</div>
-              </div>
-              <div className="estadisticaTitulo">Total Conductores</div>
-              <div className="estadisticaFooter">
-                <span className="estadisticaSubtitulo">Conductores registrados</span>
-              </div>
-            </div>
-
-            <div className="tarjetaEstadistica">
-              <div className="estadisticaHeader">
-                <div className="estadisticaIcono color-green"><Zap size={20} /></div>
-                <div className="estadisticaValor">{loading ? '—' : stats.activeNow}</div>
-              </div>
-              <div className="estadisticaTitulo">Activos Ahora</div>
-              <div className="estadisticaFooter">
-                <span className="estadisticaSubtitulo">Monitoreo en vivo</span>
-              </div>
-            </div>
-
-            <div className="tarjetaEstadistica">
-              <div className="estadisticaHeader">
-                <div className="estadisticaIcono color-yellow"><Star size={20} /></div>
-                <div className="estadisticaValor">{loading ? '—' : stats.avgRating}</div>
-              </div>
-              <div className="estadisticaTitulo">Rating Promedio</div>
-              <div className="estadisticaFooter">
-                <span className="estadisticaSubtitulo">Todas las valoraciones</span>
-              </div>
-            </div>
-          </div>
-
-          <div id="gridConductores" className="passengers-section">
-            {loading ? (
-              <div className="loading-state-dashboard">
-                <div className="spinner-dashboard" />
-                <p>Cargando conductores...</p>
-              </div>
-            ) : drivers.length > 0 ? (
-              <div className="conductoresGrid">
-                {drivers.map(driver => (
-                  <DriverCard
-                    key={driver._id}
-                    driver={driver}
-                    onEdit={handleOpenModal}
-                    onDelete={handleDelete}
-                    onActivate={handleActivate}
-                    onView={handleViewTrips}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="empty-state-dashboard">
-                <Truck size={48} />
-                <h3>No se encontraron conductores</h3>
-                <p>Conecta el backend o registra el primer conductor para comenzar.</p>
-              </div>
-            )}
-          </div>
-
-          {/* --- PAGINACIÓN --- */}
-          {/* --- PAGINACIÓN INTELIGENTE --- */}
-          {totalPages > 1 && (
-            <div className="pagination-container">
-              <button 
-                className="pagination-btn" 
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(1)}
-                title="Primera página"
-              >
-                <ChevronsLeft size={18} />
-              </button>
-              
-              <button 
-                className="pagination-btn" 
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(prev => prev - 1)}
-              >
-                <ChevronLeft size={18} />
-              </button>
-              
-              <div className="pagination-numbers">
-                {getPageNumbers().map((num, i) => (
-                  num === '...' ? (
-                    <span key={`dots-${i}`} className="pagination-dots">...</span>
-                  ) : (
-                    <button
-                      key={`page-${num}`}
-                      className={`page-num ${currentPage === num ? 'active' : ''}`}
-                      onClick={() => setCurrentPage(num)}
-                    >
-                      {num}
-                    </button>
-                  )
-                ))}
-              </div>
-
-              <button 
-                className="pagination-btn" 
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(prev => prev + 1)}
-              >
-                <ChevronRight size={18} />
-              </button>
-
-              <button 
-                className="pagination-btn" 
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(totalPages)}
-                title="Última página"
-              >
-                <ChevronsRight size={18} />
-              </button>
+            ))
+          ) : !loading && (
+            <div className="empty-state-dashboard">
+              <Truck size={48} />
+              <h3>No se encontraron conductores</h3>
+              <p>Intenta con otros filtros o registra uno nuevo.</p>
             </div>
           )}
         </div>
-      </main>
+      </div>
+
+      {/* --- PAGINACIÓN --- */}
+      {totalPages > 1 && (
+        <div className="pagination-container">
+          <button 
+            className="pagination-btn" 
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(1)}
+            title="Primera página"
+          >
+            <ChevronsLeft size={18} />
+          </button>
+          
+          <button 
+            className="pagination-btn" 
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(prev => prev - 1)}
+          >
+            <ChevronLeft size={18} />
+          </button>
+          
+          <div className="pagination-numbers">
+            {getPageNumbers().map((num, i) => (
+              num === '...' ? (
+                <span key={`dots-${i}`} className="pagination-dots">...</span>
+              ) : (
+                <button
+                  key={`page-${num}`}
+                  className={`page-num ${currentPage === num ? 'active' : ''}`}
+                  onClick={() => setCurrentPage(num)}
+                >
+                  {num}
+                </button>
+              )
+            ))}
+          </div>
+
+          <button 
+            className="pagination-btn" 
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(prev => prev + 1)}
+          >
+            <ChevronRight size={18} />
+          </button>
+
+          <button 
+            className="pagination-btn" 
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(totalPages)}
+            title="Última página"
+          >
+            <ChevronsRight size={18} />
+          </button>
+        </div>
+      )}
 
       <DriverProfileModal
         isOpen={isModalOpen}
@@ -554,7 +483,7 @@ const ConductoresPage = () => {
         onSaved={handleSaved}
         initialTab={modalTab}
       />
-    </div>
+    </>
   );
 };
 
