@@ -168,6 +168,27 @@
     overflow-y: auto;
 }
 
+/* Estilos para la barra de desplazamiento (Scrollbar) */
+.modalContenido::-webkit-scrollbar {
+    width: 16px;
+}
+
+.modalContenido::-webkit-scrollbar-track {
+    background: #f0f4f7;
+    border-radius: 0 20px 20px 0;
+}
+
+.modalContenido::-webkit-scrollbar-thumb {
+    background: #b9c1ca;
+    border-radius: 10px;
+    border: 2px solid #f1f5f9;
+    transition: all 0.2s ease;
+}
+
+.modalContenido::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
@@ -257,10 +278,14 @@
     color: #64748B;
 }
 
+.contenedorUsername{
+    margin-bottom: 20px;
+}
+
 .cuadriculaCampos {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 20px;
 }
 
 .grupoInput {
@@ -269,8 +294,28 @@
     gap: 8px;
 }
 
+.grupoInputEmpresa {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-top: 15px;
+}
+
+.contenedorSelectEmpresa {
+    position: relative;
+    margin-top: 8px;
+    width: 100%;
+    max-width: 450px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+
 .labelInput {
-    font-size: 0.85rem;
+    font-size: 15px;
     font-weight: 600;
     color: #0F172A;
 }
@@ -281,16 +326,41 @@
     padding: 12px 16px;
     border-radius: 10px;
     color: #334155;
-    font-size: 0.95rem;
+    font-size: 15px;
     outline: none;
     transition: all 0.2s;
 }
 
+.selectEstilizado {
+    background: #F1F5F9;
+    border: 1px solid #E2E8F0;
+    padding: 12px 16px;
+    border-radius: 10px;
+    color: #334155;
+    font-size: 15px;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.selectEstilizado option {
+    font-size: 15px;
+    background: #F1F5F9;
+    color: #334155;
+}
+
+
 .inputEstilizado:focus {
     background: white;
     border-color: #2563EB;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+    box-shadow: 0 0 0 4px rgba(37, 100, 235, 0.055);
 }
+
+.selectEstilizado:focus {
+    background: white;
+    border-color: #2563EB;
+    box-shadow: 0 0 0 4px rgba(37, 100, 235, 0.055);
+}
+
 
 .botonCancelar {
     background: #F1F5F9;
@@ -317,33 +387,37 @@
     font-weight: 600;
     cursor: pointer;
     box-shadow: 0 4px 12px rgba(0, 86, 210, 0.2);
+    transition: all 0.2s;
 }
 
 .botonGuardar:hover {
-    background: #0045A8;
+    background: #023b8b;
 }
 
 
-/* Fila de Estadísticas */
+
+/* ==================================================
+* Fila de Estadísticas
+*  ===== */ 
 .filaEstadisticas {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 1.5rem;
-    margin-bottom: 2rem;
+    gap: 25px;
+    margin-bottom: 30px;
 }
 
 .tarjetaEstadistica {
     background: white;
-    border: 1px solid #E2E8F0;
+    border: 1px solid #dae0e9;
     border-radius: 16px;
-    padding: 1.5rem;
+    padding: 23px;
 }
 
 .estadisticaEncabezado {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    margin-bottom: 16px;
 }
 
 .iconoEstadistica {
@@ -357,15 +431,9 @@
     justify-content: center;
 }
 
-.cambioPositivo {
-    color: #10B981;
-    font-size: 0.8rem;
-    font-weight: 600;
-}
-
 .estadisticaEtiqueta {
     color: #64748B;
-    font-size: 0.9rem;
+    font-size: 16px;
     margin-bottom: 4px;
 }
 
