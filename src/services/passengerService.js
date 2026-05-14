@@ -18,7 +18,14 @@
 
 import api from './api';
 
+let _passengersCache = { data: [], pagination: null, stats: null };
+
 const passengerService = {
+
+  /**
+   * Obtiene la caché actual.
+   */
+  getCachedPassengers: () => _passengersCache,
 
   /**
    * Obtiene todos los pasajeros (type='pasajero') con filtros y paginación.
@@ -32,6 +39,11 @@ const passengerService = {
         type: 'pasajero', // Filtro fijo al rol pasajero
       },
     });
+    _passengersCache = { 
+      data: response.data.data, 
+      pagination: response.data.pagination,
+      stats: response.data.stats 
+    };
     return response.data;
   },
 

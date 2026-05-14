@@ -1,4 +1,5 @@
 14/05/26
+
 Este era que el conductor no se eliminaba solo se quedaba inactive, lo que se hizo fue un soft delete para que no se borren solo desactiven
 
 # Justificación Técnica: Borrado Lógico (Soft Delete) de Conductores

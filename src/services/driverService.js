@@ -1,9 +1,18 @@
 import api from './api';
 
+let _driversCache = { data: [], pagination: null, stats: null };
+
 export const getAllDrivers = async (params = {}) => {
   const res = await api.get('/users', { params: { ...params, type: 'conductor' } });
+  _driversCache = { 
+    data: res.data.data, 
+    pagination: res.data.pagination,
+    stats: res.data.stats
+  };
   return res.data;
 };
+
+export const getCachedDrivers = () => _driversCache;
 
 export const getVehicleByDriver = async (driverId) => {
   try {
@@ -50,6 +59,7 @@ export const uploadImage = async (id, file) => {
 
 export default {
   getAllDrivers,
+  getCachedDrivers,
   getVehicleByDriver,
   createDriver,
   updateDriver,
