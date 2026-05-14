@@ -8,7 +8,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import PrivateRoute  from '../components/PrivateRoute/PrivateRoute';
-import Login         from '../pages/Login/Login';
+import Login         from '../pages/LoginPages/Login';
 import Dashboard     from '../pages/DashboardPage/Dashboard';
 import PerfilAdmin   from '../pages/PerfilAdminPage/PerfilAdmin';
 import PasajerosPage from '../pages/PasajerosPage/Pasajeros';

@@ -20,7 +20,8 @@ const PrivateRoute = ({ requiredRole }) => {
 
     // Verificación de rol: acepta 'admin' y 'administrador'
     if (requiredRole && user.type !== 'admin' && user.type !== 'administrador') {
-        return <Navigate to="/" replace />;
+        window.location.href = '/';
+        return null;
     }
 
     return <Outlet />;
