@@ -245,6 +245,21 @@ header {
   width: 36px;
   height: 36px;
   border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #E2E8F0;
+}
+
+.userInfo img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Global Reset for images */
+img {
+  max-width: 100%;
+  height: auto;
 }
 
 .IconMenu {
@@ -846,17 +861,237 @@ header {
   text-align: right;
 }
 
+/* ============================================
+   Nuevos Módulos: Monitoreo y Alertas
+   ============================================ */
+
+.tituloConIcono {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.indicadorEnVivo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: #059669;
+  font-weight: 600;
+  background: #ECFDF5;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.puntoPulso {
+  width: 8px;
+  height: 8px;
+  background-color: #10B981;
+  border-radius: 50%;
+  position: relative;
+}
+
+.puntoPulso::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-color: #10B981;
+  border-radius: 50%;
+  animation: pulsoVivo 1.5s infinite;
+}
+
+@keyframes pulsoVivo {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+.cuerpoMonitoreo {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.mapaPlaceholder {
+  height: 300px;
+  background-color: #E2E8F0;
+  background-image: 
+    linear-gradient(#cbd5e1 1px, transparent 1px),
+    linear-gradient(90deg, #cbd5e1 1px, transparent 1px);
+  background-size: 40px 40px;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #CBD5E1;
+}
+
+.marcadorVehiculo {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #2563EB;
+  animation: flotarVehiculo 3s ease-in-out infinite;
+}
+
+.etiquetaVehiculo {
+  font-size: 10px;
+  font-weight: 700;
+  background: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-top: 4px;
+  white-space: nowrap;
+}
+
+@keyframes flotarVehiculo {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.overlayMapa {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(4px);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
+
+.estadisticasRapidas {
+  display: flex;
+  justify-content: space-around;
+  background: #F8FAFC;
+  padding: 15px;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+}
+
+.itemMiniEstadistica {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.valorMini {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.etiquetaMini {
+  font-size: 0.75rem;
+  color: #64748B;
+}
+
+/* Alertas SOS */
+.cuerpoAlertas {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.alertaItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+
+.alertaItem.critica {
+  background: #FEF2F2;
+  border-color: #FEE2E2;
+}
+
+.alertaItem.advertencia {
+  background: #FFFBEB;
+  border-color: #FEF3C7;
+}
+
+.alertaIcono {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.critica .alertaIcono { background: #EF4444; color: white; }
+.advertencia .alertaIcono { background: #F59E0B; color: white; }
+
+.alertaInfo { flex: 1; }
+.alertaInfo h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 2px; }
+.alertaInfo p { font-size: 0.8rem; color: #475569; margin: 0; }
+.tiempoAlerta { font-size: 0.7rem; color: #94A3B8; font-weight: 500; }
+
+.botonAtender {
+  background: #EF4444;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: center;
+}
+
+/* Metas Verdes */
+.cuerpoMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.progresoMeta {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.barraProgreso {
+  flex: 1;
+  height: 10px;
+  background: #E2E8F0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progresoLleno {
+  height: 100%;
+  background: linear-gradient(90deg, #10B981, #34D399);
+  border-radius: 10px;
+  transition: width 1s ease-in-out;
+}
+
+.porcentajeMeta {
+  font-weight: 700;
+  color: #059669;
+}
+
+.descripcionMeta {
+  font-size: 0.85rem;
+  color: #475569;
+  line-height: 1.5;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1400px) {
   .graficosGrid { grid-template-columns: repeat(3, 1fr); }
   .graficoGrid { grid-template-columns: 1fr 1fr; }
-  .graficos:first-child { grid-column: span 2; }
+  .tarjetaMonitoreo { grid-column: span 2; }
   .cuadriculaListas { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 1024px) {
   .graficoGrid { grid-template-columns: 1fr; }
-  .graficos:first-child { grid-column: span 1; }
+  .tarjetaMonitoreo { grid-column: span 1; }
   .cuadriculaListas { grid-template-columns: 1fr; }
 }
 

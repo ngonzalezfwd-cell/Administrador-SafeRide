@@ -386,7 +386,7 @@ const ConductoresPage = () => {
               <span className="notificacionBadge">5</span>
             </div>
             <div className="userInfo">
-              <img src={getDefaultImagen(user?.profileImage)} alt="Admin" />
+              <img src={getDefaultImagen(user?.profileImage)} alt="Admin" className="FotoPerfilHeader" />
             </div>
             <Menu size={22} className="IconMenu" />
           </div>
