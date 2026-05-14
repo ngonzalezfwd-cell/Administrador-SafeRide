@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import api from '../services/api';
+import Swal from 'sweetalert2';
 
 const AuthContext = createContext();
 
@@ -37,7 +38,7 @@ export const AuthProvider = ({ children }) => {
                 const { accessToken, user } = response.data.data;
                 localStorage.setItem('token', accessToken);
                 setUser(user);
-                return { success: true };
+                return { success: true, user: user };
             }
         } catch (error) {
             return { 
@@ -47,13 +48,29 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = () => {
-        localStorage.removeItem('token');
-        setUser(null);
+    const cerrarSesion = async () => {
+        const result = await Swal.fire({
+            title: 'Estas por cerrar sesión',
+            text: '¿Estas seguro de que quieres cerrar sesión?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#8183bdff',
+            cancelButtonColor: '#2563EB',
+            cancelButtonText: 'Cancelar',
+            confirmButtonText: 'Sí, salir',
+            background: '#ffffff',
+            backdrop: `rgba(15, 23, 42, 0.4)`
+        });
+
+        if (result.isConfirmed) {
+            localStorage.removeItem('token');
+            setUser(null);
+            window.location.href = '/login';
+        }
     };
 
     return (
-        <AuthContext.Provider value={{ user, setUser, login, logout, cerrarSesion: logout, loading }}>
+        <AuthContext.Provider value={{ user, setUser, login, cerrarSesion, loading }}>
             {children}
         </AuthContext.Provider>
     );

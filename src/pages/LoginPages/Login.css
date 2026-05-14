@@ -1,0 +1,227 @@
+/* =============================================
+   Login.css
+   ============================================= */
+
+.pantallaLogin {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    background-color: #ffffff;
+    font-family: 'Inter', sans-serif;
+}
+
+/* --- SECCIÓN IZQUIERDA: IMAGEN --- */
+.ImagenLateral {
+    flex: 1.2;
+    background-image: url("../../imgs/ImagenFondoLogin.jpg");
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    padding: 60px;
+    background-size: cover;
+    background-position: center;
+}
+
+.capaSuperpuestaImagen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to top, rgba(10, 14, 26, 0.918) 0%, rgba(15, 23, 42, 0.137) 70%);
+    display: flex;
+    align-items: flex-end;
+    padding: 30px;
+}
+
+.marcaSeguridad {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    text-align: center;
+}
+
+.marcaSeguridad img {
+    margin-bottom: 10px;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.329));
+}
+
+.marcaSeguridad h1 {
+    font-size: 45px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 15px;
+    letter-spacing: -2px;
+}
+
+.marcaSeguridad p {
+    font-size: 17px;
+    color: #c2d1e6;
+    max-width: 450px;
+    line-height: 1.6;
+}
+
+
+/* --- SECCIÓN DERECHA: FORMULARIO --- */
+.seccionFormularioLateral {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ffffff;
+    padding: 30px;
+}
+
+.contenedorCajaLogin {
+    width: 100%;
+    max-width: 420px;
+    padding: 40px;
+}
+
+.encabezadoLogin {
+    margin-bottom: 40px;
+}
+
+.encabezadoLogin h2 {
+    font-size: 34px;
+    font-weight: 700;
+    color: #2666c5;
+    margin-bottom: 12px;
+}
+
+.encabezadoLogin p {
+    color: #556172;
+    font-size: 15px;
+}
+
+/* --- ESTILOS DEL FORMULARIO --- */
+.formularioLoginEstilo {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.grupoEntradaLogin {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.grupoEntradaLogin label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #334155;
+}
+
+.envolturaEntrada {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.iconoEntrada {
+    position: absolute;
+    left: 16px;
+    color: #94A3B8;
+}
+
+.envolturaEntrada input {
+    width: 100%;
+    padding: 14px 16px 14px 48px;
+    border: 2px solid #F1F5F9;
+    border-radius: 12px;
+    background-color: #F8FAFC;
+    font-size: 1rem;
+    color: #1E293B;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.envolturaEntrada input:focus {
+    border-color: #2563EB;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+/* --- BOTÓN DE ENVÍO --- */
+.botonEnviarLogin {
+    margin-top: 10px;
+    background-color: #2563EB;
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+}
+
+.botonEnviarLogin:hover {
+    background-color: #1D4ED8;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+}
+
+.botonEnviarLogin:active {
+    transform: translateY(0);
+}
+
+.mensajeErrorLogin {
+    background-color: #FEF2F2;
+    color: #EF4444;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 1px solid #FEE2E2;
+}
+
+.enlacesPieLogin {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.enlacesPieLogin a {
+    color: #2563EB;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.enlacesPieLogin a:hover {
+    text-decoration: underline;
+}
+
+/* --- ANIMACIONES --- */
+.animacionEntradaSuave {
+    animation: entradaSuave 0.8s ease-out forwards;
+}
+
+@keyframes entradaSuave {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- RESPONSIVIDAD --- */
+@media (max-width: 900px) {
+    .seccionImagenLateral {
+        display: none;
+    }
+    .seccionFormularioLateral {
+        flex: 1;
+    }
+}
