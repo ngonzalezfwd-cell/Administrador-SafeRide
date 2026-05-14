@@ -7,17 +7,19 @@
  * @author SafeRide Dev Team
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   LayoutDashboard, Users, UserCheck, Car, Calendar, CreditCard,
   Bell, AlertCircle, ShieldCheck, Settings, Search, Menu,
   ChevronDown, Plus, Truck, Star, Zap, MapPin, Clock,
-  Award, Activity, Eye, Edit, Trash2
+  Award, Activity, Eye, Edit, Trash2, CheckCircle
 } from 'lucide-react';
 import driverService from '../../services/driverService';
 import DriverProfileModal from '../../components/DriverProfileModal';
+import Swal from 'sweetalert2';
+import { toast, Toaster } from 'react-hot-toast';
 
 import '../DashboardPage/Dashboard.css';
 import './ConductoresPage.css';
@@ -31,7 +33,7 @@ const getDefaultImagen = (url) => (url && url.trim() !== '') ? url : DefaultImag
 // ─────────────────────────────────────────────────────────────
 // COMPONENTE: Tarjeta de Conductor
 // ─────────────────────────────────────────────────────────────
-const DriverCard = ({ driver, onEdit, onDelete }) => {
+const DriverCard = ({ driver, onEdit, onDelete, onActivate }) => {
   const statusClass = driver.isActive ? 'bg-green' : 'bg-red';
   const statusLabel = driver.isActive ? 'Activo' : 'Inactivo';
 
@@ -77,6 +79,11 @@ const DriverCard = ({ driver, onEdit, onDelete }) => {
           <span>{(driver.rating || 0).toFixed(1)}</span>
         </div>
         <div className="p-actions">
+          {!driver.isActive && (
+            <button title="Activar" className="btn-activate" onClick={() => onActivate(driver)} style={{ color: '#10B981' }}>
+              <CheckCircle size={17} />
+            </button>
+          )}
           <button title="Editar" onClick={() => onEdit(driver)}><Edit size={17} /></button>
           <button title="Eliminar" className="btn-delete" onClick={() => onDelete(driver)}><Trash2 size={17} /></button>
         </div>
@@ -97,33 +104,69 @@ const ConductoresPage = () => {
   const [searchTerm, setSearch] = useState('');
   const [isModalOpen, setModalOpen] = useState(false);
   const [selectedDriver, setSelectedDriver] = useState(null);
+  const lastRequestId = useRef(0);
   const [stats, setStats] = useState({
     total: 0,
     activeNow: 0,
     avgRating: 0,
     onTrip: 0,
   });
+  const [selectedLetter, setSelectedLetter] = useState('');
 
   useEffect(() => { loadDrivers(); }, []);
 
   const loadDrivers = async () => {
+    const requestId = ++lastRequestId.current;
     setLoading(true);
     try {
-      const response = await driverService.getAllDrivers({ search: searchTerm });
-      if (response?.success && Array.isArray(response.data)) {
-        // Mostramos todos, pero podríamos filtrar si quisiéramos
-        setDrivers(response.data);
-        computeStats(response.data);
+      const list = await driverService.getAllDrivers({ 
+        search: searchTerm,
+        initial: selectedLetter 
+      });
+
+      // Si hay una petición más nueva en curso, ignoramos esta
+      if (requestId !== lastRequestId.current) return;
+      
+      
+      if (Array.isArray(list)) {
+        // Enriquecemos cada conductor con su vehículo de forma paralela y resiliente
+        const enriched = await Promise.all(
+          list.map(async (d) => {
+            try {
+              const vehicle = await driverService.getVehicleByDriver(d._id);
+              return { ...d, vehicle };
+            } catch (vErr) {
+              // Si falla el vehículo, devolvemos el conductor sin vehículo en lugar de romper todo
+              console.warn(`No se pudo cargar el vehículo para ${d.name}:`, vErr);
+              return { ...d, vehicle: null };
+            }
+          })
+        );
+        
+        // Verificación final de Race Condition después de la carga pesada
+        if (requestId !== lastRequestId.current) return;
+
+        setDrivers(enriched);
+        computeStats(enriched);
       } else {
         setDrivers([]);
         setStats({ total: 0, activeNow: 0, avgRating: 0, onTrip: 0 });
       }
     } catch (err) {
       console.error('[ConductoresPage] Error al cargar conductores:', err);
+      setDrivers([]);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Debounce de 300ms para no saturar el backend
+    const timeoutId = setTimeout(() => {
+      loadDrivers();
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, selectedLetter]);
 
   const computeStats = (data) => {
     const active = data.filter(d => d.isActive);
@@ -153,17 +196,56 @@ const ConductoresPage = () => {
     loadDrivers();
   };
 
-  const handleDelete = async (driver) => {
-    if (window.confirm(`¿Estás seguro de que deseas eliminar a ${driver.name}?`)) {
+  const handleActivate = async (driver) => {
+    Swal.fire({
+      title: '¿Reactivar conductor?',
+      text: `Estás a punto de activar a ${driver.name}`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#10B981',
+      cancelButtonColor: '#64748B',
+      confirmButtonText: 'Sí, activar',
+      cancelButtonText: 'Cancelar',
+      background: 'rgba(255, 255, 255, 0.9)',
+      backdrop: `blur(4px)`
+    }).then(async (result) => {
+      if (result.isConfirmed) {
         try {
-            await driverService.deleteDriver(driver._id);
-            alert('Conductor y su vehículo eliminados permanentemente.');
-            loadDrivers();
+          await driverService.activateDriver(driver._id);
+          toast.success('Conductor reactivado correctamente');
+          loadDrivers();
         } catch (err) {
-            console.error('Error deleting driver:', err);
-            alert('No se pudo eliminar al conductor.');
+          console.error('Error activating driver:', err);
+          toast.error('No se pudo reactivar al conductor');
         }
-    }
+      }
+    });
+  };
+
+  const handleDelete = async (driver) => {
+    Swal.fire({
+      title: '¿Eliminar conductor?',
+      text: `Esta acción desactivará a ${driver.name} del sistema.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#EF4444',
+      cancelButtonColor: '#64748B',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      background: 'rgba(255, 255, 255, 0.9)',
+      backdrop: `blur(4px)`
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await driverService.deleteDriver(driver._id);
+          toast.success('Conductor desactivado correctamente');
+          loadDrivers();
+        } catch (err) {
+          console.error('Error deleting driver:', err);
+          toast.error('No se pudo eliminar al conductor');
+        }
+      }
+    });
   };
 
   const handleSearch = (e) => {
@@ -174,6 +256,7 @@ const ConductoresPage = () => {
 
   return (
     <div className="dashboardContent">
+      <Toaster position="top-right" />
 
       {/* --- SIDEBAR --- */}
       <aside>
@@ -233,11 +316,16 @@ const ConductoresPage = () => {
               <Search size={18} className="buscadorIcono" />
               <input
                 type="text"
-                placeholder="Buscar conductores..."
+                placeholder="Filtrar por nombre o usuario..."
                 value={searchTerm}
                 onChange={e => setSearch(e.target.value)}
-                onKeyDown={handleSearch}
               />
+              <button className="btn-search-header" onClick={loadDrivers}>
+                Buscar
+              </button>
+              <div className="search-status-indicator" style={{ right: '85px' }}>
+                {loading && <div className="spinner-mini" />}
+              </div>
             </div>
           </div>
 
@@ -266,6 +354,25 @@ const ConductoresPage = () => {
             <button className="btn-add-passenger" onClick={() => handleOpenModal(null)}>
               <Plus size={18} /> Registrar Conductor
             </button>
+          </div>
+
+          {/* --- ALPHABET FILTER --- */}
+          <div className="alphabet-filter">
+            <button 
+              className={`letter-btn ${selectedLetter === '' ? 'active' : ''}`}
+              onClick={() => setSelectedLetter('')}
+            >
+              Todos
+            </button>
+            { 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(letter => (
+              <button
+                key={letter}
+                className={`letter-btn ${selectedLetter === letter ? 'active' : ''}`}
+                onClick={() => setSelectedLetter(letter)}
+              >
+                {letter}
+              </button>
+            )) }
           </div>
 
           <div className="graficosGrid">
@@ -312,11 +419,12 @@ const ConductoresPage = () => {
             ) : drivers.length > 0 ? (
               <div className="passengers-list-grid">
                 {drivers.map(driver => (
-                  <DriverCard 
-                    key={driver._id} 
-                    driver={driver} 
-                    onEdit={handleOpenModal} 
+                  <DriverCard
+                    key={driver._id}
+                    driver={driver}
+                    onEdit={handleOpenModal}
                     onDelete={handleDelete}
+                    onActivate={handleActivate}
                   />
                 ))}
               </div>
