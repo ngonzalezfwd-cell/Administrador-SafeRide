@@ -36,23 +36,22 @@
   position: relative;
   height: 120px;
   background: linear-gradient(135deg, #1E293B 0%, #334155 100%);
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  padding-bottom: 0;
+  overflow: visible;
 }
 
 .conductor-img {
-  width: 100px;
-  height: 100px;
+  width: 88px;
+  height: 88px;
   border-radius: 50%;
   object-fit: cover;
   border: 4px solid white;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   background: #f8fafc;
-  transform: translateY(25px); /* Reducido de 40px a 25px para invadir menos el contenido */
+  position: absolute;
+  bottom: -44px;   /* exactamente la mitad de 88px → queda mitad dentro, mitad fuera */
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 10;
-  position: relative;
 }
 
 .status-badge {
@@ -82,18 +81,16 @@
 
 /* --- CONTENIDO DE TARJETA --- */
 .conductor-card .card-content {
-  padding: 115px 24px 24px 24px !important; /* Blindado con !important y selector específico */
+  padding: 56px 24px 24px 24px; /* 44px (mitad foto) + 12px de respiro */
   flex-grow: 1;
   text-align: center;
 }
 
 .conductor-card .conductor-name {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: #1E293B;
-  margin: 20px 0 6px 0 !important; /* Margen blindado para despejar el nombre */
-  position: relative;
-  z-index: 1;
+  margin: 0 0 4px 0;
 }
 
 .conductor-role {
