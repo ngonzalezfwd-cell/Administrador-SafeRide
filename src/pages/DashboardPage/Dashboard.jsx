@@ -110,7 +110,7 @@ const Dashboard = () => {
 
     const totalUsuarios = metricas.totalUsers || 0;
     const totalConductores = metricas.totalDrivers || 0;
-    const totalPasajeros = totalUsuarios > 0 ? totalUsuarios - totalConductores - 3 : 0;
+    const totalPasajeros = totalUsuarios > 0 ? totalUsuarios - totalConductores : 0;
     const totalViajes = metricas.totalRides || 0;
     const totalKM = metricas.totalKilometers || 0;
     const totalCarbon = metricas.totalCarbonSaved || 0;
@@ -154,9 +154,8 @@ const Dashboard = () => {
             <aside>
 
                 <div className="sidebaLogo">
-
-                    <img src={IconSafeRide} alt="Icono" className='IconSafeRide' />
-                    <span>RideAdmin</span>
+                    <img src={IconSafeRide} alt="Logo" className='IconSafeRide' />
+                    <span>SafeRide Admin</span>
                 </div>
 
                 <nav className="sidebarNav">
@@ -225,7 +224,7 @@ const Dashboard = () => {
                         <div className="notificacionCampana">
 
                             <Bell size={20} />
-                            <span className="notificacionBadge">8</span>
+                            <span className="notificacionBadge">3</span>
                         </div>
 
                         <img src={getDefaultImagen(user?.profileImage)} alt="Admin" className="FotoPerfilHeader" />
@@ -278,9 +277,12 @@ const Dashboard = () => {
                                         <LogOut size={18} /> <span>Cerrar Sesión</span>
                                     </button>
                                 </div>
+
                             )}
                         </div>
+
                     </div>
+
                 </header>
 
 
@@ -446,10 +448,10 @@ const Dashboard = () => {
                             </div>
                         </div>
                     </div>
-                    
+
                     {/*  3. MONITOREO Y ALERTAS (NUEVO) */}
                     <div id="seccionMonitoreoAlertas" className="graficoGrid">
-                        <div id="centroMonitoreoEnVivo" className="graficos graficoFilaCompleta tarjetaMonitoreo">
+                        <div className="graficos graficoFilaCompleta tarjetaMonitoreo">
                             <div className="graficoHeader">
                                 <div className="tituloConIcono">
                                     <Activity size={20} className="color-green-dark" />
@@ -625,10 +627,10 @@ const Dashboard = () => {
                                 {usuarios.length === 0 && (
                                     <div className="textoGris">No hay usuarios recientes</div>
                                 )}
+                            </div>
                         </div>
                     </div>
                 </div>
-        </div>
             </main >
         </div >
     );
