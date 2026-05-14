@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Upload, User, Truck, Mail, AtSign, Calendar, Users, Palette, CheckCircle, AlertCircle } from 'lucide-react';
+import { 
+  X, Save, Upload, User, Truck, Mail, AtSign, Calendar, 
+  Users, Palette, CheckCircle, AlertCircle, MapPin, Clock, 
+  History, Navigation, Info, ExternalLink 
+} from 'lucide-react';
 import driverService from '../services/driverService';
+import passengerService from '../services/passengerService';
 import api from '../services/api';
+import rideService from '../services/rideService';
 import { toast } from 'react-hot-toast';
 import './DriverProfileModal.css';
 
@@ -62,8 +68,9 @@ const SCHEDULES = [
 
 const generateTempPassword = () => "SafeRide@" + Math.random().toString(36).slice(-4) + Math.floor(Math.random() * 10);
 
-const DriverProfileModal = ({ isOpen, onClose, driver, onSaved }) => {
+const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'conductor', initialTab = 'info' }) => {
   const isEditMode = Boolean(driver);
+  const isPassenger = userType === 'pasajero';
   const [form, setForm] = useState({
     name: '', username: '', email: '', phone: '',
     company: COMPANIES[0], work_schedule: SCHEDULES[0],
@@ -82,6 +89,10 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved }) => {
   const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState('');
   const [usernameStatus, setUsernameStatus] = useState('idle');
+  const [emailStatus, setEmailStatus] = useState('idle');
+  const [activeTab, setActiveTab] = useState(initialTab);
+  const [trips, setTrips] = useState([]);
+  const [loadingTrips, setLoadingTrips] = useState(false);
 
   useEffect(() => {
     if (isEditMode) {
@@ -123,7 +134,41 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved }) => {
       setUsernameStatus('idle');
     }
     setStep('');
-  }, [driver, isEditMode, isOpen]);
+    if (isOpen) {
+      setActiveTab(initialTab);
+    }
+  }, [driver, isEditMode, isOpen, initialTab]);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (activeTab === 'history' && driver?._id) {
+        setLoadingTrips(true);
+        try {
+          let res;
+          if (isPassenger) {
+            res = await rideService.getBookingsByPassenger(driver._id);
+            // Normalizamos: en las reservas, los datos del viaje están en .ride
+            const normalized = (res.data || []).map(b => ({
+              ...b.ride,
+              status: b.status, // Usamos el estado de la reserva
+              _id: b._id
+            }));
+            setTrips(normalized);
+          } else {
+            res = await rideService.getRidesByDriver(driver._id);
+            setTrips(res.data || []);
+          }
+        } catch (err) {
+          console.error('Error loading history:', err);
+          toast.error('No se pudo cargar el historial');
+          setTrips([]);
+        } finally {
+          setLoadingTrips(false);
+        }
+      }
+    };
+    fetchHistory();
+  }, [activeTab, driver?._id, isPassenger]);
 
   const checkUsernameUniqueness = async (val) => {
     if (!val || val.length < 4 || isEditMode) return;
@@ -137,6 +182,19 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved }) => {
     }
   };
 
+  const checkEmailUniqueness = async (val) => {
+    if (!val || !/^\S+@\S+\.\S+$/.test(val) || isEditMode) return;
+    setEmailStatus('checking');
+    try {
+      // Consultamos al backend si existe alguien con ese correo
+      const response = await api.get(`/users?search=${val}`);
+      const exists = response.data?.data?.some(u => u.email.toLowerCase() === val.toLowerCase());
+      setEmailStatus(exists ? 'taken' : 'available');
+    } catch (err) {
+      setEmailStatus('idle');
+    }
+  };
+
   const handleChange = e => {
     const { name, value } = e.target;
     if (name.startsWith('v-')) {
@@ -147,19 +205,37 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved }) => {
         return { ...prev, vehicle: newVehicle };
       });
     } else {
-      setForm(prev => ({ ...prev, [name]: value }));
-      if (name === 'username' && !isEditMode) setUsernameStatus('idle');
+      if (name === 'name') {
+        const filteredValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+        setForm(prev => ({ ...prev, [name]: filteredValue }));
+      } else if (name === 'username') {
+        const filteredUser = value.replace(/[^a-zA-Z0-9]/g, '');
+        setForm(prev => ({ ...prev, [name]: filteredUser }));
+        if (!isEditMode) setUsernameStatus('idle');
+      } else {
+        setForm(prev => ({ ...prev, [name]: value }));
+        if (name === 'username' && !isEditMode) setUsernameStatus('idle');
+        if (name === 'email' && !isEditMode) setEmailStatus('idle');
+      }
     }
   };
 
   const validate = () => {
     if (!form.name.trim() || form.name.length < 4) return 'El nombre debe tener al menos 4 caracteres';
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(form.name)) return 'El nombre solo puede contener letras y espacios';
+    if (form.username && !/^[a-zA-Z0-9]+$/.test(form.username)) return 'El usuario solo puede contener letras y números';
     if (!/^\d{8}$/.test(form.phone)) return 'El teléfono debe tener exactamente 8 dígitos';
     if (!form.email || !form.username) return 'Email y Usuario son obligatorios';
-    if (!isEditMode && usernameStatus === 'taken') return 'El nombre de usuario ya está en uso';
+    if (!isEditMode && (usernameStatus === 'taken' || emailStatus === 'taken')) {
+      return emailStatus === 'taken' ? 'Este correo ya está registrado' : 'El nombre de usuario ya está en uso';
+    }
     if (form.username.length < 4) return 'El usuario debe tener al menos 4 caracteres';
-    if (!/^[A-Z0-9]{6}$/.test(form.vehicle.license_plate.toUpperCase())) return 'La placa debe tener exactamente 6 caracteres alfanuméricos';
-    if (!form.vehicle.model) return 'El modelo del vehículo es obligatorio';
+    
+    // Validaciones exclusivas de conductor
+    if (!isPassenger) {
+      if (!/^[A-Z0-9]{6}$/.test(form.vehicle.license_plate.toUpperCase())) return 'La placa debe tener exactamente 6 caracteres alfanuméricos';
+      if (!form.vehicle.model) return 'El modelo del vehículo es obligatorio';
+    }
     return null;
   };
 
@@ -174,21 +250,23 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved }) => {
 
       if (!isEditMode) {
         setStep('Registrando usuario...');
-        const userPayload = { ...form, password: generateTempPassword(), type: 'conductor' };
+        const userPayload = { ...form, password: generateTempPassword(), type: userType };
         delete userPayload.vehicle;
 
         const regRes = await api.post('/auth/register', userPayload);
-        const newDriverId = regRes.data?.data?.user?._id;
+        const newUserId = regRes.data?.data?.user?._id;
 
-        setStep('Registrando vehículo...');
-        const vehiclePayload = {
-          ...form.vehicle,
-          license_plate: form.vehicle.license_plate.toUpperCase(),
-          year: parseInt(form.vehicle.year),
-          capacity: parseInt(form.vehicle.capacity),
-          driver_id: newDriverId
-        };
-        await api.post('/vehicles', vehiclePayload);
+        if (!isPassenger) {
+          setStep('Registrando vehículo...');
+          const vehiclePayload = {
+            ...form.vehicle,
+            license_plate: form.vehicle.license_plate.toUpperCase(),
+            year: parseInt(form.vehicle.year),
+            capacity: parseInt(form.vehicle.capacity),
+            driver_id: newUserId
+          };
+          await api.post('/vehicles', vehiclePayload);
+        }
 
         setStep('Enviando invitación...');
         await api.post('/auth/send-verification-code', { email: form.email });
@@ -201,37 +279,46 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved }) => {
           company: form.company,
           work_schedule: form.work_schedule
         };
-        await driverService.updateDriver(savedDriverId, userUpdatePayload);
-
-        const vehicleId = driver.vehicle?._id || driver.vehicle;
-        if (vehicleId) {
-          setStep('Actualizando vehículo...');
-          const targetVehicleId = typeof vehicleId === 'object' ? vehicleId._id : vehicleId;
-          const vehicleUpdate = {
-            brand: form.vehicle.brand,
-            model: form.vehicle.model,
-            license_plate: form.vehicle.license_plate.toUpperCase(),
-            color: form.vehicle.color,
-            year: parseInt(form.vehicle.year),
-            capacity: parseInt(form.vehicle.capacity)
-          };
-          await api.put(`/vehicles/${targetVehicleId}`, vehicleUpdate);
+        
+        if (isPassenger) {
+          await passengerService.updatePassenger(savedDriverId, userUpdatePayload);
         } else {
-          setStep('Creando vehículo faltante...');
-          const vehiclePayload = {
-            ...form.vehicle,
-            license_plate: form.vehicle.license_plate.toUpperCase(),
-            year: parseInt(form.vehicle.year),
-            capacity: parseInt(form.vehicle.capacity),
-            driver_id: savedDriverId
-          };
-          await api.post('/vehicles', vehiclePayload);
+          await driverService.updateDriver(savedDriverId, userUpdatePayload);
+
+          const vehicleId = driver.vehicle?._id || driver.vehicle;
+          if (vehicleId) {
+            setStep('Actualizando vehículo...');
+            const targetVehicleId = typeof vehicleId === 'object' ? vehicleId._id : vehicleId;
+            const vehicleUpdate = {
+              brand: form.vehicle.brand,
+              model: form.vehicle.model,
+              license_plate: form.vehicle.license_plate.toUpperCase(),
+              color: form.vehicle.color,
+              year: parseInt(form.vehicle.year),
+              capacity: parseInt(form.vehicle.capacity)
+            };
+            await api.put(`/vehicles/${targetVehicleId}`, vehicleUpdate);
+          } else {
+            setStep('Creando vehículo faltante...');
+            const vehiclePayload = {
+              ...form.vehicle,
+              license_plate: form.vehicle.license_plate.toUpperCase(),
+              year: parseInt(form.vehicle.year),
+              capacity: parseInt(form.vehicle.capacity),
+              driver_id: savedDriverId
+            };
+            await api.post('/vehicles', vehiclePayload);
+          }
         }
       }
 
       if (avatarFile && savedDriverId) {
         setStep('Subiendo imagen...');
-        await driverService.uploadImage(savedDriverId, avatarFile);
+        if (isPassenger) {
+          await passengerService.uploadImage(savedDriverId, avatarFile);
+        } else {
+          await driverService.uploadImage(savedDriverId, avatarFile);
+        }
       }
 
       onSaved();
@@ -255,103 +342,188 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved }) => {
     <div className="modal-backdrop">
       <div className="modal-glass">
         <header className="modal-header">
-          <h2>{isEditMode ? 'Editar Perfil Conductor' : 'Nuevo Registro'}</h2>
+          <h2>
+            {activeTab === 'history' 
+              ? `Historial de Viajes: ${driver?.name}` 
+              : (isEditMode ? `Editar Perfil ${isPassenger ? 'Pasajero' : 'Conductor'}` : 'Nuevo Registro')}
+          </h2>
           <button className="close-btn" onClick={onClose}><X size={20} /></button>
         </header>
 
-        <form className="modal-body" onSubmit={handleSubmit}>
-          <div className="avatar-section">
-            <img src={previewUrl || 'https://via.placeholder.com/150'} alt="Avatar" className="avatar-preview" />
-            <label className="file-label">
-              <Upload size={16} /> <span>Subir foto (opcional)</span>
-              <input type="file" accept="image/*" onChange={e => {
-                const file = e.target.files[0];
-                if (file) { setAvatarFile(file); setPreviewUrl(URL.createObjectURL(file)); }
-              }} />
-            </label>
-          </div>
-
-          <div className="section-title"><Mail size={14} /> Datos de Cuenta</div>
-          <div className="field-group">
-            <label>Correo Electrónico</label>
-            <input type="email" name="email" value={form.email} onChange={handleChange} required readOnly={isEditMode} className={isEditMode ? 'input-readonly' : ''} />
-          </div>
-          <div className="field-group">
-            <label>Nombre de Usuario</label>
-            <div className="username-input-wrapper">
-              <input name="username" value={form.username} onChange={handleChange} onBlur={(e) => checkUsernameUniqueness(e.target.value)} required readOnly={isEditMode} className={isEditMode ? 'input-readonly' : ''} />
-              {!isEditMode && (
-                <div className="username-status-icon">
-                  {usernameStatus === 'checking' && <div className="spinner-mini" />}
-                  {usernameStatus === 'available' && <CheckCircle size={16} color="#10B981" />}
-                  {usernameStatus === 'taken' && <AlertCircle size={16} color="#EF4444" />}
-                </div>
-              )}
+        {activeTab === 'info' ? (
+          <form className="modal-body" onSubmit={handleSubmit}>
+            <div className="avatar-section">
+              <img src={previewUrl || 'https://via.placeholder.com/150'} alt="Avatar" className="avatar-preview" />
+              {/* Solo permitir subir foto si estamos editando o creando */}
+              <label className="file-label">
+                <Upload size={16} /> <span>{isEditMode ? 'Cambiar foto' : 'Subir foto (opcional)'}</span>
+                <input type="file" accept="image/*" onChange={e => {
+                  const file = e.target.files[0];
+                  if (file) { setAvatarFile(file); setPreviewUrl(URL.createObjectURL(file)); }
+                }} />
+              </label>
             </div>
-          </div>
 
-          <div className="section-title"><User size={14} /> Información Personal</div>
-          <div className="field-group">
-            <label>Nombre Completo *</label>
-            <input name="name" value={form.name} onChange={handleChange} required />
-          </div>
-          <div className="field-group">
-            <label>Teléfono (8 dígitos) *</label>
-            <input name="phone" value={form.phone} onChange={handleChange} required maxLength={8} />
-          </div>
-          <div className="field-group">
-            <label>Empresa *</label>
-            <select name="company" value={form.company} onChange={handleChange}>
-              {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div className="field-group">
-            <label>Horario *</label>
-            <select name="work_schedule" value={form.work_schedule} onChange={handleChange}>
-              {SCHEDULES.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
+            <div className="section-title"><Mail size={14} /> Datos de Cuenta</div>
+            <div className="field-group">
+              <label>Correo Electrónico</label>
+              <div className="username-input-wrapper">
+                <input 
+                  type="email" 
+                  name="email" 
+                  value={form.email} 
+                  onChange={handleChange} 
+                  onBlur={(e) => checkEmailUniqueness(e.target.value)}
+                  required 
+                  readOnly={isEditMode} 
+                  className={isEditMode ? 'input-readonly' : ''} 
+                />
+                {!isEditMode && (
+                  <div className="username-status-icon">
+                    {emailStatus === 'checking' && <div className="spinner-mini" />}
+                    {emailStatus === 'available' && <CheckCircle size={16} color="#10B981" />}
+                    {emailStatus === 'taken' && <AlertCircle size={16} color="#EF4444" />}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="field-group">
+              <label>Nombre de Usuario</label>
+              <div className="username-input-wrapper">
+                <input name="username" value={form.username} onChange={handleChange} onBlur={(e) => checkUsernameUniqueness(e.target.value)} required readOnly={isEditMode} className={isEditMode ? 'input-readonly' : ''} />
+                {!isEditMode && (
+                  <div className="username-status-icon">
+                    {usernameStatus === 'checking' && <div className="spinner-mini" />}
+                    {usernameStatus === 'available' && <CheckCircle size={16} color="#10B981" />}
+                    {usernameStatus === 'taken' && <AlertCircle size={16} color="#EF4444" />}
+                  </div>
+                )}
+              </div>
+            </div>
 
-          <div className="section-title"><Truck size={14} /> Información del Vehículo</div>
-          <div className="field-group">
-            <label>Marca *</label>
-            <select name="v-brand" value={form.vehicle.brand} onChange={handleChange}>
-              {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
-            </select>
-          </div>
-          <div className="field-group">
-            <label>Modelo *</label>
-            <select name="v-model" value={form.vehicle.model} onChange={handleChange}>
-              {currentModels.map(m => <option key={m} value={m}>{m}</option>)}
-            </select>
-          </div>
-          <div className="field-group">
-            <label>Placa (6 Caracteres) *</label>
-            <input name="v-license_plate" value={form.vehicle.license_plate} onChange={handleChange} maxLength={6} style={{ textTransform: 'uppercase' }} />
-          </div>
-          <div className="field-group">
-            <label>Color *</label>
-            <select name="v-color" value={form.vehicle.color} onChange={handleChange}>
-              {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div className="field-group">
-            <label><Calendar size={12} /> Año *</label>
-            <select name="v-year" value={form.vehicle.year} onChange={handleChange}>
-              {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-            </select>
-          </div>
-          <div className="field-group">
-            <label><Users size={12} /> Capacidad *</label>
-            <input type="number" name="v-capacity" value={form.vehicle.capacity} onChange={handleChange} min="1" max="7" />
-          </div>
+            <div className="section-title"><User size={14} /> Información Personal</div>
+            <div className="field-group">
+              <label>Nombre Completo *</label>
+              <input name="name" value={form.name} onChange={handleChange} required />
+            </div>
+            <div className="field-group">
+              <label>Teléfono (8 dígitos) *</label>
+              <input name="phone" value={form.phone} onChange={handleChange} required maxLength={8} />
+            </div>
+            <div className="field-group">
+              <label>Empresa *</label>
+              <select name="company" value={form.company} onChange={handleChange}>
+                {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div className="field-group">
+              <label>Horario *</label>
+              <select name="work_schedule" value={form.work_schedule} onChange={handleChange}>
+                {SCHEDULES.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
 
-          <div className="modal-footer">
-            <button type="submit" className="save-btn" disabled={submitting || usernameStatus === 'checking'}>
-              {submitting ? step : (isEditMode ? 'Actualizar Perfil' : 'Completar Registro')}
-            </button>
+            {!isPassenger && (
+              <>
+                <div className="section-title"><Truck size={14} /> Información del Vehículo</div>
+                <div className="field-group">
+                  <label>Marca *</label>
+                  <select name="v-brand" value={form.vehicle.brand} onChange={handleChange}>
+                    {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                </div>
+                <div className="field-group">
+                  <label>Modelo *</label>
+                  <select name="v-model" value={form.vehicle.model} onChange={handleChange}>
+                    {currentModels.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
+                <div className="field-group">
+                  <label>Placa (6 Caracteres) *</label>
+                  <input name="v-license_plate" value={form.vehicle.license_plate} onChange={handleChange} maxLength={6} style={{ textTransform: 'uppercase' }} />
+                </div>
+                <div className="field-group">
+                  <label>Color *</label>
+                  <select name="v-color" value={form.vehicle.color} onChange={handleChange}>
+                    {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div className="field-group">
+                  <label><Calendar size={12} /> Año *</label>
+                  <select name="v-year" value={form.vehicle.year} onChange={handleChange}>
+                    {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                </div>
+                <div className="field-group">
+                  <label><Users size={12} /> Capacidad *</label>
+                  <input type="number" name="v-capacity" value={form.vehicle.capacity} onChange={handleChange} min="1" max="7" />
+                </div>
+              </>
+            )}
+
+            <div className="modal-footer">
+              <button type="submit" className="save-btn" disabled={submitting || usernameStatus === 'checking' || emailStatus === 'checking'}>
+                {submitting ? step : (isEditMode ? 'Actualizar Perfil' : 'Completar Registro')}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="modal-body history-body">
+            {loadingTrips ? (
+              <div className="loading-trips">
+                <div className="spinner-dashboard" />
+                <p>Cargando historial de viajes...</p>
+              </div>
+            ) : trips.length > 0 ? (
+              <div className="trips-timeline">
+                {trips.map((trip, idx) => (
+                  <div key={trip._id || idx} className="trip-history-item">
+                    <div className="trip-date-indicator">
+                      <div className="date-dot" />
+                      {idx !== trips.length - 1 && <div className="date-line" />}
+                    </div>
+                    <div className="trip-card-history">
+                      <div className="trip-header-h">
+                        <span className={`trip-status-badge ${trip.status}`}>
+                          {trip.status === 'completed' ? 'Completado' : 
+                           trip.status === 'cancelled' ? 'Cancelado' : 
+                           trip.status === 'in progress' ? 'En Curso' : 'Programado'}
+                        </span>
+                        <span className="trip-date-h"><Calendar size={12} /> {trip.fecha} · {trip.hora}</span>
+                      </div>
+                      <div className="trip-route-h">
+                        <div className="route-step">
+                          <MapPin size={14} color="#10B981" />
+                          <div>
+                            <p className="route-label">Origen</p>
+                            <p className="route-name">{trip.origin?.name}</p>
+                          </div>
+                        </div>
+                        <div className="route-divider-h" />
+                        <div className="route-step">
+                          <MapPin size={14} color="#EF4444" />
+                          <div>
+                            <p className="route-label">Destino</p>
+                            <p className="route-name">{trip.destination?.name}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="trip-footer-h">
+                        <span><Users size={12} /> {trip.available_seats} Asientos</span>
+                        {trip.distance_km && <span><Navigation size={12} /> {trip.distance_km} km</span>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-trips">
+                <History size={48} />
+                <p>Este {isPassenger ? 'pasajero' : 'conductor'} aún no registra actividad.</p>
+              </div>
+            )}
           </div>
-        </form>
+        )}
       </div>
     </div>
   );

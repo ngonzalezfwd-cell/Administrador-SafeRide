@@ -76,6 +76,15 @@ const passengerService = {
   },
 
   /**
+   * Reactiva un pasajero. Pone isActive = true.
+   * @param {string} id
+   */
+  activatePassenger: async (id) => {
+    const response = await api.patch(`/users/${id}/activate`);
+    return response.data;
+  },
+
+  /**
    * Sube imagen de perfil del pasajero a Azure Blob Storage.
    * @param {string} id
    * @param {File} imageFile - Archivo de imagen (jpeg/png, max 5MB)
