@@ -21,28 +21,28 @@ import DefaultImageUser from '../../imgs/DefaultImageUser.png';
 const getDefaultImagen = (url) => (url && url.trim() !== '') ? url : DefaultImageUser;
 
 // ────────────── Tarjeta de estadísticas con iconos ───────────────────────────────────
-const TarjetaEstadistica = ({ icon, title, value, change, isPositive, subtitle }) => (
-
+const TarjetaEstadistica = React.memo(({ icon, title, value, change, isPositive, subtitle, loading }) => (
     <div className="tarjetaEstadistica">
-
-        <div className="estadisticaHeader">
-
-            <div className="estadisticaIcono">{icon}</div>
-            <div className="estadisticaValor">{value}</div>
-        </div>
-
-        <div className="estadisticaTitulo">{title}</div>
-
-        <div className="estadisticaFooter">
-
-            <span className={"estadisticaCambio " + (isPositive ? 'positive' : 'negative')}>
-                {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                {change}
-            </span>
-            <span className="estadisticaSubtitulo">{subtitle}</span>
-        </div>
+        {loading ? (
+            <div className="skeleton-pulse" style={{ height: '100%', width: '100%', borderRadius: '16px', background: '#f1f5f9' }} />
+        ) : (
+            <>
+                <div className="estadisticaHeader">
+                    <div className="estadisticaIcono">{icon}</div>
+                    <div className="estadisticaValor">{value}</div>
+                </div>
+                <div className="estadisticaTitulo">{title}</div>
+                <div className="estadisticaFooter">
+                    <span className={"estadisticaCambio " + (isPositive ? 'positive' : 'negative')}>
+                        {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                        {change}
+                    </span>
+                    <span className="estadisticaSubtitulo">{subtitle}</span>
+                </div>
+            </>
+        )}
     </div>
-);
+));
 
 
 // ──────────────────────────────────────────────────────────────────────────────────────────────────
@@ -54,6 +54,7 @@ const Dashboard = () => {
     const [metricas, setMetricas] = useState({});
     const [Reservas, setReservas] = useState([]);
     const [usuarios, setUsuarios] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const CargarDatos = async () => {
@@ -67,9 +68,11 @@ const Dashboard = () => {
                 setMetricas(metricasRes.data?.data || {});
                 setReservas(reservasRes.data?.data || reservasRes.data?.data?.docs || []);
                 setUsuarios(usuariosRes.data?.data || usuariosRes.data?.data?.docs || []);
+                setLoading(false);
 
             } catch (error) {
                 console.error("Error al cargar datos del Panel:", error);
+                setLoading(false);
             }
         };
         CargarDatos();
@@ -137,12 +140,10 @@ const Dashboard = () => {
 
                 {/*  1. ESTADISTICAS PRINCIPALES */}
                 <div className="graficosGrid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-
-                    <TarjetaEstadistica icon={<Users size={20} className="color-purple" />} title="Usuarios Totales" value={totalUsuarios.toLocaleString()} change="12.5%" isPositive={true} subtitle="Crecimiento" />
-                    <TarjetaEstadistica icon={<Calendar size={20} className="color-blue" />} title="Viajes Completados" value={totalViajes.toLocaleString()} change="15.7%" isPositive={true} subtitle="Éxito" />
-                    <TarjetaEstadistica icon={<Car size={20} className="color-yellow" />} title="KM Totales" value={`${totalKM.toLocaleString()} km`} change="4.3%" isPositive={true} subtitle="Alcance de red" />
-                    <TarjetaEstadistica icon={<AlertCircle size={20} className="color-green" />} title="Carbono Ahorrado" value={`${totalCarbon.toFixed(1)} kg`} change="5.6%" isPositive={true} subtitle="Sostenibilidad" />
-
+                    <TarjetaEstadistica loading={loading} icon={<Users size={20} className="color-purple" />} title="Usuarios Totales" value={totalUsuarios.toLocaleString()} change="12.5%" isPositive={true} subtitle="Crecimiento" />
+                    <TarjetaEstadistica loading={loading} icon={<Calendar size={20} className="color-blue" />} title="Viajes Completados" value={totalViajes.toLocaleString()} change="15.7%" isPositive={true} subtitle="Éxito" />
+                    <TarjetaEstadistica loading={loading} icon={<Car size={20} className="color-yellow" />} title="KM Totales" value={`${totalKM.toLocaleString()} km`} change="4.3%" isPositive={true} subtitle="Alcance de red" />
+                    <TarjetaEstadistica loading={loading} icon={<AlertCircle size={20} className="color-green" />} title="Carbono Ahorrado" value={`${totalCarbon.toFixed(1)} kg`} change="5.6%" isPositive={true} subtitle="Sostenibilidad" />
                 </div>
 
 

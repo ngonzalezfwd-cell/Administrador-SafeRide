@@ -2,22 +2,56 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Plus, Search, Filter, MoreVertical, Truck,
   CheckCircle, AlertCircle, Clock, ShieldCheck,
-  ExternalLink, Eye, Check, X
+  ExternalLink, Eye, Check, X,
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight
 } from 'lucide-react';
 import vehicleService from '../../services/vehicleService';
 import { toast } from 'react-hot-toast';
 import './Vehiculos.css';
 
+// ─────────────────────────────────────────────────────────────
+// COMPONENTE: Skeleton para carga de vehículos
+// ─────────────────────────────────────────────────────────────
+const VehicleSkeleton = () => (
+  <div className="vehicle-card skeleton">
+    <div className="card-top skeleton-pulse">
+      <div className="skeleton-img-v" />
+    </div>
+    <div className="card-content">
+      <div className="skeleton-line-v title" />
+      <div className="driver-info">
+        <div className="skeleton-avatar" />
+        <div className="skeleton-line-v small" />
+      </div>
+      <div className="card-actions">
+        <div className="skeleton-btn-v" />
+        <div className="skeleton-btn-v" />
+      </div>
+    </div>
+  </div>
+);
+
 const VehiculosPage = () => {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all'); // all, active, pending
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
     pending: 0
   });
+
+  // Debounce para la búsqueda
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const [selectedDoc, setSelectedDoc] = useState(null);
 
@@ -26,27 +60,64 @@ const VehiculosPage = () => {
     try {
       const response = await vehicleService.getAllVehicles({
         status: filterStatus !== 'all' ? filterStatus : undefined,
-        search: searchTerm
+        search: debouncedSearch,
+        page: currentPage,
+        limit: 9 // Cambiado de 6 a 9 a petición del usuario
       });
 
-      setVehicles(response.data);
-      // Calcular stats locales
-      const total = response.pagination?.total || response.data.length;
-      const active = response.data.filter(v => v.isActive).length;
-      const pending = response.data.filter(v => !v.isActive).length;
+      if (response && response.data) {
+        setVehicles(response.data);
+        if (response.pagination) {
+          setTotalPages(response.pagination.pages || 1);
+        }
+        
+        // Calcular stats (usamos los totales del backend si vienen)
+        const total = response.pagination?.total || response.data.length;
+        const active = response.stats?.active || response.data.filter(v => v.isActive).length;
+        const pending = response.stats?.pending || response.data.filter(v => !v.isActive).length;
 
-      setStats({ total, active, pending });
+        setStats({ total, active, pending });
+      }
     } catch (error) {
       console.error('Error loading vehicles:', error);
       toast.error('No se pudieron cargar los vehículos');
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, searchTerm]);
+  }, [filterStatus, debouncedSearch, currentPage]);
 
   useEffect(() => {
     loadVehicles();
-  }, [loadVehicles]);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentPage]);
+
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    } else {
+      loadVehicles();
+    }
+  }, [filterStatus, debouncedSearch]);
+
+  // Lógica de números de página
+  const getPageNumbers = React.useMemo(() => {
+    const pages = [];
+    const maxVisible = 5;
+    if (totalPages <= maxVisible + 2) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push('...');
+      let start = Math.max(2, currentPage - 1);
+      let end = Math.min(totalPages - 1, currentPage + 1);
+      if (currentPage <= 3) end = 4;
+      if (currentPage >= totalPages - 2) start = totalPages - 3;
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (currentPage < totalPages - 2) pages.push('...');
+      pages.push(totalPages);
+    }
+    return pages;
+  }, [totalPages, currentPage]);
 
   const handleApprove = async (id) => {
     try {
@@ -158,12 +229,16 @@ const VehiculosPage = () => {
       {/* Grid de Vehículos */}
       <div className="vehicles-grid">
         {loading ? (
-          <div className="loading-state">Cargando flota...</div>
+          Array.from({ length: 9 }).map((_, i) => <VehicleSkeleton key={`vsk-${i}`} />)
         ) : vehicles.length === 0 ? (
           <div className="empty-state">No se encontraron vehículos.</div>
         ) : (
-          vehicles.map((vehicle) => (
-            <div key={vehicle._id} className={`vehicle-card ${!vehicle.isActive ? 'is-pending' : ''}`}>
+          vehicles.map((vehicle, index) => (
+            <div 
+              key={vehicle._id} 
+              className={`vehicle-card ${!vehicle.isActive ? 'is-pending' : ''}`}
+              style={{ '--card-index': index }}
+            >
               <div className="card-top">
                 <span className="plate-badge">{vehicle.license_plate}</span>
                 <div className="card-image-container">
@@ -171,6 +246,7 @@ const VehiculosPage = () => {
                     src={vehicle.vehicleImage || 'https://via.placeholder.com/300x200?text=Sin+Imagen'}
                     alt={vehicle.model}
                     className="vehicle-image"
+                    loading="lazy"
                   />
                   {!vehicle.isActive && (
                     <div className="pending-overlay">
@@ -232,6 +308,61 @@ const VehiculosPage = () => {
           ))
         )}
       </div>
+
+      {/* --- PAGINACIÓN --- */}
+      {totalPages > 1 && (
+        <div className="pagination-container">
+          <button 
+            className="pagination-btn" 
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(1)}
+            title="Primera página"
+          >
+            <ChevronsLeft size={18} />
+          </button>
+          
+          <button 
+            className="pagination-btn" 
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(prev => prev - 1)}
+          >
+            <ChevronLeft size={18} />
+          </button>
+          
+          <div className="pagination-numbers">
+            {getPageNumbers.map((num, i) => (
+              num === '...' ? (
+                <span key={`dots-${i}`} className="pagination-dots">...</span>
+              ) : (
+                <button
+                  key={`page-${num}`}
+                  className={`page-num ${currentPage === num ? 'active' : ''}`}
+                  onClick={() => setCurrentPage(num)}
+                >
+                  {num}
+                </button>
+              )
+            ))}
+          </div>
+
+          <button 
+            className="pagination-btn" 
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(prev => prev + 1)}
+          >
+            <ChevronRight size={18} />
+          </button>
+
+          <button 
+            className="pagination-btn" 
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(totalPages)}
+            title="Última página"
+          >
+            <ChevronsRight size={18} />
+          </button>
+        </div>
+      )}
 
       {/* MODAL DE REVISIÓN DOCUMENTAL */}
       {selectedDoc && (
