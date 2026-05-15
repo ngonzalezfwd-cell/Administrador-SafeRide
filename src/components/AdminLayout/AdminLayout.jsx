@@ -73,14 +73,8 @@ const AdminLayout = () => {
             <Car size={20} /> <span>Vehículos</span>
           </Link>
 
-          <Link to="/reservas" className={`navItem ${location.pathname === '/reservas' ? 'active' : ''}`} onClick={() => setSidebarOpen(false)}>
-            <Calendar size={20} /> <span>Reservas</span>
-          </Link>
-          
-          <Link to="/pagos" className={`navItem ${location.pathname === '/pagos' ? 'active' : ''}`} onClick={() => setSidebarOpen(false)}>
-            <CreditCard size={20} /> <span>Pagos</span>
-          </Link>
           <Link to="/notificaciones" className={`navItem ${location.pathname === '/notificaciones' ? 'active' : ''}`} onClick={() => setSidebarOpen(false)}>
+
             <Bell size={20} /> <span>Notificaciones</span>
           </Link>
           <Link to="/quejas" className={`navItem ${location.pathname === '/quejas' ? 'active' : ''}`} onClick={() => setSidebarOpen(false)}>
