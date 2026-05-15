@@ -92,7 +92,7 @@ const Dashboard = () => {
     const totalKM = metricas.totalKilometers || 0;
     const totalCarbon = metricas.totalCarbonSaved || 0;
 
-    const pieDataRoles = [
+    const pieDataRoles = useMemo(() => [
         { name: 'Pasajeros', value: totalPasajeros > 0 ? totalPasajeros : 892, color: '#3B82F6' },
         { name: 'Conductores', value: totalConductores > 0 ? totalConductores : 342, color: '#10B981' },
         { name: 'Moderadores', value: (totalUsuarios - totalPasajeros - totalConductores) > 0 ? (totalUsuarios - totalPasajeros - totalConductores) : 14, color: '#8B5CF6' },
