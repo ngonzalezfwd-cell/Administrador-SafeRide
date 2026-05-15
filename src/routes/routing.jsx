@@ -34,9 +34,12 @@ const Routing = () => (
 
       {/* ── RUTAS PRIVADAS (ADMIN ONLY) ───────────────────── */}
       <Route element={<PrivateRoute requiredRole="admin" />}>
+        {/* PerfilAdmin se renderiza SIN AdminLayout (sin aside ni header) */}
+        <Route path="/miPerfil" element={<PerfilAdmin />} />
+
+        {/* El resto de las páginas SÍ usan AdminLayout */}
         <Route element={<AdminLayout />}>
           <Route path="/inicio"         element={<Dashboard />} />
-          <Route path="/miPerfil"       element={<PerfilAdmin />} />
           <Route path="/usuarios"       element={<PasajerosPage />} />
           <Route path="/conductores"    element={<ConductoresPage />} />
           <Route path="/vehiculos"      element={<VehiculosPage />} />

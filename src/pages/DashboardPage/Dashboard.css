@@ -14,120 +14,6 @@
     overflow: hidden;
 }
 
-
-/* =============================================
-   Sidebar
-   ============================================= */
-aside {
-    width: 260px;
-    background-color: #0F172A;
-    color: #F1F5F9;
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    transition: all 0.3s ease;
-}
-
-.sidebaLogo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 24px;
-    font-size: 1.25rem;
-    font-weight: 700;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.IconSafeRide {
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    object-fit: cover;
-}
-
-.sidebarNav {
-    flex: 1;
-    padding: 20px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    overflow-y: auto;
-}
-
-.sidebarNav::-webkit-scrollbar {
-    width: 4px;
-}
-
-.sidebarNav::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.295);
-    border-radius: 4px;
-}
-
-.navItem {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    color: #8ea1bd;
-    text-decoration: none;
-    border-radius: 11px;
-    font-size: 15px;
-    font-weight: 500;
-    transition: all 0.2s;
-}
-
-.navItem:hover {
-    background-color: rgba(40, 68, 121, 0.247);
-    color: #F8FAFC;
-}
-
-.navItem.active {
-    background-color: #2563EB;
-    color: white;
-}
-
-.FlechaSidebar {
-    margin-left: auto;
-}
-
-.sidebarPerfil {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 20px;
-    background-color: rgba(0, 0, 0, 0.2);
-    border-top: 1px solid rgba(255, 255, 255, 0.199);
-}
-
-.FotoPerfil {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-.PerfilInfo {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-}
-
-.NombrePerfil {
-    font-size: 16px;
-    font-weight: 500;
-    color: #F8FAFC;
-}
-
-.RolPerfil {
-    font-size: 12px;
-    color: #94A3B8;
-}
-
-.FlechaPerfil {
-    color: #94A3B8;
-}
-
-
 /* =============================================
    MAIN CONTENT
    ============================================= */
@@ -459,10 +345,35 @@ img {
 
 .tarjetaEstadistica {
     background: white;
-    border-radius: 12px;
-    padding: 20px;
-    border: 1px solid #8eb8f0e1;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.103);
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.tarjetaEstadistica::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, transparent 50%, rgba(59, 130, 246, 0.03) 50%);
+    transition: all 0.3s;
+}
+
+.tarjetaEstadistica:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+.tarjetaEstadistica:hover::after {
+    width: 80px;
+    height: 80px;
 }
 
 .estadisticaHeader {
@@ -566,11 +477,17 @@ img {
 
 .graficos {
     background: white;
-    border-radius: 12px;
-    padding: 24px;
-    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 28px;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     display: flex;
     flex-direction: column;
+    transition: all 0.3s ease;
+}
+
+.graficos:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
 }
 
 .graficoHeader {

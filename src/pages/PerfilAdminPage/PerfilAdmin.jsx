@@ -202,7 +202,7 @@ const PerfilAdmin = () => {
 
             if (response.data.success) {
 
-                if (setUser) setUser(response.data.data.user);
+                if (setUser) setUser(response.data.data);
 
                 Swal.fire({
                     icon: 'success',
