@@ -1,17 +1,44 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Plus, Search, Filter, MoreVertical, Truck,
+  Plus, Search, Truck,
   CheckCircle, AlertCircle, Clock, ShieldCheck,
-  ExternalLink, Eye, Check, X
+  Eye, Check, X
 } from 'lucide-react';
 import vehicleService from '../../services/vehicleService';
+import driverService from '../../services/driverService';
 import { toast } from 'react-hot-toast';
 import './Vehiculos.css';
+
+import { CAR_DATA, BRANDS, COLORS, YEARS } from '../../constants/carData';
+
+// ─────────────────────────────────────────────────────────────
+// COMPONENTE: Skeleton para carga de vehículos
+// ─────────────────────────────────────────────────────────────
+const VehicleSkeleton = () => (
+  <div className="vehicle-card skeleton">
+    <div className="card-top skeleton-pulse">
+      <div className="skeleton-img-v" />
+    </div>
+    <div className="card-content">
+      <div className="skeleton-line-v title" />
+      <div className="driver-info">
+        <div className="skeleton-avatar" />
+        <div className="skeleton-line-v small" />
+      </div>
+      <div className="card-actions">
+        <div className="skeleton-btn-v" />
+        <div className="skeleton-btn-v" />
+      </div>
+    </div>
+  </div>
+);
+
 
 const VehiculosPage = () => {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all'); // all, active, pending
   const [stats, setStats] = useState({
     total: 0,
@@ -19,14 +46,38 @@ const VehiculosPage = () => {
     pending: 0
   });
 
+  // Debounce para la búsqueda
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 500); // Esperar 500ms después de dejar de escribir
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   const [selectedDoc, setSelectedDoc] = useState(null);
+  
+  // Estados para el formulario de nuevo vehículo
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [drivers, setDrivers] = useState([]);
+  const [formLoading, setFormLoading] = useState(false);
+  const [newVehicle, setNewVehicle] = useState({
+    driver_id: '',
+    brand: BRANDS[0] || '',
+    model: (BRANDS[0] && CAR_DATA[BRANDS[0]] && CAR_DATA[BRANDS[0]][0]) || '',
+    license_plate: '',
+    color: COLORS[0],
+    year: YEARS[0],
+    capacity: 4,
+    image: null
+  });
 
   const loadVehicles = useCallback(async () => {
     setLoading(true);
     try {
       const response = await vehicleService.getAllVehicles({
         status: filterStatus !== 'all' ? filterStatus : undefined,
-        search: searchTerm
+        search: debouncedSearch
       });
 
       setVehicles(response.data);
@@ -42,7 +93,7 @@ const VehiculosPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, searchTerm]);
+  }, [filterStatus, debouncedSearch]);
 
   useEffect(() => {
     loadVehicles();
@@ -69,6 +120,67 @@ const VehiculosPage = () => {
     }
   };
 
+  const fetchDrivers = async () => {
+    try {
+      const response = await driverService.getAllDrivers({ limit: 100 });
+      setDrivers(response.data);
+    } catch (error) {
+      console.error('Error fetching drivers:', error);
+    }
+  };
+
+  const handleOpenAddModal = () => {
+    fetchDrivers();
+    setShowAddModal(true);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!newVehicle.driver_id) {
+      toast.error('Debes seleccionar un conductor');
+      return;
+    }
+
+    setFormLoading(true);
+    try {
+      // 1. Crear el vehículo
+      const vehicleRes = await vehicleService.createVehicle({
+        driver_id: newVehicle.driver_id,
+        brand: newVehicle.brand,
+        model: newVehicle.model,
+        license_plate: newVehicle.license_plate,
+        color: newVehicle.color,
+        year: parseInt(newVehicle.year),
+        capacity: parseInt(newVehicle.capacity)
+      });
+
+      // 2. Si hay imagen, subirla
+      if (newVehicle.image && vehicleRes.data?._id) {
+        await vehicleService.uploadVehicleImage(vehicleRes.data._id, newVehicle.image);
+      }
+
+      toast.success('Vehículo registrado con éxito');
+      setShowAddModal(false);
+      setNewVehicle({
+        driver_id: '',
+        brand: BRANDS[0],
+        model: CAR_DATA[BRANDS[0]][0],
+        license_plate: '',
+        color: COLORS[0],
+        year: YEARS[0],
+        capacity: 4,
+        image: null
+      });
+      loadVehicles();
+    } catch (error) {
+      console.error('Error creating vehicle:', error);
+      toast.error(error.response?.data?.message || 'Error al crear el vehículo');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
   return (
     <div className="vehiculos-container">
       <div className="vehiculos-header">
@@ -76,7 +188,7 @@ const VehiculosPage = () => {
           <h1>Inventario de Vehículos</h1>
           <p>Gestiona y monitorea el estado de la flota activa.</p>
         </div>
-        <button className="add-vehicle-btn">
+        <button className="add-vehicle-btn" onClick={handleOpenAddModal}>
           <Plus size={20} />
           Añadir Vehículo
         </button>
@@ -158,12 +270,16 @@ const VehiculosPage = () => {
       {/* Grid de Vehículos */}
       <div className="vehicles-grid">
         {loading ? (
-          <div className="loading-state">Cargando flota...</div>
+          Array.from({ length: 6 }).map((_, i) => <VehicleSkeleton key={`vsk-${i}`} />)
         ) : vehicles.length === 0 ? (
           <div className="empty-state">No se encontraron vehículos.</div>
         ) : (
-          vehicles.map((vehicle) => (
-            <div key={vehicle._id} className={`vehicle-card ${!vehicle.isActive ? 'is-pending' : ''}`}>
+          vehicles.map((vehicle, index) => (
+            <div 
+              key={vehicle._id} 
+              className={`vehicle-card ${!vehicle.isActive ? 'is-pending' : ''}`}
+              style={{ '--card-index': index }}
+            >
               <div className="card-top">
                 <span className="plate-badge">{vehicle.license_plate}</span>
                 <div className="card-image-container">
@@ -171,6 +287,7 @@ const VehiculosPage = () => {
                     src={vehicle.vehicleImage || 'https://via.placeholder.com/300x200?text=Sin+Imagen'}
                     alt={vehicle.model}
                     className="vehicle-image"
+                    loading="lazy"
                   />
                   {!vehicle.isActive && (
                     <div className="pending-overlay">
@@ -290,6 +407,169 @@ const VehiculosPage = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE AÑADIR VEHÍCULO */}
+      {showAddModal && (
+        <div className="doc-modal-overlay" onClick={() => setShowAddModal(false)}>
+          <div className="doc-modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '800px' }}>
+            <div className="doc-modal-header">
+              <div>
+                <h2>Registrar Nuevo Vehículo</h2>
+                <p>Completa la información técnica del vehículo y su conductor.</p>
+              </div>
+              <button className="close-modal-btn" onClick={() => setShowAddModal(false)}>
+                <X size={24} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="add-vehicle-form">
+              <div className="form-grid-admin">
+                <div className="form-group-admin full-width">
+                  <label>Conductor Asignado</label>
+                  <select
+                    required
+                    value={newVehicle.driver_id}
+                    onChange={(e) => setNewVehicle({ ...newVehicle, driver_id: e.target.value })}
+                  >
+                    <option value="">Selecciona un conductor...</option>
+                    {drivers.map(driver => (
+                      <option key={driver._id} value={driver._id}>
+                        {driver.name} ({driver.company})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group-admin">
+                  <label>Marca</label>
+                  <select
+                    required
+                    value={newVehicle.brand}
+                    onChange={(e) => {
+                      const brand = e.target.value;
+                      setNewVehicle({ 
+                        ...newVehicle, 
+                        brand, 
+                        model: CAR_DATA[brand][0] 
+                      });
+                    }}
+                  >
+                    {BRANDS.map(brand => (
+                      <option key={brand} value={brand}>{brand}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group-admin">
+                  <label>Modelo</label>
+                  <select
+                    required
+                    value={newVehicle.model}
+                    onChange={(e) => setNewVehicle({ ...newVehicle, model: e.target.value })}
+                  >
+                    {(CAR_DATA[newVehicle.brand] || []).map(model => (
+                      <option key={model} value={model}>{model}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group-admin">
+                  <label>Placa (6 caracteres)</label>
+                  <input
+                    type="text"
+                    required
+                    maxLength={6}
+                    placeholder="ABC123"
+                    value={newVehicle.license_plate}
+                    onChange={(e) => setNewVehicle({ ...newVehicle, license_plate: e.target.value.toUpperCase() })}
+                  />
+                </div>
+
+                <div className="form-group-admin">
+                  <label>Color</label>
+                  <select
+                    required
+                    value={newVehicle.color}
+                    onChange={(e) => setNewVehicle({ ...newVehicle, color: e.target.value })}
+                  >
+                    {COLORS.map(color => (
+                      <option key={color} value={color}>{color}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group-admin">
+                  <label>Año</label>
+                  <select
+                    required
+                    value={newVehicle.year}
+                    onChange={(e) => setNewVehicle({ ...newVehicle, year: e.target.value })}
+                  >
+                    {YEARS.map(year => (
+                      <option key={year} value={year}>{year}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group-admin">
+                  <label>Capacidad Pasajeros</label>
+                  <select
+                    value={newVehicle.capacity}
+                    onChange={(e) => setNewVehicle({ ...newVehicle, capacity: e.target.value })}
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7].map(num => (
+                      <option key={num} value={num}>{num} Asientos</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group-admin full-width">
+                  <label>Imagen / Documento del Vehículo</label>
+                  <div className="file-upload-zone">
+                    <input
+                      type="file"
+                      id="vehicle-image"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => setNewVehicle({ ...newVehicle, image: e.target.files[0] })}
+                    />
+                    <label htmlFor="vehicle-image" className="file-label">
+                      {newVehicle.image ? (
+                        <div className="file-selected-status">
+                          <CheckCircle size={24} color="#16A34A" />
+                          <span>{newVehicle.image.name} seleccionado</span>
+                        </div>
+                      ) : (
+                        <div className="file-placeholder-status">
+                          <Plus size={24} />
+                          <span>Subir Marchamo o Foto del Vehículo</span>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-actions-admin">
+                <button 
+                  type="button" 
+                  className="cancel-btn-admin" 
+                  onClick={() => setShowAddModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  className="submit-btn-admin" 
+                  disabled={formLoading}
+                >
+                  {formLoading ? 'Guardando...' : 'Registrar Vehículo'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

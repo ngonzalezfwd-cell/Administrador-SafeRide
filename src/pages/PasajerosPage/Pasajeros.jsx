@@ -7,7 +7,7 @@
  * @author SafeRide Dev Team
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -32,16 +32,39 @@ import DefaultImageUser from '../../imgs/DefaultImageUser.png';
 const getDefaultImagen = (url) => (url && url.trim() !== '') ? url : DefaultImageUser;
 
 // ─────────────────────────────────────────────────────────────
-// COMPONENTE: Tarjeta de Pasajero
+// COMPONENTE: Skeleton para carga de tarjetas
 // ─────────────────────────────────────────────────────────────
-const PassengerCard = ({ passenger, onEdit, onDelete, onActivate, onView }) => {
+const CardSkeleton = () => (
+  <div className="conductor-card skeleton">
+    <div className="card-header skeleton-pulse">
+      <div className="skeleton-img" />
+      <div className="skeleton-badge" />
+    </div>
+    <div className="card-content">
+      <div className="skeleton-line title" />
+      <div className="skeleton-line subtitle" />
+      <div className="vehicle-info-mini" style={{ marginTop: '12px' }}>
+        <div className="skeleton-line small" />
+        <div className="skeleton-line small" />
+      </div>
+    </div>
+    <div className="card-actions">
+      <div className="skeleton-btn" />
+      <div className="skeleton-btn" />
+      <div className="skeleton-btn" />
+    </div>
+  </div>
+);
+
+const PassengerCard = React.memo(({ passenger, onEdit, onDelete, onActivate, onView, index }) => {
   return (
-    <div className="conductor-card">
+    <div className="conductor-card" style={{ '--card-index': index }}>
       <div className="card-header">
         <img
           src={getDefaultImagen(passenger.profileImage)}
           alt={passenger.name}
           className="conductor-img"
+          loading="lazy"
         />
         <div className={`status-badge ${passenger.isActive ? 'active' : 'inactive'}`}>
           {passenger.isActive ? 'Activo' : 'Inactivo'}
@@ -91,7 +114,7 @@ const PassengerCard = ({ passenger, onEdit, onDelete, onActivate, onView }) => {
       </div>
     </div>
   );
-};
+});
 
 // ─────────────────────────────────────────────────────────────
 // PÁGINA PRINCIPAL: PasajerosPage
@@ -118,7 +141,7 @@ const PasajerosPage = () => {
   });
 
 
-  const loadPassengers = async () => {
+  const loadPassengers = useCallback(async () => {
     const requestId = ++lastRequestId.current;
     setLoading(true);
     try {
@@ -129,7 +152,6 @@ const PasajerosPage = () => {
         limit: 9
       });
 
-      // Si hay una petición más nueva en curso, ignoramos esta
       if (requestId !== lastRequestId.current) return;
 
       if (response?.success) {
@@ -138,12 +160,11 @@ const PasajerosPage = () => {
           setTotalPages(response.pagination.pages || 1);
         }
 
-        // Usamos las estadísticas globales que vienen del servidor
         setStats({
           total: response.stats?.total || response.pagination?.total || 0,
           activeNow: response.stats?.active || 0,
           avgRating: (response.data?.reduce((s, p) => s + (p.rating || 0), 0) / (response.data?.length || 1)).toFixed(1),
-          totalRides: (response.stats?.total || 0) * 12, // Simulación proporcional
+          totalRides: (response.stats?.total || 0) * 12,
         });
       } else {
         setPassengers([]);
@@ -155,7 +176,7 @@ const PasajerosPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm, selectedLetter, currentPage]);
 
   useEffect(() => { loadPassengers(); }, []);
 
@@ -253,7 +274,7 @@ const PasajerosPage = () => {
   };
 
   // Lógica para generar números de página con elipsis (...)
-  const getPageNumbers = () => {
+  const getPageNumbers = useMemo(() => {
     const pages = [];
     const maxVisible = 5;
     
@@ -275,7 +296,7 @@ const PasajerosPage = () => {
       pages.push(totalPages);
     }
     return pages;
-  };
+  }, [totalPages, currentPage]);
 
   const handleCerrarSesion = logout || cerrarSesion;
 
@@ -374,26 +395,22 @@ const PasajerosPage = () => {
       </div>
 
       <div id="gridPasajeros" className="passengers-section">
-        {loading && passengers.length === 0 && (
-          <div className="loading-state-dashboard">
-            <div className="spinner-dashboard" />
-            <p>Cargando pasajeros...</p>
-          </div>
-        )}
-
         <div className={`conductoresGrid ${loading ? 'conductoresGrid--loading' : 'conductoresGrid--loaded'}`}>
-          {passengers.length > 0 ? (
-            passengers.map(p => (
+          {loading ? (
+            Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={`skp-${i}`} />)
+          ) : passengers.length > 0 ? (
+            passengers.map((p, index) => (
               <PassengerCard
                 key={p._id}
                 passenger={p}
+                index={index}
                 onEdit={handleOpenModal}
                 onDelete={handleDelete}
                 onActivate={handleActivate}
                 onView={handleViewTrips}
               />
             ))
-          ) : !loading && (
+          ) : (
             <div className="empty-state-dashboard">
               <Users size={48} />
               <h3>No se encontraron pasajeros</h3>
@@ -424,7 +441,7 @@ const PasajerosPage = () => {
           </button>
           
           <div className="pagination-numbers">
-            {getPageNumbers().map((num, i) => (
+            {getPageNumbers.map((num, i) => (
               num === '...' ? (
                 <span key={`dots-${i}`} className="pagination-dots">...</span>
               ) : (

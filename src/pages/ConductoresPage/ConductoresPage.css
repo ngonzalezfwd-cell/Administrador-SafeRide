@@ -387,12 +387,102 @@
 
 /* --- ESTADO DE CARGA SUAVE (sin parpadeo) --- */
 .conductoresGrid--loading {
-  opacity: 0.5;
+  opacity: 0.8;
   pointer-events: none;
-  transition: opacity 0.2s ease;
 }
 
 .conductoresGrid--loaded {
   opacity: 1;
-  transition: opacity 0.25s ease;
+}
+
+/* --- ANIMACIÓN DE ENTRADA STAGGERED --- */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.conductor-card {
+  animation: fadeInUp 0.5s ease backwards;
+  animation-delay: calc(var(--card-index) * 0.05s);
+}
+
+/* --- SKELETON LOADERS --- */
+.skeleton-pulse {
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-pulse::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.conductor-card.skeleton {
+  pointer-events: none;
+  border-color: #f1f5f9;
+}
+
+.skeleton .card-header {
+  background: #e2e8f0;
+}
+
+.skeleton-img {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  position: absolute;
+  bottom: -44px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid white;
+}
+
+.skeleton-badge {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 60px;
+  height: 20px;
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+.skeleton-line {
+  background: #f1f5f9;
+  border-radius: 4px;
+  margin: 0 auto 10px auto;
+}
+
+.skeleton-line.title { width: 70%; height: 20px; }
+.skeleton-line.subtitle { width: 50%; height: 14px; }
+.skeleton-line.small { width: 90%; height: 12px; }
+
+.skeleton-btn {
+  width: 42px;
+  height: 42px;
+  background: #f1f5f9;
+  border-radius: 12px;
 }
