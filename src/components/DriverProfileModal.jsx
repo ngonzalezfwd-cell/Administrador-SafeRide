@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  X, Save, Upload, User, Truck, Mail, AtSign, Calendar, 
-  Users, Palette, CheckCircle, AlertCircle, MapPin, Clock, 
-  History, Navigation, Info, ExternalLink 
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import { createPortal } from 'react-dom';
+import {
+  X, Save, Upload, User, Truck, Mail, AtSign, Calendar,
+  Users, Palette, CheckCircle, AlertCircle, MapPin, Clock,
+  History, Navigation
 } from 'lucide-react';
 import driverService from '../services/driverService';
 import passengerService from '../services/passengerService';
@@ -68,18 +69,60 @@ const SCHEDULES = [
 
 const generateTempPassword = () => "SafeRide@" + Math.random().toString(36).slice(-4) + Math.floor(Math.random() * 10);
 
+// Componente interno para items del historial memoizado
+const TripItem = memo(({ trip, idx, isLast }) => (
+  <div className="trip-history-item">
+    <div className="trip-date-indicator">
+      <div className="date-dot" />
+      {!isLast && <div className="date-line" />}
+    </div>
+    <div className="trip-card-history">
+      <div className="trip-header-h">
+        <span className={`trip-status-badge ${trip.status || 'scheduled'}`}>
+          {trip.status === 'completed' ? 'Completado' :
+            trip.status === 'cancelled' ? 'Cancelado' :
+              trip.status === 'in progress' ? 'En Curso' : 'Programado'}
+        </span>
+        <span className="trip-date-h"><Calendar size={12} /> {trip.fecha || 'N/A'} · {trip.hora || '--:--'}</span>
+      </div>
+      <div className="trip-route-h">
+        <div className="route-step">
+          <MapPin size={14} color="#10B981" />
+          <div>
+            <p className="route-label">Origen</p>
+            <p className="route-name">{trip.origin?.name || 'Origen no disponible'}</p>
+          </div>
+        </div>
+        <div className="route-divider-h" />
+        <div className="route-step">
+          <MapPin size={14} color="#EF4444" />
+          <div>
+            <p className="route-label">Destino</p>
+            <p className="route-name">{trip.destination?.name || 'Destino no disponible'}</p>
+          </div>
+        </div>
+      </div>
+      <div className="trip-footer-h">
+        <span><Users size={12} /> {trip.available_seats || 0} Asientos</span>
+        {trip.distance_km && <span><Navigation size={12} /> {trip.distance_km} km</span>}
+      </div>
+    </div>
+  </div>
+));
+
+
 const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'conductor', initialTab = 'info' }) => {
   const isEditMode = Boolean(driver);
   const isPassenger = userType === 'pasajero';
   const [form, setForm] = useState({
     name: '', username: '', email: '', phone: '',
-    company: COMPANIES[0], work_schedule: SCHEDULES[0],
+    company: COMPANIES[0] || '', work_schedule: SCHEDULES[0] || '',
     vehicle: {
-      brand: BRANDS[0],
-      model: CAR_DATA[BRANDS[0]][0],
+      brand: BRANDS[0] || '',
+      model: (BRANDS[0] && CAR_DATA[BRANDS[0]] && CAR_DATA[BRANDS[0]][0]) || '',
       license_plate: '',
-      color: COLORS[0],
-      year: YEARS[0],
+      color: COLORS[0] || '',
+      year: YEARS[0] || '',
       capacity: 4
     }
   });
@@ -107,7 +150,7 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
         work_schedule: driver.work_schedule || SCHEDULES[0],
         vehicle: {
           brand: brand,
-          model: v.model || CAR_DATA[brand][0],
+          model: v.model || (CAR_DATA[brand] ? CAR_DATA[brand][0] : ''),
           license_plate: v.license_plate || '',
           color: v.color || COLORS[0],
           year: String(v.year || YEARS[0]),
@@ -122,7 +165,7 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
         company: COMPANIES[0], work_schedule: SCHEDULES[0],
         vehicle: {
           brand: BRANDS[0],
-          model: CAR_DATA[BRANDS[0]][0],
+          model: CAR_DATA[BRANDS[0]] ? CAR_DATA[BRANDS[0]][0] : '',
           license_plate: '',
           color: COLORS[0],
           year: YEARS[0],
@@ -170,8 +213,24 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
     fetchHistory();
   }, [activeTab, driver?._id, isPassenger]);
 
+  // Debounce para verificaciones de unicidad
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!form.username || form.username.length < 4 || isEditMode) return;
+      checkUsernameUniqueness(form.username);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [form.username]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!form.email || !/^\S+@\S+\.\S+$/.test(form.email) || isEditMode) return;
+      checkEmailUniqueness(form.email);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [form.email]);
+
   const checkUsernameUniqueness = async (val) => {
-    if (!val || val.length < 4 || isEditMode) return;
     setUsernameStatus('checking');
     try {
       const response = await api.get(`/users?search=${val}`);
@@ -183,10 +242,8 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
   };
 
   const checkEmailUniqueness = async (val) => {
-    if (!val || !/^\S+@\S+\.\S+$/.test(val) || isEditMode) return;
     setEmailStatus('checking');
     try {
-      // Consultamos al backend si existe alguien con ese correo
       const response = await api.get(`/users?search=${val}`);
       const exists = response.data?.data?.some(u => u.email.toLowerCase() === val.toLowerCase());
       setEmailStatus(exists ? 'taken' : 'available');
@@ -201,17 +258,15 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
       const field = name.replace('v-', '');
       setForm(prev => {
         const newVehicle = { ...prev.vehicle, [field]: value };
-        if (field === 'brand') newVehicle.model = CAR_DATA[value][0];
+        if (field === 'brand') {
+          newVehicle.model = CAR_DATA[value] ? CAR_DATA[value][0] : '';
+        }
         return { ...prev, vehicle: newVehicle };
       });
     } else {
       if (name === 'name') {
         const filteredValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
         setForm(prev => ({ ...prev, [name]: filteredValue }));
-      } else if (name === 'username') {
-        const filteredUser = value.replace(/[^a-zA-Z0-9]/g, '');
-        setForm(prev => ({ ...prev, [name]: filteredUser }));
-        if (!isEditMode) setUsernameStatus('idle');
       } else {
         setForm(prev => ({ ...prev, [name]: value }));
         if (name === 'username' && !isEditMode) setUsernameStatus('idle');
@@ -221,16 +276,16 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
   };
 
   const validate = () => {
-    if (!form.name.trim() || form.name.length < 4) return 'El nombre debe tener al menos 4 caracteres';
-    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(form.name)) return 'El nombre solo puede contener letras y espacios';
-    if (form.username && !/^[a-zA-Z0-9]+$/.test(form.username)) return 'El usuario solo puede contener letras y números';
+    if (!form.name.trim() || form.name.trim().length < 4) return 'El nombre completo debe tener al menos 4 caracteres';
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s.\-']+$/.test(form.name)) return 'El nombre contiene caracteres no permitidos (solo se permiten letras, espacios, puntos y guiones)';
+    if (form.username && !/^[a-zA-Z0-9._-]+$/.test(form.username)) return 'El nombre de usuario solo puede contener letras, números, puntos, guiones y guiones bajos';
     if (!/^\d{8}$/.test(form.phone)) return 'El teléfono debe tener exactamente 8 dígitos';
     if (!form.email || !form.username) return 'Email y Usuario son obligatorios';
     if (!isEditMode && (usernameStatus === 'taken' || emailStatus === 'taken')) {
       return emailStatus === 'taken' ? 'Este correo ya está registrado' : 'El nombre de usuario ya está en uso';
     }
     if (form.username.length < 4) return 'El usuario debe tener al menos 4 caracteres';
-    
+
     // Validaciones exclusivas de conductor
     if (!isPassenger) {
       if (!/^[A-Z0-9]{6}$/.test(form.vehicle.license_plate.toUpperCase())) return 'La placa debe tener exactamente 6 caracteres alfanuméricos';
@@ -246,7 +301,7 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
 
     setSubmitting(true);
     try {
-      const savedDriverId = driver ? driver._id : null;
+      let savedDriverId = driver ? driver._id : null;
 
       if (!isEditMode) {
         setStep('Registrando usuario...');
@@ -254,7 +309,9 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
         delete userPayload.vehicle;
 
         const regRes = await api.post('/auth/register', userPayload);
-        const newUserId = regRes.data?.data?.user?._id;
+        savedDriverId = regRes.data?.data?.user?._id;
+
+        if (!savedDriverId) throw new Error('No se pudo obtener el ID del nuevo usuario');
 
         if (!isPassenger) {
           setStep('Registrando vehículo...');
@@ -263,14 +320,13 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
             license_plate: form.vehicle.license_plate.toUpperCase(),
             year: parseInt(form.vehicle.year),
             capacity: parseInt(form.vehicle.capacity),
-            driver_id: newUserId
+            driver_id: savedDriverId
           };
           await api.post('/vehicles', vehiclePayload);
         }
 
         setStep('Enviando invitación...');
         await api.post('/auth/send-verification-code', { email: form.email });
-        toast.success('Conductor registrado exitosamente.');
       } else {
         setStep('Actualizando datos personales...');
         const userUpdatePayload = {
@@ -279,7 +335,7 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
           company: form.company,
           work_schedule: form.work_schedule
         };
-        
+
         if (isPassenger) {
           await passengerService.updatePassenger(savedDriverId, userUpdatePayload);
         } else {
@@ -321,6 +377,7 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
         }
       }
 
+      toast.success(isEditMode ? 'Perfil actualizado' : 'Registro exitoso');
       onSaved();
       onClose();
     } catch (err) {
@@ -333,18 +390,21 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
     }
   };
 
+  const currentModels = useMemo(() => {
+    if (!form.vehicle?.brand) return [];
+    return CAR_DATA[form.vehicle.brand] || [];
+  }, [form.vehicle?.brand]);
+
   if (!isOpen) return null;
 
-  const currentModels = CAR_DATA[form.vehicle.brand] || [];
 
-
-  return (
-    <div className="modal-backdrop">
-      <div className="modal-glass">
+  const modalContent = (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-glass" onClick={e => e.stopPropagation()}>
         <header className="modal-header">
           <h2>
-            {activeTab === 'history' 
-              ? `Historial de Viajes: ${driver?.name}` 
+            {activeTab === 'history'
+              ? `Historial de Viajes: ${driver?.name || ''}`
               : (isEditMode ? `Editar Perfil ${isPassenger ? 'Pasajero' : 'Conductor'}` : 'Nuevo Registro')}
           </h2>
           <button className="close-btn" onClick={onClose}><X size={20} /></button>
@@ -354,7 +414,6 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
           <form className="modal-body" onSubmit={handleSubmit}>
             <div className="avatar-section">
               <img src={previewUrl || 'https://via.placeholder.com/150'} alt="Avatar" className="avatar-preview" />
-              {/* Solo permitir subir foto si estamos editando o creando */}
               <label className="file-label">
                 <Upload size={16} /> <span>{isEditMode ? 'Cambiar foto' : 'Subir foto (opcional)'}</span>
                 <input type="file" accept="image/*" onChange={e => {
@@ -368,15 +427,14 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
             <div className="field-group">
               <label>Correo Electrónico</label>
               <div className="username-input-wrapper">
-                <input 
-                  type="email" 
-                  name="email" 
-                  value={form.email} 
-                  onChange={handleChange} 
-                  onBlur={(e) => checkEmailUniqueness(e.target.value)}
-                  required 
-                  readOnly={isEditMode} 
-                  className={isEditMode ? 'input-readonly' : ''} 
+                <input
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  required
+                  readOnly={isEditMode}
+                  className={isEditMode ? 'input-readonly' : ''}
                 />
                 {!isEditMode && (
                   <div className="username-status-icon">
@@ -390,7 +448,7 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
             <div className="field-group">
               <label>Nombre de Usuario</label>
               <div className="username-input-wrapper">
-                <input name="username" value={form.username} onChange={handleChange} onBlur={(e) => checkUsernameUniqueness(e.target.value)} required readOnly={isEditMode} className={isEditMode ? 'input-readonly' : ''} />
+                <input name="username" value={form.username} onChange={handleChange} required readOnly={isEditMode} className={isEditMode ? 'input-readonly' : ''} />
                 {!isEditMode && (
                   <div className="username-status-icon">
                     {usernameStatus === 'checking' && <div className="spinner-mini" />}
@@ -477,43 +535,12 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
             ) : trips.length > 0 ? (
               <div className="trips-timeline">
                 {trips.map((trip, idx) => (
-                  <div key={trip._id || idx} className="trip-history-item">
-                    <div className="trip-date-indicator">
-                      <div className="date-dot" />
-                      {idx !== trips.length - 1 && <div className="date-line" />}
-                    </div>
-                    <div className="trip-card-history">
-                      <div className="trip-header-h">
-                        <span className={`trip-status-badge ${trip.status}`}>
-                          {trip.status === 'completed' ? 'Completado' : 
-                           trip.status === 'cancelled' ? 'Cancelado' : 
-                           trip.status === 'in progress' ? 'En Curso' : 'Programado'}
-                        </span>
-                        <span className="trip-date-h"><Calendar size={12} /> {trip.fecha} · {trip.hora}</span>
-                      </div>
-                      <div className="trip-route-h">
-                        <div className="route-step">
-                          <MapPin size={14} color="#10B981" />
-                          <div>
-                            <p className="route-label">Origen</p>
-                            <p className="route-name">{trip.origin?.name}</p>
-                          </div>
-                        </div>
-                        <div className="route-divider-h" />
-                        <div className="route-step">
-                          <MapPin size={14} color="#EF4444" />
-                          <div>
-                            <p className="route-label">Destino</p>
-                            <p className="route-name">{trip.destination?.name}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="trip-footer-h">
-                        <span><Users size={12} /> {trip.available_seats} Asientos</span>
-                        {trip.distance_km && <span><Navigation size={12} /> {trip.distance_km} km</span>}
-                      </div>
-                    </div>
-                  </div>
+                  <TripItem 
+                    key={trip._id || idx} 
+                    trip={trip} 
+                    idx={idx} 
+                    isLast={idx === trips.length - 1} 
+                  />
                 ))}
               </div>
             ) : (
@@ -527,6 +554,8 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default DriverProfileModal;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Link, useLocation } from 'react-router-dom';
 import api from '../../services/api';
@@ -96,17 +96,15 @@ const Dashboard = () => {
         { name: 'Pasajeros', value: totalPasajeros > 0 ? totalPasajeros : 892, color: '#3B82F6' },
         { name: 'Conductores', value: totalConductores > 0 ? totalConductores : 342, color: '#10B981' },
         { name: 'Moderadores', value: (totalUsuarios - totalPasajeros - totalConductores) > 0 ? (totalUsuarios - totalPasajeros - totalConductores) : 14, color: '#8B5CF6' },
-    ];
+    ], [totalPasajeros, totalConductores, totalUsuarios]);
 
-    const pieDataPagos = [
-
+    const pieDataPagos = useMemo(() => [
         { name: 'Pagados', value: 100, color: '#10B981' },
         { name: 'Pendientes', value: 100, color: '#F59E0B' },
         { name: 'Fallidos', value: 100, color: '#EF4444' },
-    ];
+    ], []);
 
-    const lineData = [
-
+    const lineData = useMemo(() => [
         { name: '14 May', value: 30 },
         { name: '15 May', value: 150 },
         { name: '16 May', value: 120 },
@@ -114,7 +112,7 @@ const Dashboard = () => {
         { name: '18 May', value: 100 },
         { name: '19 May', value: Math.floor(totalViajes / 2) || 180 },
         { name: '20 May', value: totalViajes || 210 },
-    ];
+    ], [totalViajes]);
 
 
 
