@@ -141,16 +141,17 @@ const QuejasPage = () => {
           <h1>Atención de Quejas</h1>
           <p>Monitorea y resuelve los reportes enviados por los usuarios vía email</p>
         </div>
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-          <button className="q-btn-secondary" onClick={handleSync} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px' }}>
-            <RefreshCw size={16} /> Sincronizar Gmail
-          </button>
+        <div className="q-header-actions">
           <div className="q-stats-summary">
             <div className="q-stat-item">
               <span className="q-stat-val">{quejas.length}</span>
               <span className="q-stat-lab">Pendientes</span>
             </div>
           </div>
+          <button className="q-sync-btn" onClick={handleSync}>
+            <RefreshCw size={15} />
+            Sincronizar Gmail
+          </button>
         </div>
       </div>
 
@@ -256,10 +257,23 @@ const QuejasPage = () => {
 
                 {/* Columna Derecha: Contenido del Mensaje */}
                 <div className="q-modal-section">
-                  <h3 className="q-section-title">Asunto: {selectedQueja.subject}</h3>
-                  <div className="q-message-box">
-                    <MessageSquare size={16} className="q-quote-icon" />
-                    <p>{selectedQueja.message}</p>
+                  <div className="q-message-header">
+                    <h3 className="q-section-title">Asunto: {selectedQueja.subject}</h3>
+                  </div>
+                  
+                  <div className="q-message-box-wrapper">
+                    <div className="q-message-box">
+                      <MessageSquare size={16} className="q-quote-icon" />
+                      <div className="q-full-text">
+                        {selectedQueja.fullMessage ? (
+                          selectedQueja.fullMessage.split('\n').map((line, i) => (
+                            <p key={i} style={{ marginBottom: '8px' }}>{line}</p>
+                          ))
+                        ) : (
+                          <p>{selectedQueja.message}</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                   <div className="q-modal-badges">
                     <span className="q-cat-tag">{selectedQueja.category}</span>
