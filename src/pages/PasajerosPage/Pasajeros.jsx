@@ -154,16 +154,16 @@ const PasajerosPage = () => {
 
       if (requestId !== lastRequestId.current) return;
 
-      if (response?.success) {
-        setPassengers(response.data || []);
+      if (Array.isArray(response?.data)) {
+        setPassengers(response.data);
         if (response.pagination) {
           setTotalPages(response.pagination.pages || 1);
         }
-
+ 
         setStats({
           total: response.stats?.total || response.pagination?.total || 0,
           activeNow: response.stats?.active || 0,
-          avgRating: (response.data?.reduce((s, p) => s + (p.rating || 0), 0) / (response.data?.length || 1)).toFixed(1),
+          avgRating: (response.data.reduce((s, p) => s + (p.rating || 0), 0) / (response.data.length || 1)).toFixed(1),
           totalRides: (response.stats?.total || 0) * 12,
         });
       } else {

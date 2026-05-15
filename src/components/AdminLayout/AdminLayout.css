@@ -146,12 +146,6 @@ aside.open {
   gap: 2px;
   border-left: 1px solid rgba(255, 255, 255, 0.05);
   padding-left: 10px;
-  animation: slideDownSub 0.3s ease-out;
-}
-
-@keyframes slideDownSub {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .subNavItem {

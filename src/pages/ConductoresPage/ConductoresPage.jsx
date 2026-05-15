@@ -165,19 +165,21 @@ const ConductoresPage = () => {
       if (Array.isArray(list)) {
         // Optimización: Solo enriquecemos si no hay muchos conductores o de forma secuencial controlada
         // Para evitar lag, limitamos las peticiones concurrentes
-        const enriched = [];
-        for (const d of list) {
-          try {
-            // Check cache or fetch
-            const vehicle = await driverService.getVehicleByDriver(d._id);
-            enriched.push({ ...d, vehicle });
-          } catch (vErr) {
-            enriched.push({ ...d, vehicle: null });
-          }
-        }
+        // Enriquecer con vehículos en paralelo para mayor velocidad
+        const enriched = await Promise.all(
+          list.map(async (d) => {
+            try {
+              const vehicle = await driverService.getVehicleByDriver(d._id);
+              return { ...d, vehicle };
+            } catch (vErr) {
+              return { ...d, vehicle: null };
+            }
+          })
+        );
 
         if (requestId !== lastRequestId.current) return;
 
+        console.log('[ConductoresPage] Drivers loaded:', enriched);
         setDrivers(enriched);
 
         setStats({
