@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Link, useLocation } from 'react-router-dom';
 import api from '../../services/api';
@@ -115,22 +115,19 @@ const Dashboard = () => {
     const totalKM = metricas.totalKilometers || 0;
     const totalCarbon = metricas.totalCarbonSaved || 0;
 
-    const pieDataRoles = [
-
+    const pieDataRoles = useMemo(() => [
         { name: 'Pasajeros', value: totalPasajeros > 0 ? totalPasajeros : 892, color: '#3B82F6' },
         { name: 'Conductores', value: totalConductores > 0 ? totalConductores : 342, color: '#10B981' },
         { name: 'Moderadores', value: (totalUsuarios - totalPasajeros - totalConductores) > 0 ? (totalUsuarios - totalPasajeros - totalConductores) : 14, color: '#8B5CF6' },
-    ];
+    ], [totalPasajeros, totalConductores, totalUsuarios]);
 
-    const pieDataPagos = [
-
+    const pieDataPagos = useMemo(() => [
         { name: 'Pagados', value: 100, color: '#10B981' },
         { name: 'Pendientes', value: 100, color: '#F59E0B' },
         { name: 'Fallidos', value: 100, color: '#EF4444' },
-    ];
+    ], []);
 
-    const lineData = [
-
+    const lineData = useMemo(() => [
         { name: '14 May', value: 30 },
         { name: '15 May', value: 150 },
         { name: '16 May', value: 120 },
@@ -138,7 +135,7 @@ const Dashboard = () => {
         { name: '18 May', value: 100 },
         { name: '19 May', value: Math.floor(totalViajes / 2) || 180 },
         { name: '20 May', value: totalViajes || 210 },
-    ];
+    ], [totalViajes]);
 
 
 
@@ -146,161 +143,18 @@ const Dashboard = () => {
     // DASHBOARD PRINCIPAL
     // ===================================================================
     return (
-
-        <div className="dashboardContent">
-
-
-            {/* ========== SIDEBAR ========== */}
-            <aside>
-
-                <div className="sidebaLogo">
-                    <img src={IconSafeRide} alt="Logo" className='IconSafeRide' />
-                    <span>SafeRide Admin</span>
+        <div className="dashboardBody">
+            <div className="TituloPagina">
+                <div>
+                    <h1>Panel Principal</h1>
+                    <p>Resumen general de SafeRide</p>
                 </div>
-
-                <nav className="sidebarNav">
-
-                    <Link to="/inicio" className={`navItem ${location.pathname === '/inicio' ? 'active' : ''}`}><LayoutDashboard size={20} /> <span>Panel</span></Link>
-
-                    <Link to="/usuarios" className={`navItem ${location.pathname === '/usuarios' ? 'active' : ''}`}><Users size={20} /> <span>Pasajeros</span></Link>
-
-                    <Link to="/conductores" className={`navItem ${location.pathname === '/conductores' ? 'active' : ''}`}><UserCheck size={20} /> <span>Conductores</span></Link>
-
-                    <Link to="/vehiculos" className={`navItem ${location.pathname === '/vehiculos' ? 'active' : ''}`}><Car size={20} /> <span>Vehículos</span></Link>
-
-                    <Link to="/reservas" className={`navItem ${location.pathname === '/reservas' ? 'active' : ''}`}><Calendar size={20} /> <span>Reservas</span></Link>
-
-                    <Link to="/pagos" className={`navItem ${location.pathname === '/pagos' ? 'active' : ''}`}><CreditCard size={20} /> <span>Pagos</span></Link>
-
-                    <Link to="/notificaciones" className={`navItem ${location.pathname === '/notificaciones' ? 'active' : ''}`}><Bell size={20} /> <span>Notificaciones</span></Link>
-
-                    <Link to="/quejas" className={`navItem ${location.pathname === '/quejas' ? 'active' : ''}`}><AlertCircle size={20} /> <span>Quejas</span></Link>
-
-                    <Link to="/auditoria" className={`navItem ${location.pathname === '/auditoria' ? 'active' : ''}`}><ShieldCheck size={20} /> <span>Auditoría</span></Link>
-
-                    <Link to="/configuracion" className={`navItem ${location.pathname === '/configuracion' ? 'active' : ''}`}><Settings size={20} /> <span>Configuración</span></Link>
-
-                </nav>
-
-
-                {/*  PERFIL */}
-                <div className="sidebarPerfil">
-
-                    <img src={getDefaultImagen(user?.profileImage)} alt="Admin" className="FotoPerfil" />
-
-                    <div className="PerfilInfo">
-
-                        <span className="NombrePerfil">{user?.name || 'Admin'}</span>
-                        <span className="RolPerfil">Super Administrador</span>
-                    </div>
-
+                <div className="botonFecha">
+                    <Calendar size={16} />
+                    <span>20 de mayo, 2025</span>
+                    <ChevronDown size={14} />
                 </div>
-            </aside>
-
-
-            {/* ========== CONTENIDO PRINCIPAL ========== */}
-            <main>
-
-                {/*  HEADER  */}
-                <header>
-
-                    <div className="headerIzquierdo">
-
-                        <div className="buscadorContainer">
-
-                            <Search size={18} className="buscadorIcono" />
-                            <input type="text" placeholder="Buscar en el sistema..." />
-                        </div>
-                    </div>
-
-                    <div className="headerDerecho">
-
-                        <div className='userInfo'>
-
-                            <span>Bienvenido/a, {user?.name || 'Admin'}</span>
-                            <ChevronDown size={16} />
-                        </div>
-
-                        <div className="notificacionCampana">
-
-                            <Bell size={20} />
-                            <span className="notificacionBadge">3</span>
-                        </div>
-
-                        <img src={getDefaultImagen(user?.profileImage)} alt="Admin" className="FotoPerfilHeader" />
-
-                        <div className="menuDesplegableContainer">
-
-                            <Menu
-                                size={25}
-                                className={`IconMenu ${MenuAbierto ? 'active' : ''}`}
-                                onClick={() => setMenuAbierto(!MenuAbierto)}
-                                style={{ cursor: 'pointer' }}
-                            />
-
-                            {MenuAbierto && (
-
-                                <div className="menuDesplegable animate-slide-down">
-
-                                    <div className="menuHeader">
-
-                                        <img src={getDefaultImagen(user?.profileImage)} alt="Admin" className="menuUserAvatar" />
-
-                                        <div className="menuUserInfo">
-
-                                            <span className="menuUserName">{user?.name}</span>
-                                            <span className="menuUserEmail">{user?.email}</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="menuDivider"></div>
-
-                                    <Link to="/miPerfil" className="menuItem" onClick={() => setMenuAbierto(false)}>
-
-                                        <User size={18} /> <span>Mi Perfil</span>
-                                    </Link>
-
-                                    <Link to="/configuracion" className="menuItem" onClick={() => setMenuAbierto(false)}>
-
-                                        <Settings size={18} /> <span>Configuración</span>
-                                    </Link>
-
-                                    <Link to="/ayuda" className="menuItem" onClick={() => setMenuAbierto(false)}>
-
-                                        <HelpCircle size={18} /> <span>Ayuda</span>
-                                    </Link>
-
-                                    <div className="menuDivider"></div>
-
-                                    <button className="menuItem logout" onClick={() => { cerrarSesion(); setMenuAbierto(false); }}>
-
-                                        <LogOut size={18} /> <span>Cerrar Sesión</span>
-                                    </button>
-                                </div>
-
-                            )}
-                        </div>
-
-                    </div>
-
-                </header>
-
-
-                {/*  CUERPO  */}
-                <div className="dashboardBody">
-
-                    <div className="TituloPagina">
-
-                        <div>
-                            <h1>Panel Principal</h1>
-                            <p>Resumen general de SafeRide</p>
-                        </div>
-                        <div className="botonFecha">
-                            <Calendar size={16} />
-                            <span>20 de mayo, 2025</span>
-                            <ChevronDown size={14} />
-                        </div>
-                    </div>
+            </div>
 
 
                     {/*  1. ESTADISTICAS PRINCIPALES */}
@@ -561,7 +415,7 @@ const Dashboard = () => {
 
                                     <div className="filaElemento" key={item._id || i}>
 
-                                        <img src={getDefaultImagen(item.passenger_id?.profileImage)} alt={item.passenger_id?.name || 'Pasajero'} className="avatarPequeno" />
+                                        <img src={getDefaultImagen(item.passenger_id?.profileImage)} alt={item.passenger_id?.name || 'Pasajero'} className="avatarPequeno" loading="lazy" />
 
                                         <div className="infoElemento">
 
@@ -603,7 +457,7 @@ const Dashboard = () => {
 
                                     <div className="filaElemento" key={item._id || i}>
 
-                                        <img src={getDefaultImagen(item.profileImage)} alt={item.name} className="avatarPequeno" />
+                                        <img src={getDefaultImagen(item.profileImage)} alt={item.name} className="avatarPequeno" loading="lazy" />
 
                                         <div className="infoElemento">
 
@@ -630,9 +484,7 @@ const Dashboard = () => {
                             </div>
                         </div>
                     </div>
-                </div>
-            </main >
-        </div >
+        </div>
     );
 };
 

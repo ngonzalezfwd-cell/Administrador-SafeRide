@@ -399,25 +399,27 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(15, 23, 42, 0.8);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 3000;
-  padding: 40px;
+  background: rgba(0, 0, 0, 0.85); /* Sólido para evitar ver el fondo azul */
+  display: block;
+  overflow-y: auto;
+  z-index: 10000;
+  padding: 40px 20px;
+  overscroll-behavior: contain;
 }
 
 .doc-modal-content {
   background: white;
   width: 100%;
   max-width: 1000px;
-  max-height: 90vh;
+  margin: 0 auto;
   border-radius: 24px;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  position: relative;
+  min-height: min-content;
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 .doc-modal-header {
@@ -558,7 +560,7 @@
 /* Formulario de Registro Administrativo */
 .add-vehicle-form {
   padding: 32px;
-  overflow-y: auto;
+  /* Eliminamos overflow-y auto para que el scroll sea manejado por el overlay */
 }
 
 .form-grid-admin {
@@ -779,4 +781,45 @@
 .cancel-btn-admin:hover {
   background: #FEF2F2;
   transform: translateX(-4px);
+}
+
+/* --- ANIMACIÓN DE ENTRADA STAGGERED --- */
+.vehicle-card {
+  animation: fadeInUp 0.5s ease backwards;
+  animation-delay: calc(var(--card-index) * 0.05s);
+}
+
+/* --- VEHICLE SKELETON LOADERS --- */
+.skeleton-img-v {
+  width: 100%;
+  height: 100%;
+  background: #e2e8f0;
+}
+
+.skeleton-line-v {
+  background: #f1f5f9;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+
+.skeleton-line-v.title { width: 80%; height: 24px; }
+.skeleton-line-v.small { width: 60%; height: 16px; }
+
+.skeleton-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f1f5f9;
+}
+
+.skeleton-btn-v {
+  flex: 1;
+  height: 36px;
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+.vehicle-card.skeleton {
+  pointer-events: none;
+  border-color: #f1f5f9;
 }

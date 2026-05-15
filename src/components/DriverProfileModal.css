@@ -8,26 +8,27 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* Simple solid transparency */
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
-  /* No animations, no filters */
+  z-index: 99999;
+  padding: 20px;
+  overscroll-behavior: contain;
 }
 
 .modal-glass {
   background: #FFFFFF;
-  width: 90%;
+  width: 100%;
   max-width: 650px;
   max-height: 90vh;
-  border-radius: 8px; /* Simple corners */
+  border-radius: 12px;
   border: 1px solid #E2E8F0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Minimal shadow */
-  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
   position: relative;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .modal-header {
@@ -67,6 +68,8 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .avatar-section {

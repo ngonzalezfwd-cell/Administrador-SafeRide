@@ -42,6 +42,20 @@ const vehicleService = {
   deleteVehicle: async (id) => {
     const response = await api.delete(`/vehicles/${id}`);
     return response.data;
+  },
+
+  /**
+   * Sube la imagen de un vehículo
+   */
+  uploadVehicleImage: async (id, file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const response = await api.post(`/vehicles/${id}/image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
   }
 };
 

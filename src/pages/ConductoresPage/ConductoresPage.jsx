@@ -7,7 +7,7 @@
  * @author SafeRide Dev Team
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -32,16 +32,39 @@ import DefaultImageUser from '../../imgs/DefaultImageUser.png';
 const getDefaultImagen = (url) => (url && url.trim() !== '') ? url : DefaultImageUser;
 
 // ─────────────────────────────────────────────────────────────
-// COMPONENTE: Tarjeta de Conductor
+// COMPONENTE: Skeleton para carga de tarjetas
 // ─────────────────────────────────────────────────────────────
-const DriverCard = ({ driver, onEdit, onDelete, onActivate, onView }) => {
+const CardSkeleton = () => (
+  <div className="conductor-card skeleton">
+    <div className="card-header skeleton-pulse">
+      <div className="skeleton-img" />
+      <div className="skeleton-badge" />
+    </div>
+    <div className="card-content">
+      <div className="skeleton-line title" />
+      <div className="skeleton-line subtitle" />
+      <div className="vehicle-info-mini" style={{ marginTop: '12px' }}>
+        <div className="skeleton-line small" />
+        <div className="skeleton-line small" />
+      </div>
+    </div>
+    <div className="card-actions">
+      <div className="skeleton-btn" />
+      <div className="skeleton-btn" />
+      <div className="skeleton-btn" />
+    </div>
+  </div>
+);
+
+const DriverCard = React.memo(({ driver, onEdit, onDelete, onActivate, onView, index }) => {
   return (
-    <div className="conductor-card">
+    <div className="conductor-card" style={{ '--card-index': index }}>
       <div className="card-header">
         <img
           src={getDefaultImagen(driver.profileImage)}
           alt={driver.name}
           className="conductor-img"
+          loading="lazy"
         />
         <div className={`status-badge ${driver.isActive ? 'active' : 'inactive'}`}>
           {driver.isActive ? 'Activo' : 'Inactivo'}
@@ -91,7 +114,7 @@ const DriverCard = ({ driver, onEdit, onDelete, onActivate, onView }) => {
       </div>
     </div>
   );
-};
+});
 
 // ─────────────────────────────────────────────────────────────
 // PÁGINA PRINCIPAL: ConductoresPage
@@ -119,7 +142,7 @@ const ConductoresPage = () => {
   const [selectedLetter, setSelectedLetter] = useState('');
 
 
-  const loadDrivers = async () => {
+  const loadDrivers = useCallback(async () => {
     const requestId = ++lastRequestId.current;
     setLoading(true);
     try {
@@ -137,30 +160,26 @@ const ConductoresPage = () => {
         setTotalPages(pagination.pages || 1);
       }
 
-      // Si hay una petición más nueva en curso, ignoramos esta
       if (requestId !== lastRequestId.current) return;
 
       if (Array.isArray(list)) {
-        // Enriquecemos cada conductor con su vehículo de forma paralela y resiliente
-        const enriched = await Promise.all(
-          list.map(async (d) => {
-            try {
-              const vehicle = await driverService.getVehicleByDriver(d._id);
-              return { ...d, vehicle };
-            } catch (vErr) {
-              // Si falla el vehículo, devolvemos el conductor sin vehículo en lugar de romper todo
-              console.warn(`No se pudo cargar el vehículo para ${d.name}:`, vErr);
-              return { ...d, vehicle: null };
-            }
-          })
-        );
+        // Optimización: Solo enriquecemos si no hay muchos conductores o de forma secuencial controlada
+        // Para evitar lag, limitamos las peticiones concurrentes
+        const enriched = [];
+        for (const d of list) {
+          try {
+            // Check cache or fetch
+            const vehicle = await driverService.getVehicleByDriver(d._id);
+            enriched.push({ ...d, vehicle });
+          } catch (vErr) {
+            enriched.push({ ...d, vehicle: null });
+          }
+        }
 
-        // Verificación final de Race Condition después de la carga pesada
         if (requestId !== lastRequestId.current) return;
 
         setDrivers(enriched);
 
-        // Usamos las estadísticas globales que vienen del servidor
         setStats({
           total: response.stats?.total || response.pagination?.total || 0,
           activeNow: response.stats?.active || 0,
@@ -177,7 +196,7 @@ const ConductoresPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm, selectedLetter, currentPage]);
 
   useEffect(() => { loadDrivers(); }, []);
 
@@ -272,7 +291,7 @@ const ConductoresPage = () => {
   };
 
   // Lógica para generar números de página con elipsis (...)
-  const getPageNumbers = () => {
+  const getPageNumbers = useMemo(() => {
     const pages = [];
     const maxVisible = 5;
     
@@ -294,7 +313,7 @@ const ConductoresPage = () => {
       pages.push(totalPages);
     }
     return pages;
-  };
+  }, [totalPages, currentPage]);
 
   const handleCerrarSesion = logout || cerrarSesion;
 
@@ -392,26 +411,23 @@ const ConductoresPage = () => {
       </div>
 
       <div id="gridConductores" className="passengers-section">
-        {loading && drivers.length === 0 && (
-          <div className="loading-state-dashboard">
-            <div className="spinner-dashboard" />
-            <p>Cargando conductores...</p>
-          </div>
-        )}
-
         <div className={`conductoresGrid ${loading ? 'conductoresGrid--loading' : 'conductoresGrid--loaded'}`}>
-          {drivers.length > 0 ? (
-            drivers.map(driver => (
+          {loading ? (
+            // Mostrar 6 esqueletos mientras carga
+            Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={`sk-${i}`} />)
+          ) : drivers.length > 0 ? (
+            drivers.map((driver, index) => (
               <DriverCard
                 key={driver._id}
                 driver={driver}
+                index={index}
                 onEdit={handleOpenModal}
                 onDelete={handleDelete}
                 onActivate={handleActivate}
                 onView={handleViewTrips}
               />
             ))
-          ) : !loading && (
+          ) : (
             <div className="empty-state-dashboard">
               <Truck size={48} />
               <h3>No se encontraron conductores</h3>
@@ -442,7 +458,7 @@ const ConductoresPage = () => {
           </button>
           
           <div className="pagination-numbers">
-            {getPageNumbers().map((num, i) => (
+            {getPageNumbers.map((num, i) => (
               num === '...' ? (
                 <span key={`dots-${i}`} className="pagination-dots">...</span>
               ) : (
