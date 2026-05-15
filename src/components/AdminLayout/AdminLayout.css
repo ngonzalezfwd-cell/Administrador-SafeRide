@@ -1,0 +1,446 @@
+/* ============================================================
+   AdminLayout.css
+   ============================================================ */
+
+:root {
+  --sidebar-width: 280px;
+  --header-height: 80px;
+  --sidebar-bg: rgba(15, 23, 42, 0.95);
+  --accent-blue: #3b82f6;
+  --accent-blue-light: #60a5fa;
+  --text-muted: #94a3b8;
+  --sidebar-hover-bg: rgba(255, 255, 255, 0.05);
+}
+
+
+
+.dashboardContent {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-color: #f8fafc;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── SIDEBAR ─────────────────────────────────────────────── */
+aside {
+  width: var(--sidebar-width);
+  background: var(--sidebar-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  position: relative;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+aside.open {
+  transform: translateX(0);
+}
+
+@media (max-width: 1024px) {
+  aside {
+    position: fixed;
+    height: 100%;
+    left: -280px;
+  }
+  aside.open {
+    left: 0;
+  }
+}
+
+.sidebaLogo {
+  padding: 30px 12px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sidebaLogo img {
+  width: 78px;
+  height: 60px;
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
+}
+
+.sidebaLogo span {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(90deg, #fff, #94a3b8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.sidebarNav {
+  flex: 1;
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.sidebarNav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebarNav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.navItem:hover {
+  background: var(--sidebar-hover-bg);
+  color: white;
+  transform: translateX(4px);
+}
+
+.navItem.active {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--accent-blue-light);
+  font-weight: 600;
+}
+
+.navItem.active::before {
+  content: '';
+  position: absolute;
+  left: -16px;
+  top: 10%;
+  height: 80%;
+  width: 4px;
+  background: var(--accent-blue);
+  border-radius: 0 4px 4px 0;
+  box-shadow: 0 0 12px var(--accent-blue);
+}
+
+/* SUB-MENÚ STYLES */
+.navGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.subPanel {
+  margin-left: 20px;
+  margin-top: 4px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  padding-left: 10px;
+  animation: slideDownSub 0.3s ease-out;
+}
+
+@keyframes slideDownSub {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.subNavItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 400;
+  transition: all 0.2s ease;
+}
+
+.subNavItem:hover {
+  background: var(--sidebar-hover-bg);
+  color: white;
+}
+
+.subNavItem.active {
+  background: rgba(59, 130, 246, 0.05);
+  color: var(--accent-blue-light);
+  font-weight: 500;
+}
+
+.subNavItem svg {
+  opacity: 0.7;
+}
+
+.navItem svg {
+  transition: transform 0.3s ease;
+}
+
+.navItem:hover svg {
+  transform: scale(1.1);
+  color: var(--accent-blue-light);
+}
+
+.sidebarPerfil {
+  margin: 20px 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.FotoPerfil {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(59, 130, 246, 0.3);
+}
+
+.PerfilInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.NombrePerfil {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: white;
+}
+
+.RolPerfil {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ── MAIN CONTENT ─────────────────────────────────────────── */
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+header {
+  height: var(--header-height);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 40px;
+  z-index: 90;
+}
+
+.headerIzquierdo {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.buscadorContainer {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 8px 16px;
+  width: 350px;
+  transition: all 0.3s ease;
+}
+
+.buscadorContainer:focus-within {
+  border-color: var(--accent-blue);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+.buscadorIcono {
+  color: #94A3B8;
+}
+
+.buscadorContainer input {
+  border: none;
+  background: transparent;
+  padding: 0 12px;
+  flex: 1;
+  outline: none;
+  color: #1E293B;
+  font-size: 14px;
+}
+
+.headerDerecho {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 10px;
+  transition: background 0.3s;
+}
+
+.userInfo:hover {
+  background: #f1f5f9;
+}
+
+.userInfo span {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.notificacionCampana {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.notificacionCampana:hover {
+  background: #f1f5f9;
+  color: var(--accent-blue);
+}
+
+.notificacionBadge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.FotoPerfilHeader {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.IconMenu {
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 10px;
+}
+
+.IconMenu:hover {
+  color: var(--accent-blue);
+  transform: scale(1.1);
+}
+
+.dashboardBody {
+  flex: 1;
+  padding: 40px;
+  overflow-y: auto;
+  background: #f8fafc;
+}
+
+/* Menu Desplegable */
+.menuDesplegable {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 240px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    border: 1px solid #E2E8F0;
+    z-index: 1000;
+    padding: 8px 0;
+    margin-top: 10px;
+}
+
+.menuHeader {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid #F1F5F9;
+}
+
+.menuUserAvatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.menuUserInfo {
+    display: flex;
+    flex-direction: column;
+}
+
+.menuUserName {
+    font-weight: 600;
+    color: #0F172A;
+}
+
+.menuUserEmail {
+    font-size: 0.75rem;
+    color: #64748B;
+}
+
+.menuItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    color: #334155;
+    text-decoration: none;
+    transition: all 0.2s;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+}
+
+.menuItem:hover {
+    background: #F8FAFC;
+    color: var(--accent-blue);
+}
+
+.menuItem.logout {
+    color: #EF4444;
+}
+
+.menuDivider {
+    height: 1px;
+    background: #F1F5F9;
+    margin: 4px 0;
+}
