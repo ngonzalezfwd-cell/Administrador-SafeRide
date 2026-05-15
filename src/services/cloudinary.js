@@ -8,7 +8,7 @@ const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
  * @param {File} file - El archivo obtenido desde un input type="file"
  * @returns {Promise<string>} - La URL segura de la imagen subida
  */
-export const uploadToCloudinary = async (file) => {
+export const InsertarEnCloudinary = async (file) => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('upload_preset', UPLOAD_PRESET);

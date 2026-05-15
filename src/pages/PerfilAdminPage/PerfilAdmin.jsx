@@ -143,7 +143,7 @@ const PerfilAdmin = () => {
 
             // 1. Subir a Cloudinary si hay una nueva foto
             if (nuevaFoto) {
-                profileImageUrl = await uploadToCloudinary(nuevaFoto);
+                profileImageUrl = await InsertarEnCloudinary(nuevaFoto);
             }
 
             // 2. Guardar en el backend (Limpiamos el teléfono de guiones antes de enviar)

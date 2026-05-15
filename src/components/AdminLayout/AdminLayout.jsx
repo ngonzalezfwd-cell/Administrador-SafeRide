@@ -122,18 +122,18 @@ const AdminLayout = () => {
               <span>Bienvenido/a, {user?.name || 'Admin'}</span>
             </div>
 
-            <div className="notificacionCampana">
-              <Bell size={20} />
-              <span className="notificacionBadge"></span>
-            </div>
-
             <div className="userInfo">
               <img src={getDefaultImagen(user?.profileImage)} alt="Admin" className="FotoPerfilHeader" />
             </div>
 
+            <div className="notificacionCampana">
+              <Bell size={24} />
+              <span className="notificacionBadge"></span>
+            </div>
+
             <div className="menuIconContainer" style={{ position: 'relative' }}>
               <Menu 
-                size={22} 
+                size={24} 
                 className="IconMenu" 
                 onClick={() => setMenuAbierto(!menuAbierto)} 
                 style={{ cursor: 'pointer' }}

@@ -59,6 +59,9 @@ aside.open {
   display: flex;
   align-items: center;
   gap: 5px;
+  border-bottom: #464663 solid 1px;
+  margin-left: 10px;
+  margin-right: 10px;
 }
 
 .sidebaLogo img {
@@ -83,15 +86,26 @@ aside.open {
   flex-direction: column;
   gap: 4px;
   overflow-y: auto;
+  border-bottom: #464663 solid 1px;
+  margin-left: 10px;
+  margin-right: 10px;
 }
 
 .sidebarNav::-webkit-scrollbar {
-  width: 4px;
+  width: 7px;
 }
 
 .sidebarNav::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.589);
   border-radius: 10px;
+}
+
+.sidebarNav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.644);
+}
+
+.sidebarNav::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0);
 }
 
 .navItem {
@@ -192,19 +206,16 @@ aside.open {
 }
 
 .sidebarPerfil {
-  margin: 20px 16px;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
+  margin: 13px 4px;
+  padding: 14px;
   display: flex;
-  align-items: center;
+  justify-content: flex-start;
   gap: 12px;
 }
 
 .FotoPerfil {
-  width: 50px;
-  height: 50px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid rgba(59, 130, 246, 0.3);
@@ -217,13 +228,13 @@ aside.open {
 }
 
 .NombrePerfil {
-  font-size: 0.9rem;
+  font-size: 20px;
   font-weight: 600;
   color: white;
 }
 
 .RolPerfil {
-  font-size: 0.75rem;
+  font-size: 14px;
   color: var(--text-muted);
 }
 
@@ -294,19 +305,14 @@ header {
 .userInfo {
   display: flex;
   align-items: center;
-  gap: 12px;
   cursor: pointer;
   padding: 6px 12px;
   border-radius: 10px;
   transition: background 0.3s;
 }
 
-.userInfo:hover {
-  background: #f1f5f9;
-}
-
 .userInfo span {
-  font-size: 0.95rem;
+  font-size: 18px;
   font-weight: 500;
   color: #1e293b;
 }
@@ -319,8 +325,7 @@ header {
   align-items: center;
   justify-content: center;
   border-radius: 10px;
-  background: #f8fafc;
-  color: #64748b;
+  color: #576475;
   cursor: pointer;
   transition: all 0.3s;
 }
@@ -342,10 +347,12 @@ header {
 }
 
 .FotoPerfilHeader {
-  width: 40px;
-  height: 40px;
+  width: 50px;
+  height: 50px;
   border-radius: 10px;
   object-fit: cover;
+  margin-right: 20px;
+  margin-left: -20px;
 }
 
 .IconMenu {
