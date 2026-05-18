@@ -404,6 +404,20 @@ const QuejasPage = () => {
                     <h3 className="q-section-title">Asunto: {selectedQueja.subject}</h3>
                   </div>
                   
+                  <div className="q-message-box-wrapper">
+                    <div className="q-message-box">
+                      <MessageSquare size={16} className="q-quote-icon" />
+                      <div className="q-full-text">
+                        {selectedQueja.fullMessage ? (
+                          selectedQueja.fullMessage.split('\n').map((line, i) => (
+                            <p key={i} style={{ marginBottom: '8px' }}>{line}</p>
+                          ))
+                        ) : (
+                          <p>{selectedQueja.message}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
                   <div className="q-reply-section" style={{ marginTop: '24px' }}>
                     <h3 className="q-section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

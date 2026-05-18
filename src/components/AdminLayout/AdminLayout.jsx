@@ -189,21 +189,21 @@ const AdminLayout = () => {
               <span>Bienvenido/a, {user?.name || 'Admin'}</span>
             </div>
 
+            <div className="userInfo">
+              <img src={getDefaultImagen(user?.profileImage)} alt="Admin" className="FotoPerfilHeader" />
+            </div>
+
             <Link 
               to="/notificaciones" 
               className="notificacionCampana" 
               style={{ color: 'inherit', textDecoration: 'none', position: 'relative' }}
               title="Centro de Notificaciones"
             >
-              <Bell size={20} />
+              <Bell size={24} />
               {unreadCount > 0 && (
                 <span className="notificacionBadge">{unreadCount}</span>
               )}
             </Link>
-
-            <div className="userInfo">
-              <img src={getDefaultImagen(user?.profileImage)} alt="Admin" className="FotoPerfilHeader" />
-            </div>
 
             <div className="menuIconContainer" style={{ position: 'relative' }} ref={menuRef}>
               <Menu
