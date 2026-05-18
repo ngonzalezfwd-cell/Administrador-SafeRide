@@ -11,7 +11,7 @@
   --accent-blue-light: #60a5fa;
   --text-muted: #94a3b8;
   --sidebar-hover-bg: rgba(255, 255, 255, 0.05);
-  
+
   --layout-bg: #f8fafc;
   --header-bg: rgba(255, 255, 255, 0.95);
   --header-text: #1e293b;
@@ -46,8 +46,10 @@ aside {
   z-index: 100;
   position: relative;
   border-right: 1px solid rgba(255, 255, 255, 0.05);
-  will-change: transform; /* Aceleración GPU */
-  transform: translateZ(0); /* Forzar compositing layer */
+  will-change: transform;
+  /* Aceleración GPU */
+  transform: translateZ(0);
+  /* Forzar compositing layer */
 }
 
 aside.open {
@@ -60,6 +62,7 @@ aside.open {
     height: 100%;
     left: -280px;
   }
+
   aside.open {
     left: 0;
   }
@@ -255,7 +258,8 @@ main {
 header {
   height: var(--header-height);
   background: var(--header-bg);
-  backdrop-filter: blur(6px); /* Reducido de 12px a 6px */
+  backdrop-filter: blur(6px);
+  /* Reducido de 12px a 6px */
   -webkit-backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--header-border);
   display: flex;
@@ -263,7 +267,8 @@ header {
   align-items: center;
   padding: 0 40px;
   z-index: 90;
-  will-change: auto; /* Solo activar cuando sea necesario */
+  will-change: auto;
+  /* Solo activar cuando sea necesario */
 }
 
 .headerIzquierdo {
@@ -385,77 +390,77 @@ header {
 
 /* Menu Desplegable */
 .menuDesplegable {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    width: 240px;
-    background: var(--card-background);
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    border: 1px solid var(--card-border);
-    z-index: 1000;
-    padding: 8px 0;
-    margin-top: 10px;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 240px;
+  background: var(--card-background);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--card-border);
+  z-index: 1000;
+  padding: 8px 0;
+  margin-top: 10px;
 }
 
 .menuHeader {
-    padding: 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    border-bottom: 1px solid var(--card-border);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--card-border);
 }
 
 .menuUserAvatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .menuUserInfo {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .menuUserName {
-    font-weight: 600;
-    color: var(--card-text);
+  font-weight: 600;
+  color: var(--card-text);
 }
 
 .menuUserEmail {
-    font-size: 0.75rem;
-    color: var(--card-text-muted);
+  font-size: 0.75rem;
+  color: var(--card-text-muted);
 }
 
 .menuItem {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    color: var(--card-text);
-    text-decoration: none;
-    transition: all 0.2s;
-    border: none;
-    background: transparent;
-    width: 100%;
-    text-align: left;
-    cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: var(--card-text);
+  text-decoration: none;
+  transition: all 0.2s;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
 }
 
 .menuItem:hover {
-    background: var(--sidebar-hover-bg);
-    color: var(--accent-blue);
+  background: var(--sidebar-hover-bg);
+  color: var(--accent-blue);
 }
 
 .menuItem.logout {
-    color: #EF4444;
+  color: #EF4444;
 }
 
 .menuDivider {
-    height: 1px;
-    background: var(--card-border);
-    margin: 4px 0;
+  height: 1px;
+  background: var(--card-border);
+  margin: 4px 0;
 }
 
 /* ============================================================
