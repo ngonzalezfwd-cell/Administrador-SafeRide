@@ -9,6 +9,34 @@
   --error-color: #ef4444;
 }
 
+/* --- THEME OVERRIDES FOR GLOBAL INDEX.CSS --- */
+[data-theme="oscuro"] {
+  --primary-color: #3b82f6;
+  --secondary-color: #1d4ed8;
+  --bg-dark: #090d16;
+  --card-bg: #111827;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+}
+
+[data-theme="gris"] {
+  --primary-color: #475569;
+  --secondary-color: #334155;
+  --bg-dark: #eceef1;
+  --card-bg: #ffffff;
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+}
+
+[data-theme="salvia"] {
+  --primary-color: #0f766e;
+  --secondary-color: #115e59;
+  --bg-dark: #f4f7f6;
+  --card-bg: #ffffff;
+  --text-primary: #064e3b;
+  --text-secondary: #0d9488;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -23,7 +51,7 @@ html {
 }
 
 body {
-  background: #0f172a; 
+  background: var(--bg-dark); 
   color: var(--text-primary);
   min-height: 100vh;
   overflow-x: hidden;
@@ -225,4 +253,131 @@ body {
   width: 32px;
   border-radius: 8px;
   background: #e2e8f0;
+}
+
+/* ============================================================
+   SOBREESCRITURAS DE TEMA GLOBALES PARA TODAS LAS PÁGINAS
+   ============================================================ */
+
+/* --- APLICAR COLOR DE FONDO PRINCIPAL DEL LAYOUT --- */
+[data-theme="oscuro"] .dashboardContent, [data-theme="oscuro"] .dashboardBody, [data-theme="oscuro"] main {
+  background-color: var(--layout-bg) !important;
+  background: var(--layout-bg) !important;
+}
+[data-theme="gris"] .dashboardContent, [data-theme="gris"] .dashboardBody, [data-theme="gris"] main {
+  background-color: var(--layout-bg) !important;
+  background: var(--layout-bg) !important;
+}
+[data-theme="salvia"] .dashboardContent, [data-theme="salvia"] .dashboardBody, [data-theme="salvia"] main {
+  background-color: var(--layout-bg) !important;
+  background: var(--layout-bg) !important;
+}
+
+/* --- APLICAR COLORES A TARJETAS, PANELES Y CONTENEDORES --- */
+[data-theme="oscuro"] .tarjetaEstadistica, [data-theme="oscuro"] .graficos, [data-theme="oscuro"] .tarjetaLista, [data-theme="oscuro"] .tarjetaConfiguracion, [data-theme="oscuro"] .cardSoporteDedicado, [data-theme="oscuro"] .panelFiltros, [data-theme="oscuro"] .buscadorContainer, [data-theme="oscuro"] .menuDesplegable, [data-theme="oscuro"] .botonFecha, [data-theme="oscuro"] .botonVerTodos, [data-theme="oscuro"] .cajaIcono, [data-theme="oscuro"] .tarjetaVehiculo, [data-theme="oscuro"] .tarjetaPasajero, [data-theme="oscuro"] .tarjetaConductor, [data-theme="oscuro"] .tarjetaQueja, [data-theme="oscuro"] .tarjeta, [data-theme="oscuro"] .card, [data-theme="oscuro"] .tarjetaInfo, [data-theme="oscuro"] .conductor-card, [data-theme="oscuro"] .passenger-card-v2, [data-theme="oscuro"] .alphabet-filter, [data-theme="oscuro"] .pagination-container, [data-theme="oscuro"] .empty-state-dashboard, [data-theme="oscuro"] .contenedorPerfil, [data-theme="oscuro"] .contenedorIzquierdo {
+  background-color: var(--card-background) !important;
+  background: var(--card-background) !important;
+  border-color: var(--card-border) !important;
+  color: var(--card-text) !important;
+}
+
+[data-theme="gris"] .tarjetaEstadistica, [data-theme="gris"] .graficos, [data-theme="gris"] .tarjetaLista, [data-theme="gris"] .tarjetaConfiguracion, [data-theme="gris"] .cardSoporteDedicado, [data-theme="gris"] .panelFiltros, [data-theme="gris"] .buscadorContainer, [data-theme="gris"] .menuDesplegable, [data-theme="gris"] .botonFecha, [data-theme="gris"] .botonVerTodos, [data-theme="gris"] .cajaIcono, [data-theme="gris"] .tarjetaVehiculo, [data-theme="gris"] .tarjetaPasajero, [data-theme="gris"] .tarjetaConductor, [data-theme="gris"] .tarjetaQueja, [data-theme="gris"] .tarjeta, [data-theme="gris"] .card, [data-theme="gris"] .tarjetaInfo, [data-theme="gris"] .conductor-card, [data-theme="gris"] .passenger-card-v2, [data-theme="gris"] .alphabet-filter, [data-theme="gris"] .pagination-container, [data-theme="gris"] .empty-state-dashboard, [data-theme="gris"] .contenedorPerfil, [data-theme="gris"] .contenedorIzquierdo {
+  background-color: var(--card-background) !important;
+  background: var(--card-background) !important;
+  border-color: var(--card-border) !important;
+  color: var(--card-text) !important;
+}
+
+[data-theme="salvia"] .tarjetaEstadistica, [data-theme="salvia"] .graficos, [data-theme="salvia"] .tarjetaLista, [data-theme="salvia"] .tarjetaConfiguracion, [data-theme="salvia"] .cardSoporteDedicado, [data-theme="salvia"] .panelFiltros, [data-theme="salvia"] .buscadorContainer, [data-theme="salvia"] .menuDesplegable, [data-theme="salvia"] .botonFecha, [data-theme="salvia"] .botonVerTodos, [data-theme="salvia"] .cajaIcono, [data-theme="salvia"] .tarjetaVehiculo, [data-theme="salvia"] .tarjetaPasajero, [data-theme="salvia"] .tarjetaConductor, [data-theme="salvia"] .tarjetaQueja, [data-theme="salvia"] .tarjeta, [data-theme="salvia"] .card, [data-theme="salvia"] .tarjetaInfo, [data-theme="salvia"] .conductor-card, [data-theme="salvia"] .passenger-card-v2, [data-theme="salvia"] .alphabet-filter, [data-theme="salvia"] .pagination-container, [data-theme="salvia"] .empty-state-dashboard, [data-theme="salvia"] .contenedorPerfil, [data-theme="salvia"] .contenedorIzquierdo {
+  background-color: var(--card-background) !important;
+  background: var(--card-background) !important;
+  border-color: var(--card-border) !important;
+  color: var(--card-text) !important;
+}
+
+/* --- APLICAR TEXTOS Y TÍTULOS --- */
+[data-theme="oscuro"] h1, [data-theme="oscuro"] h2, [data-theme="oscuro"] h3, [data-theme="oscuro"] h4, [data-theme="oscuro"] .estadisticaValor, [data-theme="oscuro"] .tituloElemento, [data-theme="oscuro"] .menuUserName, [data-theme="oscuro"] .NombrePerfil, [data-theme="oscuro"] .valorTotal, [data-theme="oscuro"] .valorLeyenda, [data-theme="oscuro"] th, [data-theme="oscuro"] td, [data-theme="oscuro"] .tituloFiltro, [data-theme="oscuro"] .nombreConductor, [data-theme="oscuro"] .nombrePasajero, [data-theme="oscuro"] .conductor-name, [data-theme="oscuro"] .p-name-info h3 {
+  color: var(--card-text) !important;
+}
+[data-theme="oscuro"] p, [data-theme="oscuro"] span:not(.badge):not(.insigniaEstado):not(.status-badge):not(.indicator):not(.indicadorLeyenda):not(.notificacionBadge):not(.avatar-placeholder), [data-theme="oscuro"] label, [data-theme="oscuro"] .descripcionElemento, [data-theme="oscuro"] .textoGris, [data-theme="oscuro"] .estadisticaSubtitulo, [data-theme="oscuro"] .menuUserEmail, [data-theme="oscuro"] .nombreLeyenda, [data-theme="oscuro"] .RolPerfil, [data-theme="oscuro"] .RolAdmin, [data-theme="oscuro"] input, [data-theme="oscuro"] select, [data-theme="oscuro"] .infoItem span, [data-theme="oscuro"] .conductor-role, [data-theme="oscuro"] .p-company, [data-theme="oscuro"] .p-detail {
+  color: var(--card-text-muted) !important;
+}
+
+[data-theme="gris"] h1, [data-theme="gris"] h2, [data-theme="gris"] h3, [data-theme="gris"] h4, [data-theme="gris"] .estadisticaValor, [data-theme="gris"] .tituloElemento, [data-theme="gris"] .menuUserName, [data-theme="gris"] .NombrePerfil, [data-theme="gris"] .valorTotal, [data-theme="gris"] .valorLeyenda, [data-theme="gris"] th, [data-theme="gris"] td, [data-theme="gris"] .tituloFiltro, [data-theme="gris"] .nombreConductor, [data-theme="gris"] .nombrePasajero, [data-theme="gris"] .conductor-name, [data-theme="gris"] .p-name-info h3 {
+  color: var(--card-text) !important;
+}
+[data-theme="gris"] p, [data-theme="gris"] span:not(.badge):not(.insigniaEstado):not(.status-badge):not(.indicator):not(.indicadorLeyenda):not(.notificacionBadge):not(.avatar-placeholder), [data-theme="gris"] label, [data-theme="gris"] .descripcionElemento, [data-theme="gris"] .textoGris, [data-theme="gris"] .estadisticaSubtitulo, [data-theme="gris"] .menuUserEmail, [data-theme="gris"] .nombreLeyenda, [data-theme="gris"] .RolPerfil, [data-theme="gris"] .RolAdmin, [data-theme="gris"] input, [data-theme="gris"] select, [data-theme="gris"] .infoItem span, [data-theme="gris"] .conductor-role, [data-theme="gris"] .p-company, [data-theme="gris"] .p-detail {
+  color: var(--card-text-muted) !important;
+}
+
+[data-theme="salvia"] h1, [data-theme="salvia"] h2, [data-theme="salvia"] h3, [data-theme="salvia"] h4, [data-theme="salvia"] .estadisticaValor, [data-theme="salvia"] .tituloElemento, [data-theme="salvia"] .menuUserName, [data-theme="salvia"] .NombrePerfil, [data-theme="salvia"] .valorTotal, [data-theme="salvia"] .valorLeyenda, [data-theme="salvia"] th, [data-theme="salvia"] td, [data-theme="salvia"] .tituloFiltro, [data-theme="salvia"] .nombreConductor, [data-theme="salvia"] .nombrePasajero, [data-theme="salvia"] .conductor-name, [data-theme="salvia"] .p-name-info h3 {
+  color: var(--card-text) !important;
+}
+[data-theme="salvia"] p, [data-theme="salvia"] span:not(.badge):not(.insigniaEstado):not(.status-badge):not(.indicator):not(.indicadorLeyenda):not(.notificacionBadge):not(.avatar-placeholder), [data-theme="salvia"] label, [data-theme="salvia"] .descripcionElemento, [data-theme="salvia"] .textoGris, [data-theme="salvia"] .estadisticaSubtitulo, [data-theme="salvia"] .menuUserEmail, [data-theme="salvia"] .nombreLeyenda, [data-theme="salvia"] .RolPerfil, [data-theme="salvia"] .RolAdmin, [data-theme="salvia"] input, [data-theme="salvia"] select, [data-theme="salvia"] .infoItem span, [data-theme="salvia"] .conductor-role, [data-theme="salvia"] .p-company, [data-theme="salvia"] .p-detail {
+  color: var(--card-text-muted) !important;
+}
+
+/* --- DETALLES DE TABLAS, CONTENEDORES INTERNOS Y BORDES --- */
+[data-theme="oscuro"] th, [data-theme="oscuro"] td, [data-theme="oscuro"] tr, [data-theme="oscuro"] .filaElemento, [data-theme="oscuro"] .infoItem, [data-theme="oscuro"] .p-card-body, [data-theme="oscuro"] .card-actions {
+  border-color: var(--card-border) !important;
+}
+[data-theme="oscuro"] .vehicle-info-mini, [data-theme="oscuro"] .card-actions {
+  background-color: var(--layout-bg) !important;
+  background: var(--layout-bg) !important;
+  border-color: var(--card-border) !important;
+}
+[data-theme="oscuro"] .letter-btn {
+  color: var(--card-text-muted) !important;
+}
+[data-theme="oscuro"] .letter-btn:hover {
+  background: var(--layout-bg) !important;
+  color: var(--accent-blue-light) !important;
+}
+
+[data-theme="gris"] th, [data-theme="gris"] td, [data-theme="gris"] tr, [data-theme="gris"] .filaElemento, [data-theme="gris"] .infoItem, [data-theme="gris"] .p-card-body, [data-theme="gris"] .card-actions {
+  border-color: var(--card-border) !important;
+}
+[data-theme="gris"] .vehicle-info-mini, [data-theme="gris"] .card-actions {
+  background-color: var(--layout-bg) !important;
+  background: var(--layout-bg) !important;
+  border-color: var(--card-border) !important;
+}
+[data-theme="gris"] .letter-btn {
+  color: var(--card-text-muted) !important;
+}
+[data-theme="gris"] .letter-btn:hover {
+  background: var(--layout-bg) !important;
+  color: var(--accent-blue-light) !important;
+}
+
+[data-theme="salvia"] th, [data-theme="salvia"] td, [data-theme="salvia"] tr, [data-theme="salvia"] .filaElemento, [data-theme="salvia"] .infoItem, [data-theme="salvia"] .p-card-body, [data-theme="salvia"] .card-actions {
+  border-color: var(--card-border) !important;
+}
+[data-theme="salvia"] .vehicle-info-mini, [data-theme="salvia"] .card-actions {
+  background-color: var(--layout-bg) !important;
+  background: var(--layout-bg) !important;
+  border-color: var(--card-border) !important;
+}
+[data-theme="salvia"] .letter-btn {
+  color: var(--card-text-muted) !important;
+}
+[data-theme="salvia"] .letter-btn:hover {
+  background: var(--layout-bg) !important;
+  color: var(--primary-color) !important;
+}
+
+/* --- SOBREESCRITURAS DE BOTONES Y ENLACES --- */
+[data-theme="salvia"] .btn-primary, [data-theme="salvia"] .botonGuardarPrimario, [data-theme="salvia"] .botonAgregar, [data-theme="salvia"] .btnAccionPrincipal, [data-theme="salvia"] .botonEditar, [data-theme="salvia"] .botonAcciones .btnEditar, [data-theme="salvia"] .btn-add-passenger, [data-theme="salvia"] .btn-search-header {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
+  color: white !important;
+}
+
+[data-theme="salvia"] .botonVerTodos, [data-theme="salvia"] .botonAccion, [data-theme="salvia"] .btnAuxiliar, [data-theme="salvia"] .btnAccionSecundario, [data-theme="salvia"] .botonDetalles, [data-theme="salvia"] .action-btn:hover, [data-theme="salvia"] .p-actions button:hover {
+  color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  background-color: var(--layout-bg) !important;
+}
+
+[data-theme="salvia"] .contactoItem {
+  color: var(--primary-color) !important;
 }

@@ -1,8 +1,8 @@
-import React, { useState, useCallback, memo } from 'react';
-import { Link, useLocation, Outlet } from 'react-router-dom';
+import React, { useState, useCallback, memo, useEffect, useRef } from 'react';
+import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
-  LayoutDashboard, Users, UserCheck, Car, Calendar, CreditCard,
+  LayoutDashboard, Users, UserCheck, Car,
   Bell, AlertCircle, ShieldCheck, Settings, ChevronDown, Menu, Search
 } from 'lucide-react';
 import IconSafeRide from '../../imgs/IconSafeRide.png';
@@ -25,10 +25,24 @@ const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [usuariosOpen, setUsuariosOpen] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const navigate = useNavigate();
+  const menuRef = useRef(null);
 
   const getDefaultImagen = (img) => img || DefaultImageUser;
 
   const handleCloseSidebar = useCallback(() => setSidebarOpen(false), []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuAbierto(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <div className="dashboardContent">
@@ -54,7 +68,10 @@ const AdminLayout = () => {
           <div className="navGroup">
             <div 
               className={`navItem ${location.pathname.includes('/usuarios') || location.pathname.includes('/conductores') ? 'active' : ''}`} 
-              onClick={() => setUsuariosOpen(!usuariosOpen)}
+              onClick={() => {
+                setUsuariosOpen(!usuariosOpen);
+                navigate('/usuarios');
+              }}
               style={{ cursor: 'pointer' }}
             >
               <Users size={20} /> 
@@ -147,7 +164,7 @@ const AdminLayout = () => {
               <span className="notificacionBadge"></span>
             </div>
 
-            <div className="menuIconContainer" style={{ position: 'relative' }}>
+            <div className="menuIconContainer" style={{ position: 'relative' }} ref={menuRef}>
               <Menu 
                 size={24} 
                 className="IconMenu" 

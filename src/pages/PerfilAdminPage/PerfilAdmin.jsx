@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { uploadToCloudinary } from '../../services/cloudinary';
+import { InsertarEnCloudinary } from '../../services/cloudinary';
 import DefaultImageUser from '../../imgs/DefaultImageUser.png';
 import api from '../../services/api';
 import { Link } from 'react-router-dom';

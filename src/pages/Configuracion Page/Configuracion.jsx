@@ -1,227 +1,247 @@
 import React, { useState } from 'react';
-import { 
-    Settings, Key, CreditCard, Palette, Info, 
-    Wrench, Save, X, Upload, Globe, Mail 
-} from 'lucide-react';
+import { Building, ShieldCheck, Lock, Palette, Mail, Phone, Info } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
+import SupportImage from '../../imgs/SupportConfig.png';
 import './Configuracion.css';
 
 const Configuracion = () => {
-    const [tabActiva, setTabActiva] = useState('general');
-    const [modoMantenimiento, setModoMantenimiento] = useState(false);
+    const { theme, setTheme } = useTheme();
 
-    // Estado del formulario
+    // Formularios y switches
     const [ajustes, setAjustes] = useState({
-        nombreSitio: 'SafeRide Global',
-        emailSoporte: 'soporte@saferide.com',
-        zonaHoraria: '(GMT-05:00) Eastern Time',
-        colorPrimario: '#2563EB',
-        colorAcento: '#10B981',
-        colorError: '#EF4444'
+        nombreSitio: 'SafeRide Transport',
+        zonaHoraria: '(GMT-06:00) Central Time',
+        emailSoporte: 'support@saferide.com'
     });
 
-    const manejarCambio = (e) => {
+    const [accesos, setAccesos] = useState({
+        dominioVerificado: true,
+        modoPrivacidad: true,
+        transitoInvitados: false
+    });
+
+    const manejarCambioAjustes = (e) => {
         const { name, value } = e.target;
         setAjustes(prev => ({ ...prev, [name]: value }));
+    };
+
+    const toggleAcceso = (key) => {
+        setAccesos(prev => ({ ...prev, [key]: !prev[key] }));
     };
 
     return (
         <div className="contenedorConfiguracion">
             <div className="cabeceraConfiguracion">
                 <h1>Configuración del Sistema</h1>
-                <p>Gestiona los ajustes globales, integraciones y la identidad visual de SafeRide.</p>
+                <p>Gestiona la red de transporte de tu organización y la identidad del sistema. Usa estos controles para asegurar una experiencia segura y fluida para todo el equipo.</p>
             </div>
 
             <div className="cuerpoConfiguracion">
-                {/* Sidebar de Navegación de Ajustes */}
-                <div className="sidebarOpciones">
-                    <div 
-                        className={`itemOpcion ${tabActiva === 'general' ? 'activo' : ''}`}
-                        onClick={() => setTabActiva('general')}
-                    >
-                        <Settings size={20} />
-                        <span>Ajustes Generales</span>
+                
+                {/* ───────────────────────────────────────────────────────── */}
+                {/* FILA 1: Identidad & Salud del Sistema */}
+                
+                <div className="tarjetaConfiguracion">
+                    <div className="tarjetaTitulo">
+                        <div className="iconoTituloWrap bg-celeste">
+                            <Building size={20} className="iconoCeleste" />
+                        </div>
+                        <h3>Identidad del Sistema</h3>
                     </div>
-                    <div 
-                        className={`itemOpcion ${tabActiva === 'seguridad' ? 'activo' : ''}`}
-                        onClick={() => setTabActiva('seguridad')}
-                    >
-                        <Key size={20} />
-                        <span>Seguridad y API</span>
-                    </div>
-                    <div 
-                        className={`itemOpcion ${tabActiva === 'pagos' ? 'activo' : ''}`}
-                        onClick={() => setTabActiva('pagos')}
-                    >
-                        <CreditCard size={20} />
-                        <span>Pasarelas de Pago</span>
-                    </div>
-                    <div 
-                        className={`itemOpcion ${tabActiva === 'apariencia' ? 'activo' : ''}`}
-                        onClick={() => setTabActiva('apariencia')}
-                    >
-                        <Palette size={20} />
-                        <span>Apariencia</span>
-                    </div>
-                </div>
-
-                {/* Contenido Dinámico */}
-                <div className="contenidoAjustes">
-                    {tabActiva === 'general' && (
-                        <>
-                            {/* Identidad General */}
-                            <div className="tarjetaConfiguracion">
-                                <div className="tarjetaTitulo">
-                                    <h3>Identidad General</h3>
-                                    <Info size={18} className="infoIcono" />
-                                </div>
-                                <div className="tarjetaCuerpo">
-                                    <div className="gridFormulario">
-                                        <div className="grupoInput">
-                                            <label>Nombre del Sistema</label>
-                                            <input 
-                                                type="text" 
-                                                name="nombreSitio"
-                                                className="inputEstilizado" 
-                                                value={ajustes.nombreSitio}
-                                                onChange={manejarCambio}
-                                            />
-                                        </div>
-                                        <div className="grupoInput">
-                                            <label>Email de Soporte</label>
-                                            <input 
-                                                type="email" 
-                                                name="emailSoporte"
-                                                className="inputEstilizado" 
-                                                value={ajustes.emailSoporte}
-                                                onChange={manejarCambio}
-                                            />
-                                        </div>
-                                        <div className="grupoInput fullWidth">
-                                            <label>Zona Horaria del Sistema</label>
-                                            <select 
-                                                name="zonaHoraria"
-                                                className="selectEstilizado"
-                                                value={ajustes.zonaHoraria}
-                                                onChange={manejarCambio}
-                                            >
-                                                <option>(GMT-05:00) Eastern Time</option>
-                                                <option>(GMT-06:00) Central Time</option>
-                                                <option>(GMT-04:00) Atlantic Time</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
+                    <div className="tarjetaCuerpo flexCol">
+                        <div className="gridFormularioDosCols">
+                            <div className="grupoInput">
+                                <label>Nombre del Sistema</label>
+                                <input 
+                                    type="text" 
+                                    name="nombreSitio"
+                                    className="inputEstilizado" 
+                                    value={ajustes.nombreSitio}
+                                    onChange={manejarCambioAjustes}
+                                />
                             </div>
-
-                            {/* Estado de la Plataforma */}
-                            <div className="tarjetaConfiguracion">
-                                <div className="tarjetaTitulo">
-                                    <h3>Estado de la Plataforma</h3>
-                                </div>
-                                <div className="tarjetaCuerpo">
-                                    <div className="filaEstado">
-                                        <div className="infoEstado">
-                                            <div className="iconoEstadoWrap">
-                                                <Wrench size={24} />
-                                            </div>
-                                            <div className="textoEstado">
-                                                <h4>Modo Mantenimiento</h4>
-                                                <p>Poner la plataforma fuera de línea para actualizaciones programadas.</p>
-                                            </div>
-                                        </div>
-                                        <label className="switch">
-                                            <input 
-                                                type="checkbox" 
-                                                checked={modoMantenimiento}
-                                                onChange={() => setModoMantenimiento(!modoMantenimiento)}
-                                            />
-                                            <span className="slider"></span>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Branding y Temas */}
-                            <div className="tarjetaConfiguracion">
-                                <div className="tarjetaTitulo">
-                                    <h3>Imagen de Marca y Temas</h3>
-                                </div>
-                                <div className="tarjetaCuerpo">
-                                    <div className="seccionBranding">
-                                        <div className="grupoInput">
-                                            <label>Color Primario</label>
-                                            <div className="colorPickerWrap">
-                                                <div className="indicadorColor" style={{ background: ajustes.colorPrimario }}></div>
-                                                <input 
-                                                    type="text" 
-                                                    name="colorPrimario"
-                                                    value={ajustes.colorPrimario} 
-                                                    onChange={manejarCambio}
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="grupoInput">
-                                            <label>Color de Acento</label>
-                                            <div className="colorPickerWrap">
-                                                <div className="indicadorColor" style={{ background: ajustes.colorAcento }}></div>
-                                                <input 
-                                                    type="text" 
-                                                    name="colorAcento"
-                                                    value={ajustes.colorAcento} 
-                                                    onChange={manejarCambio}
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="grupoInput">
-                                            <label>Resaltado de Errores</label>
-                                            <div className="colorPickerWrap">
-                                                <div className="indicadorColor" style={{ background: ajustes.colorError }}></div>
-                                                <input 
-                                                    type="text" 
-                                                    name="colorError"
-                                                    value={ajustes.colorError} 
-                                                    onChange={manejarCambio}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="grupoInput">
-                                        <label>Logo del Sistema</label>
-                                        <div className="uploadLogoWrap">
-                                            <div className="iconoUploadWrap">
-                                                <Upload size={24} />
-                                            </div>
-                                            <div className="textoUpload">
-                                                <h5>Haz clic para subir el logo</h5>
-                                                <p>SVG, PNG o JPG (Máx 2MB)</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </>
-                    )}
-
-                    {tabActiva !== 'general' && (
-                        <div className="tarjetaConfiguracion">
-                            <div className="tarjetaCuerpo" style={{ textAlign: 'center', padding: '60px' }}>
-                                <Wrench size={48} style={{ color: '#94A3B8', marginBottom: '16px' }} />
-                                <h3>Sección en Desarrollo</h3>
-                                <p>Estamos trabajando para traerte más opciones de configuración en {tabActiva}.</p>
+                            <div className="grupoInput">
+                                <label>Zona Horaria</label>
+                                <select 
+                                    name="zonaHoraria"
+                                    className="selectEstilizado"
+                                    value={ajustes.zonaHoraria}
+                                    onChange={manejarCambioAjustes}
+                                >
+                                    <option>(GMT-05:00) Eastern Time</option>
+                                    <option>(GMT-06:00) Central Time</option>
+                                    <option>(GMT-04:00) Atlantic Time</option>
+                                </select>
                             </div>
                         </div>
-                    )}
+                        <div className="grupoInput mT-16">
+                            <label>Email de Contacto</label>
+                            <input 
+                                type="email" 
+                                name="emailSoporte"
+                                className="inputEstilizado" 
+                                value={ajustes.emailSoporte}
+                                onChange={manejarCambioAjustes}
+                            />
+                        </div>
+                        <button className="botonGuardarPrimario mT-24">
+                            Guardar Cambios
+                        </button>
+                    </div>
                 </div>
-            </div>
 
-            {/* Acciones Finales */}
-            <div className="pieAcciones">
-                <button className="botonDescartar">Descartar Cambios</button>
-                <button className="botonGuardar">
-                    <Save size={18} />
-                    Guardar Cambios
-                </button>
+                <div className="tarjetaConfiguracion">
+                    <div className="tarjetaTitulo">
+                        <div className="iconoTituloWrap bg-verdeClaro">
+                            <ShieldCheck size={20} className="iconoVerde" />
+                        </div>
+                        <h3>Estado del Sistema</h3>
+                    </div>
+                    <div className="tarjetaCuerpo flexCol">
+                        <div className="listaEstado">
+                            <div className="itemEstado">
+                                <div className="estadoIzquierda">
+                                    <div className="puntoVerde"></div>
+                                    <span>Conectividad de Red</span>
+                                </div>
+                                <span className="badgeEstado optimo">Óptima</span>
+                            </div>
+                            <div className="itemEstado">
+                                <div className="estadoIzquierda">
+                                    <div className="puntoVerde"></div>
+                                    <span>Servicios API</span>
+                                </div>
+                                <span className="badgeEstado estable">Estable</span>
+                            </div>
+                            <div className="itemEstado">
+                                <div className="estadoIzquierda">
+                                    <div className="puntoVerde"></div>
+                                    <span>Base de Datos</span>
+                                </div>
+                                <span className="badgeEstado sincronizada">Sincronizada</span>
+                            </div>
+                        </div>
+
+                        <div className="bannerInfoSistema">
+                            <Info size={20} />
+                            <p>La plataforma funciona correctamente para los 1,240 miembros activos en las tres regiones.</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ───────────────────────────────────────────────────────── */}
+                {/* FILA 2: Acceso & Temas */}
+                
+                <div className="tarjetaConfiguracion">
+                    <div className="tarjetaTitulo">
+                        <div className="iconoTituloWrap bg-naranjaClaro">
+                            <Lock size={20} className="iconoNaranja" />
+                        </div>
+                        <h3>Acceso a la Plataforma</h3>
+                    </div>
+                    <div className="tarjetaCuerpo flexCol gap-24">
+                        <div className="itemSwitch">
+                            <div className="infoSwitch">
+                                <h4>Acceso a Dominio Verificado</h4>
+                                <p>Solo los empleados con correo corporativo pueden unirse.</p>
+                            </div>
+                            <label className="switch">
+                                <input 
+                                    type="checkbox" 
+                                    checked={accesos.dominioVerificado}
+                                    onChange={() => toggleAcceso('dominioVerificado')}
+                                />
+                                <span className="slider"></span>
+                            </label>
+                        </div>
+
+                        <div className="itemSwitch">
+                            <div className="infoSwitch">
+                                <h4>Modo Privacidad de Datos</h4>
+                                <p>Oculta el teléfono de los empleados hasta confirmar el viaje.</p>
+                            </div>
+                            <label className="switch">
+                                <input 
+                                    type="checkbox" 
+                                    checked={accesos.modoPrivacidad}
+                                    onChange={() => toggleAcceso('modoPrivacidad')}
+                                />
+                                <span className="slider"></span>
+                            </label>
+                        </div>
+
+                        <div className="itemSwitch">
+                            <div className="infoSwitch">
+                                <h4>Tránsito de Invitados</h4>
+                                <p>Permitir acceso temporal para socios o visitas externas.</p>
+                            </div>
+                            <label className="switch">
+                                <input 
+                                    type="checkbox" 
+                                    checked={accesos.transitoInvitados}
+                                    onChange={() => toggleAcceso('transitoInvitados')}
+                                />
+                                <span className="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="tarjetaConfiguracion">
+                    <div className="tarjetaTitulo">
+                        <div className="iconoTituloWrap bg-grisClaro">
+                            <Palette size={20} className="iconoGris" />
+                        </div>
+                        <h3>Temas Visuales</h3>
+                    </div>
+                    <div className="tarjetaCuerpo flexCol">
+                        <p className="textoDescriptivo">Personaliza la apariencia de la plataforma para ajustarla a la identidad corporativa y preferencias de los usuarios.</p>
+                        
+                        <div className="gridTemas">
+                            <div className="temaOpcion" onClick={() => setTheme('estandar')}>
+                                <div className={`cajaColor bg-temaEstandar ${theme === 'estandar' ? 'seleccionado' : ''}`}></div>
+                                <span>Estándar</span>
+                            </div>
+                            <div className="temaOpcion" onClick={() => setTheme('gris')}>
+                                <div className={`cajaColor bg-temaGris ${theme === 'gris' ? 'seleccionado' : ''}`}></div>
+                                <span>Gris</span>
+                            </div>
+                            <div className="temaOpcion" onClick={() => setTheme('oscuro')}>
+                                <div className={`cajaColor bg-temaOscuro ${theme === 'oscuro' ? 'seleccionado' : ''}`}></div>
+                                <span>Oscuro</span>
+                            </div>
+                            <div className="temaOpcion" onClick={() => setTheme('salvia')}>
+                                <div className={`cajaColor bg-temaSalvia ${theme === 'salvia' ? 'seleccionado' : ''}`}></div>
+                                <span>Salvia</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ───────────────────────────────────────────────────────── */}
+                {/* FILA 3: Soporte Técnico Dedicado (Ancho completo) */}
+
+                <div className="tarjetaConfiguracion fullWidth cardSoporteDedicado">
+                    <div className="soporteImagenWrap">
+                        <img src={SupportImage} alt="Equipo de Soporte SafeRide" />
+                    </div>
+                    <div className="soporteContenido">
+                        <h2>Soporte Dedicado al Staff</h2>
+                        <p>Nuestra misión principal es asegurar que cada empleado tenga un viaje seguro y libre de estrés. Si necesitas ayuda con integraciones avanzadas del sistema, nuestro equipo de soporte interno está disponible de 8 AM a 6 PM de Lunes a Viernes.</p>
+                        
+                        <div className="contactoSoporteList">
+                            <div className="contactoItem">
+                                <Mail size={18} />
+                                <span>soporte@saferide.cr</span>
+                            </div>
+                            <div className="contactoItem">
+                                <Phone size={18} />
+                                <span>Ext. 4455</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     );
