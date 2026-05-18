@@ -535,11 +535,11 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
             ) : trips.length > 0 ? (
               <div className="trips-timeline">
                 {trips.map((trip, idx) => (
-                  <TripItem 
-                    key={trip._id || idx} 
-                    trip={trip} 
-                    idx={idx} 
-                    isLast={idx === trips.length - 1} 
+                  <TripItem
+                    key={trip._id || idx}
+                    trip={trip}
+                    idx={idx}
+                    isLast={idx === trips.length - 1}
                   />
                 ))}
               </div>

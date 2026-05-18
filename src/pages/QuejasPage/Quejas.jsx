@@ -22,7 +22,8 @@ import {
   AlertCircle, Search, Filter, Mail, User, Clock,
   ChevronRight, MessageSquare, Tag, Flag,
   CheckCircle, AlertTriangle, Info, Copy, ExternalLink,
-  ChevronLeft, ChevronsLeft, ChevronsRight, RefreshCw
+  ChevronLeft, ChevronsLeft, ChevronsRight, RefreshCw,
+  ChevronUp, ChevronDown
 } from 'lucide-react';
 import { toast, Toaster } from 'react-hot-toast';
 import Swal from 'sweetalert2';
@@ -54,6 +55,7 @@ const QuejasPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [replyMessage, setReplyMessage] = useState('');
   const [sendingReply, setSendingReply] = useState(false);
+  const [expandedQuejaId, setExpandedQuejaId] = useState(null);
 
   // Filtrado dinámico
   const filteredQuejas = useMemo(() => {
@@ -215,60 +217,141 @@ const QuejasPage = () => {
         </button>
       </div>
 
-      {/* Tabla de Quejas */}
-      <div className="q-table-wrapper">
-        <table className="q-table">
-          <thead>
-            <tr>
-              <th>ID Caso</th>
-              <th>Usuario / Email</th>
-              <th>Categoría</th>
-              <th>Fecha</th>
-              <th>Estado</th>
-              <th style={{ textAlign: 'right' }}>Acción</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredQuejas.length > 0 ? (
-              filteredQuejas.map((q) => (
-                <tr key={q.id} onClick={() => handleOpenDetail(q)} className="q-row">
-                  <td><span className="q-id">{q.id}</span></td>
-                  <td>
-                    <div className="q-user-cell">
-                      <div className="q-user-avatar">
-                        <User size={14} />
-                      </div>
-                      <div>
-                        <div className="q-user-name">{q.user}</div>
-                        <div className="q-user-email">{q.email}</div>
-                      </div>
+      {/* Listado de Quejas en formato Cards Premium */}
+      <div className="q-cards-grid animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+        {filteredQuejas.length > 0 ? (
+          filteredQuejas.map((q) => {
+            const isExpanded = expandedQuejaId === q.id;
+            return (
+              <div
+                key={q.id}
+                className={`n-card ${q.status === 'Pendiente' ? 'unread' : 'read'} correo`}
+                style={{
+                  background: 'white',
+                  borderRadius: '16px',
+                  border: '1px solid #E2E8F0',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  position: 'relative',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01)'
+                }}
+              >
+                {/* Banda dorada decorativa de correo */}
+                <div className="n-stripe" style={{ width: '5px', backgroundColor: '#F59E0B', flexShrink: 0 }} />
+
+                <div className="n-card-body" style={{ padding: '16px 20px', display: 'flex', alignItems: 'flex-start', gap: '16px', width: '100%' }}>
+                  {/* Ícono de Correo */}
+                  <div className="n-icon-wrapper" style={{ width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', backgroundColor: 'rgba(245, 158, 11, 0.15)', flexShrink: 0, justifyContent: 'center' }}>
+                    <Mail size={20} style={{ color: '#F59E0B' }} />
+                  </div>
+
+                  <div className="n-card-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {/* Header de la tarjeta */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: '800', background: '#F1F5F9', color: '#475569', padding: '2px 8px', borderRadius: '4px' }}>
+                        {q.id}
+                      </span>
+                      <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', padding: '2px 8px', borderRadius: '20px', backgroundColor: q.status === 'Pendiente' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', color: q.status === 'Pendiente' ? '#EF4444' : '#10B981' }}>
+                        {q.status}
+                      </span>
                     </div>
-                  </td>
-                  <td><span className="q-cat-tag">{q.category}</span></td>
-                  <td>
-                    <div className="q-date-cell">
-                      <Clock size={12} />
-                      {new Date(q.createdAt).toLocaleDateString()}
+
+                    <p className="n-message" style={{ fontSize: '14.5px', fontWeight: '600', color: '#1E293B', margin: 0 }}>
+                      Nueva Queja de {q.user} ({q.email})
+                    </p>
+
+                    {/* Preview box */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                      <div className="n-preview-box" style={{ margin: '8px 0 0 0', width: '100%' }}>
+                        <strong>Asunto: {q.subject}</strong>
+                        <p style={{ margin: 0 }}>
+                          {isExpanded 
+                            ? q.fullMessage || q.message 
+                            : `${(q.fullMessage || q.message).substring(0, 160)}...`}
+                        </p>
+                      </div>
+                      <button 
+                        className="n-toggle-preview-btn" 
+                        onClick={() => setExpandedQuejaId(prev => prev === q.id ? null : q.id)}
+                        style={{ marginTop: '8px' }}
+                      >
+                        {isExpanded ? (
+                          <>Ocultar detalles <ChevronUp size={12} /></>
+                        ) : (
+                          <>Ver preview de queja completo <ChevronDown size={12} /></>
+                        )}
+                      </button>
                     </div>
-                  </td>
-                  <td><StatusBadge status={q.status} /></td>
-                  <td style={{ textAlign: 'right' }}>
-                    <button className="q-view-btn">
+
+                    {/* Meta info */}
+                    <div className="n-meta" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
+                      <span className="n-time" style={{ fontSize: '12px', color: '#94A3B8', fontWeight: '500', display: 'flex', alignItems: 'center' }}>
+                        <Clock size={12} style={{ marginRight: '4px' }} />
+                        {new Date(q.createdAt).toLocaleDateString()} a las {new Date(q.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <span className="n-badge-category correo" style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', padding: '2px 8px', borderRadius: '20px', background: 'rgba(245, 158, 11, 0.15)', color: '#B45309' }}>
+                        {q.category}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Acciones de la Tarjeta */}
+                  <div className="n-card-actions" style={{ display: 'flex', gap: '8px', alignSelf: 'center', marginLeft: '16px' }}>
+                    {q.status === 'Pendiente' && (
+                      <button
+                        className="n-action-btn check"
+                        title="Marcar como atendida"
+                        onClick={() => handleResolve(q)}
+                        style={{
+                          border: 'none',
+                          background: 'transparent',
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                          color: '#94A3B8'
+                        }}
+                      >
+                        <CheckCircle size={18} />
+                      </button>
+                    )}
+                    <button
+                      className="n-action-btn view"
+                      title="Ver Detalles Completos y Responder"
+                      onClick={() => handleOpenDetail(q)}
+                      style={{
+                        border: 'none',
+                        background: '#2563EB',
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        color: 'white'
+                      }}
+                    >
                       <ChevronRight size={18} />
                     </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="7" className="q-empty">
-                  <MessageSquare size={48} />
-                  <p>No hay quejas que coincidan con los filtros</p>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="n-empty-state" style={{ textAlign: 'center', padding: '80px 20px', background: 'white', borderRadius: '20px', border: '1.5px dashed #E2E8F0', color: '#64748B' }}>
+            <MessageSquare size={56} style={{ color: '#64748B', marginBottom: '16px' }} />
+            <h3>No hay quejas</h3>
+            <p>No se encontraron reportes que coincidan con los filtros seleccionados.</p>
+          </div>
+        )}
       </div>
 
       {/* Modal de Detalle */}
@@ -321,20 +404,7 @@ const QuejasPage = () => {
                     <h3 className="q-section-title">Asunto: {selectedQueja.subject}</h3>
                   </div>
                   
-                  <div className="q-message-box-wrapper">
-                    <div className="q-message-box">
-                      <MessageSquare size={16} className="q-quote-icon" />
-                      <div className="q-full-text">
-                        {selectedQueja.fullMessage ? (
-                          selectedQueja.fullMessage.split('\n').map((line, i) => (
-                            <p key={i} style={{ marginBottom: '8px' }}>{line}</p>
-                          ))
-                        ) : (
-                          <p>{selectedQueja.message}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+
                   <div className="q-reply-section" style={{ marginTop: '24px' }}>
                     <h3 className="q-section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <Mail size={16} /> Responder a Usuario

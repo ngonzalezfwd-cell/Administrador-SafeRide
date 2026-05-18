@@ -8,6 +8,7 @@ import {
 import IconSafeRide from '../../imgs/IconSafeRide.png';
 import DefaultImageUser from '../../imgs/DefaultImageUser.png';
 import { Toaster } from 'react-hot-toast';
+import notificationService from '../../services/notificationService';
 import './AdminLayout.css';
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────
@@ -27,6 +28,39 @@ const AdminLayout = () => {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const navigate = useNavigate();
   const menuRef = useRef(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const loadUnreadCount = useCallback(async () => {
+    try {
+      const res = await notificationService.getNotifications();
+      const list = res?.data || [];
+      setUnreadCount(list.filter(n => n.status === 'unread').length);
+    } catch {
+      setUnreadCount(0);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadUnreadCount();
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadUnreadCount();
+      }
+    };
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadUnreadCount();
+      }
+    }, 10000); // Equilibrado a 10 segundos para mayor fluidez de red
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [loadUnreadCount]);
 
   const getDefaultImagen = (img) => img || DefaultImageUser;
 
@@ -155,13 +189,20 @@ const AdminLayout = () => {
               <span>Bienvenido/a, {user?.name || 'Admin'}</span>
             </div>
 
+            <Link 
+              to="/notificaciones" 
+              className="notificacionCampana" 
+              style={{ color: 'inherit', textDecoration: 'none', position: 'relative' }}
+              title="Centro de Notificaciones"
+            >
+              <Bell size={20} />
+              {unreadCount > 0 && (
+                <span className="notificacionBadge">{unreadCount}</span>
+              )}
+            </Link>
+
             <div className="userInfo">
               <img src={getDefaultImagen(user?.profileImage)} alt="Admin" className="FotoPerfilHeader" />
-            </div>
-
-            <div className="notificacionCampana">
-              <Bell size={24} />
-              <span className="notificacionBadge"></span>
             </div>
 
             <div className="menuIconContainer" style={{ position: 'relative' }} ref={menuRef}>
