@@ -28,11 +28,18 @@
   --q-slate-900: #0F172A;
 }
 
+/* Anular el margin-bottom del page-header dentro de quejas */
+.quejas-container .page-header {
+  margin-bottom: 4px !important; /* Reducido de 8px */
+  padding-bottom: 0 !important;
+}
+
 /* Acciones del header: badge + botón bien separados */
 .q-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 20px; /* Separación clara entre el badge y el botón */
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important; /* Reducido de 24px */
+  margin-bottom: 4px;
 }
 
 /* Botón de sincronizar con estilo propio */
@@ -42,8 +49,8 @@
   gap: 8px;
   padding: 10px 20px;
   background: #fff;
-  color: var(--q-slate-500, #64748B);
-  border: 1.5px solid var(--q-slate-200, #E2E8F0);
+  color: #64748B;
+  border: 1.5px solid #E2E8F0;
   border-radius: 12px;
   font-size: 13px;
   font-weight: 600;
@@ -53,11 +60,10 @@
 }
 
 .q-sync-btn:hover {
-  background: var(--q-slate-50, #F8FAFC);
-  color: var(--q-slate-900, #0F172A);
+  background: #F8FAFC;
+  color: #0F172A;
   border-color: #CBD5E1;
 }
-
 
 /* ─────────────────────────────────────────────────────
    BARRA DE BÚSQUEDA Y FILTROS
@@ -66,7 +72,10 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 28px;
+  margin-top: 0;
+  margin-bottom: 4px; /* Reducido de 8px */
+  padding-bottom: 4px; /* Reducido de 8px */
+  border-bottom: 1.5px solid #F1F5F9;
   gap: 16px;
   flex-wrap: wrap;
 }
@@ -89,7 +98,7 @@
 
 .q-search-box input {
   width: 100%;
-  padding: 13px 16px 13px 46px;
+  padding: 10px 16px 10px 42px; /* Reducido de 13px */
   background: #fff;
   border: 1.5px solid var(--q-slate-200);
   border-radius: var(--q-radius-md);
@@ -175,7 +184,7 @@
 }
 
 .q-table th {
-  padding: 14px 28px;
+  padding: 8px 20px; /* Reducido de 14px 28px */
   background: var(--q-slate-50);
   font-size: 11px;
   font-weight: 700;
@@ -196,7 +205,7 @@
 .q-row:hover { background: var(--q-slate-50); }
 
 .q-table td {
-  padding: 18px 28px;
+  padding: 10px 20px; /* Reducido de 18px 28px */
   vertical-align: middle;
 }
 

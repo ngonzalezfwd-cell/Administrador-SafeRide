@@ -1,4 +1,4 @@
-1. En el Backend (Servidor)
+1. En el Backend (Servidor) R
 No existe un modelo de "Queja": En la base de datos (src/models), no hay una tabla o esquema específico para quejas (Complaints o Quejas).
 Sistema Unificado de Reseñas: Todo el feedback de los usuarios se centraliza en el modelo Review.js. Este guarda:
 ride_id: El viaje relacionado.

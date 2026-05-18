@@ -1,4 +1,4 @@
-14/05/26
+14/05/26 R
 
 Este era que el conductor no se eliminaba solo se quedaba inactive, lo que se hizo fue un soft delete para que no se borren solo desactiven
 
