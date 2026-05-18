@@ -1,0 +1,298 @@
+/**
+ * Quejas.jsx
+ * 
+ * Módulo de Gestión de Incidencias y Quejas — SafeRide Admin Panel
+ * Este componente visualiza los reportes procesados por el agente de soporte.
+ * 
+ * @author SafeRide Dev Team
+ */
+
+import React, { useState, useMemo } from 'react';
+import {
+  AlertCircle, Search, Filter, Mail, User, Clock,
+  ChevronRight, MessageSquare, Tag, Flag,
+  CheckCircle, AlertTriangle, Info, Copy, ExternalLink,
+  ChevronLeft, ChevronsLeft, ChevronsRight, RefreshCw
+} from 'lucide-react';
+import { toast, Toaster } from 'react-hot-toast';
+import Swal from 'sweetalert2';
+
+import complaintsData from '../../data/complaints.json';
+import './Quejas.css';
+
+const StatusBadge = ({ status }) => {
+  const styles = {
+    Pendiente: { bg: 'rgba(239, 68, 68, 0.1)', color: '#EF4444' },
+    "En Revisión": { bg: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B' },
+    Atendido: { bg: 'rgba(16, 185, 129, 0.1)', color: '#10B981' }
+  };
+  const config = styles[status] || { bg: '#F1F5F9', color: '#64748B' };
+
+  return (
+    <div className="q-status" style={{ backgroundColor: config.bg, color: config.color }}>
+      <div className="q-status-dot" style={{ backgroundColor: config.color }} />
+      {status}
+    </div>
+  );
+};
+
+const QuejasPage = () => {
+  const [quejas, setQuejas] = useState(complaintsData);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('Todos');
+  const [selectedQueja, setSelectedQueja] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Filtrado dinámico
+  const filteredQuejas = useMemo(() => {
+    return quejas.filter(q => {
+      const matchSearch = q.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        q.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        q.subject.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchCategory = filterCategory === 'Todos' || q.category === filterCategory;
+      return matchSearch && matchCategory;
+    });
+  }, [searchTerm, filterCategory]);
+
+  const handleOpenDetail = (queja) => {
+    setSelectedQueja(queja);
+    setIsModalOpen(true);
+  };
+
+  const handleCopyId = (id) => {
+    navigator.clipboard.writeText(id);
+    toast.success('ID copiado al portapapeles');
+  };
+
+  // Función para forzar sincronización manual con el Agente
+  const handleSync = async () => {
+    toast.loading('Sincronizando con Gmail...', { id: 'sync' });
+    try {
+      const response = await fetch('http://localhost:3001/api/sync');
+      const data = await response.json();
+      setQuejas(data);
+      toast.success('Sincronización completa', { id: 'sync' });
+    } catch (error) {
+      toast.error('Error: El Agente no está activo', { id: 'sync' });
+    }
+  };
+
+  const handleResolve = (queja) => {
+    Swal.fire({
+      title: '¿Marcar como atendida?',
+      text: `Esto marcará el correo como LEÍDO en Gmail de forma permanente.`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#10B981',
+      cancelButtonColor: '#64748B',
+      confirmButtonText: 'Sí, resolver en Gmail',
+      cancelButtonText: 'Cancelar'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const response = await fetch(`http://localhost:3001/api/resolve/${queja.uid}`, {
+            method: 'POST'
+          });
+
+          if (response.ok) {
+            toast.success('¡Hecho! Marcado como leído en Gmail');
+            setIsModalOpen(false);
+            // Sincronizar para actualizar la lista
+            setTimeout(handleSync, 500);
+          } else {
+            toast.error('Error al resolver en Gmail');
+          }
+        } catch (error) {
+          toast.error('El Agente no está respondiendo');
+        }
+      }
+    });
+  };
+
+  return (
+    <div className="quejas-container">
+      <Toaster position="top-right" />
+
+      {/* Header local con buscador */}
+      <div className="quejas-header-actions">
+        <div className="q-search-box">
+          <Search size={18} className="q-search-icon" />
+          <input
+            type="text"
+            placeholder="Buscar por ID, usuario o asunto..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="q-filters">
+          <Filter size={16} />
+          <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
+            <option value="Todos">Todas las categorías</option>
+            <option value="Pagos">Pagos</option>
+            <option value="Conducta">Conducta</option>
+            <option value="Seguridad">Seguridad</option>
+            <option value="Soporte Técnico">Soporte Técnico</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="page-header">
+        <div>
+          <h1>Atención de Quejas</h1>
+          <p>Monitorea y resuelve los reportes enviados por los usuarios vía email</p>
+        </div>
+        <div className="q-header-actions">
+          <div className="q-stats-summary">
+            <div className="q-stat-item">
+              <span className="q-stat-val">{quejas.length}</span>
+              <span className="q-stat-lab">Pendientes</span>
+            </div>
+          </div>
+          <button className="q-sync-btn" onClick={handleSync}>
+            <RefreshCw size={15} />
+            Sincronizar Gmail
+          </button>
+        </div>
+      </div>
+
+      {/* Tabla de Quejas */}
+      <div className="q-table-wrapper">
+        <table className="q-table">
+          <thead>
+            <tr>
+              <th>ID Caso</th>
+              <th>Usuario / Email</th>
+              <th>Categoría</th>
+              <th>Fecha</th>
+              <th>Estado</th>
+              <th style={{ textAlign: 'right' }}>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredQuejas.length > 0 ? (
+              filteredQuejas.map((q) => (
+                <tr key={q.id} onClick={() => handleOpenDetail(q)} className="q-row">
+                  <td><span className="q-id">{q.id}</span></td>
+                  <td>
+                    <div className="q-user-cell">
+                      <div className="q-user-avatar">
+                        <User size={14} />
+                      </div>
+                      <div>
+                        <div className="q-user-name">{q.user}</div>
+                        <div className="q-user-email">{q.email}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span className="q-cat-tag">{q.category}</span></td>
+                  <td>
+                    <div className="q-date-cell">
+                      <Clock size={12} />
+                      {new Date(q.createdAt).toLocaleDateString()}
+                    </div>
+                  </td>
+                  <td><StatusBadge status={q.status} /></td>
+                  <td style={{ textAlign: 'right' }}>
+                    <button className="q-view-btn">
+                      <ChevronRight size={18} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="7" className="q-empty">
+                  <MessageSquare size={48} />
+                  <p>No hay quejas que coincidan con los filtros</p>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Modal de Detalle */}
+      {isModalOpen && selectedQueja && (
+        <div className="q-modal-overlay" onClick={() => setIsModalOpen(false)}>
+          <div className="q-modal" onClick={e => e.stopPropagation()}>
+            <div className="q-modal-header">
+              <div className="q-modal-title-row">
+                <AlertCircle size={20} color="#EF4444" />
+                <h2>Detalle de Incidencia {selectedQueja.id}</h2>
+              </div>
+              <button className="q-close-btn" onClick={() => setIsModalOpen(false)}>×</button>
+            </div>
+
+            <div className="q-modal-content">
+              <div className="q-modal-grid">
+                {/* Columna Izquierda: Info de Usuario */}
+                <div className="q-modal-section">
+                  <h3 className="q-section-title">Información del Usuario</h3>
+                  <div className="q-info-card">
+                    <div className="q-info-item">
+                      <User size={16} />
+                      <span>{selectedQueja.user}</span>
+                    </div>
+                    <div className="q-info-item">
+                      <Mail size={16} />
+                      <span>{selectedQueja.email}</span>
+                    </div>
+                  </div>
+
+                  <h3 className="q-section-title" style={{ marginTop: '20px' }}>Detalles del Viaje</h3>
+                  <div className="q-info-card">
+                    <div className="q-info-item" style={{ justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Flag size={16} />
+                        <span>ID Viaje: {selectedQueja.tripId}</span>
+                      </div>
+                      {selectedQueja.tripId !== 'N/A' && (
+                        <button className="q-copy-btn" onClick={() => handleCopyId(selectedQueja.tripId)}>
+                          <Copy size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Columna Derecha: Contenido del Mensaje */}
+                <div className="q-modal-section">
+                  <div className="q-message-header">
+                    <h3 className="q-section-title">Asunto: {selectedQueja.subject}</h3>
+                  </div>
+                  
+                  <div className="q-message-box-wrapper">
+                    <div className="q-message-box">
+                      <MessageSquare size={16} className="q-quote-icon" />
+                      <div className="q-full-text">
+                        {selectedQueja.fullMessage ? (
+                          selectedQueja.fullMessage.split('\n').map((line, i) => (
+                            <p key={i} style={{ marginBottom: '8px' }}>{line}</p>
+                          ))
+                        ) : (
+                          <p>{selectedQueja.message}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="q-modal-badges">
+                    <span className="q-cat-tag">{selectedQueja.category}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="q-modal-footer">
+              <button className="q-btn-secondary" onClick={() => setIsModalOpen(false)}>Cerrar</button>
+              <button className="q-btn-primary" onClick={() => handleResolve(selectedQueja)}>
+                <CheckCircle size={18} /> Marcar como Atendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default QuejasPage;

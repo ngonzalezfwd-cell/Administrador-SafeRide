@@ -7,12 +7,19 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "sync-complaints": "node scripts/sync_complaints.cjs"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "axios": "^1.16.0",
     "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "imap": "^0.8.19",
     "lucide-react": "^1.14.0",
+    "mailparser": "^3.9.8",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-hot-toast": "^2.6.0",

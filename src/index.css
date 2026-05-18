@@ -51,11 +51,11 @@ body {
 
 .glass-card {
   background: var(--card-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(4px); /* Reducido de 12px: mejora fluídez global */
+  -webkit-backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15); /* Sombra más ligera */
 }
 
 .btn-primary {
@@ -90,11 +90,139 @@ body {
 }
 
 /* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+.animate-fade-in {
+  opacity: 1;
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.6s ease-out forwards;
+/* --- Global Skeleton Loaders --- */
+.skeleton {
+  pointer-events: none;
+  user-select: none;
+}
+
+.skeleton-pulse {
+  background: #f1f5f9;
+}
+
+/* --- Staggered Card Entrance (Removed) --- */
+.conductor-card, .vehicle-card, .pasajero-card {
+  opacity: 1;
+}
+
+/* Specific skeleton parts */
+.skeleton-img, .skeleton-img-v {
+  width: 100%;
+  height: 160px;
+  background: #e2e8f0;
+  border-radius: 12px;
+}
+
+.skeleton-line, .skeleton-line-v {
+  height: 12px;
+  background: #e2e8f0;
+  margin: 8px 0;
+  border-radius: 4px;
+}
+
+.skeleton-line.title { width: 70%; height: 16px; }
+.skeleton-line.subtitle { width: 50%; }
+.skeleton-line.small { width: 40%; }
+
+/* --- Global Pagination Styles --- */
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 50px;
+  padding: 12px 20px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+  border: 1px solid #F1F5F9;
+}
+
+.pagination-numbers {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border-left: 1px solid #F1F5F9;
+  border-right: 1px solid #F1F5F9;
+  margin: 0 5px;
+}
+
+.pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #F1F5F9;
+  color: #3B82F6;
+  transform: scale(1.1);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.page-num {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.page-num:hover {
+  background: #F1F5F9;
+  color: #3B82F6;
+}
+
+.page-num.active {
+  background: #3B82F6;
+  color: white;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+
+.pagination-dots {
+  padding: 0 8px;
+  color: #94A3B8;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.skeleton-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e2e8f0;
+}
+
+.skeleton-btn, .skeleton-btn-v {
+  height: 32px;
+  width: 32px;
+  border-radius: 8px;
+  background: #e2e8f0;
 }

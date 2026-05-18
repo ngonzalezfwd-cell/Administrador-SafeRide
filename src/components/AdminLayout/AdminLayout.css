@@ -23,20 +23,20 @@
   font-family: 'Inter', sans-serif;
 }
 
-/* ── SIDEBAR ─────────────────────────────────────────────── */
 aside {
   width: var(--sidebar-width);
   background: var(--sidebar-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  /* blur eliminado: era la causa #1 del lag en macOS (se recalculaba cada frame) */
   color: white;
   display: flex;
   flex-direction: column;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
   z-index: 100;
   position: relative;
   border-right: 1px solid rgba(255, 255, 255, 0.05);
+  will-change: transform; /* Aceleración GPU */
+  transform: translateZ(0); /* Forzar compositing layer */
 }
 
 aside.open {
@@ -160,12 +160,6 @@ aside.open {
   gap: 2px;
   border-left: 1px solid rgba(255, 255, 255, 0.05);
   padding-left: 10px;
-  animation: slideDownSub 0.3s ease-out;
-}
-
-@keyframes slideDownSub {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .subNavItem {
@@ -249,15 +243,16 @@ main {
 
 header {
   height: var(--header-height);
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.95); /* Más opaco = menos blur necesario */
+  backdrop-filter: blur(6px); /* Reducido de 12px a 6px */
+  -webkit-backdrop-filter: blur(6px);
   border-bottom: 1px solid rgba(226, 232, 240, 0.8);
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 40px;
   z-index: 90;
+  will-change: auto; /* Solo activar cuando sea necesario */
 }
 
 .headerIzquierdo {

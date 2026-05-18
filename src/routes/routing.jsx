@@ -11,6 +11,7 @@ import PerfilAdmin       from '../pages/PerfilAdminPage/PerfilAdmin';
 import PasajerosPage     from '../pages/PasajerosPage/Pasajeros';
 import ConductoresPage   from '../pages/ConductoresPage/ConductoresPage';
 import VehiculosPage     from '../pages/VehiculosPage/Vehiculos';
+import QuejasPage        from '../pages/QuejasPage/Quejas';
 import Configuracion     from '../pages/Configuracion Page/Configuracion';
 import AdminLayout       from '../components/AdminLayout/AdminLayout';
 
@@ -48,7 +49,7 @@ const Routing = () => (
           <Route path="/reservas"       element={<PlaceholderPage title="Gestión de Reservas" />} />
           <Route path="/pagos"          element={<PlaceholderPage title="Historial de Pagos" />} />
           <Route path="/notificaciones" element={<PlaceholderPage title="Notificaciones del Sistema" />} />
-          <Route path="/quejas"         element={<PlaceholderPage title="Atención de Quejas" />} />
+          <Route path="/quejas"         element={<QuejasPage />} />
           <Route path="/auditoria"      element={<PlaceholderPage title="Registros de Auditoría" />} />
           <Route path="/configuracion"  element={<Configuracion />} />
         </Route>
