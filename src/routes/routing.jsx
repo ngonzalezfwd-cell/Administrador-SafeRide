@@ -1,21 +1,22 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-
-// IMPORTACIONES
 import PrivateRoute      from '../components/PrivateRoute/PrivateRoute';
-import Login             from '../pages/LoginPages/Login';
-import NuevoPassword     from '../pages/LoginPages/NuevoPassword';
-import RecuperarPassword from '../pages/LoginPages/RecuperarPassword';
-import Dashboard         from '../pages/DashboardPage/Dashboard';
-import PerfilAdmin       from '../pages/PerfilAdminPage/PerfilAdmin';
-import PasajerosPage     from '../pages/PasajerosPage/Pasajeros';
-import ConductoresPage   from '../pages/ConductoresPage/ConductoresPage';
-import VehiculosPage     from '../pages/VehiculosPage/Vehiculos';
-import QuejasPage        from '../pages/QuejasPage/Quejas';
-import Configuracion     from '../pages/Configuracion Page/Configuracion';
 import AdminLayout       from '../components/AdminLayout/AdminLayout';
 
-/** Placeholder para páginas aún no implementadas */
+// Carga perezosa (lazy load) de las páginas para optimizar la velocidad inicial de carga
+const Login             = lazy(() => import('../pages/LoginPages/Login'));
+const NuevoPassword     = lazy(() => import('../pages/LoginPages/NuevoPassword'));
+const RecuperarPassword = lazy(() => import('../pages/LoginPages/RecuperarPassword'));
+const Dashboard         = lazy(() => import('../pages/DashboardPage/Dashboard'));
+const PerfilAdmin       = lazy(() => import('../pages/PerfilAdminPage/PerfilAdmin'));
+const PasajerosPage     = lazy(() => import('../pages/PasajerosPage/Pasajeros'));
+const ConductoresPage   = lazy(() => import('../pages/ConductoresPage/ConductoresPage'));
+const VehiculosPage     = lazy(() => import('../pages/VehiculosPage/Vehiculos'));
+const QuejasPage        = lazy(() => import('../pages/QuejasPage/Quejas'));
+const NotificacionesPage = lazy(() => import('../pages/NotificacionesPage/Notificaciones'));
+const Configuracion     = lazy(() => import('../pages/Configuracion Page/Configuracion'));
+
+/** Placeholder temporal para páginas aún no implementadas */
 const PlaceholderPage = ({ title }) => (
   <div style={{
     padding: '40px',
@@ -28,39 +29,70 @@ const PlaceholderPage = ({ title }) => (
   </div>
 );
 
+/** Spinner elegante de carga para la transición entre páginas lazy */
+const LoadingSpinner = () => (
+  <div style={{
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '80vh',
+    width: '100%',
+    flexDirection: 'column',
+    gap: '16px',
+    fontFamily: 'Inter, sans-serif'
+  }}>
+    <div style={{
+      width: '40px',
+      height: '40px',
+      border: '3.5px solid rgba(0, 0, 0, 0.05)',
+      borderTopColor: '#3B82F6',
+      borderRadius: '50%',
+      animation: 'spin 0.8s linear infinite'
+    }} />
+    <p style={{ color: '#64748B', fontSize: '13px', fontWeight: '500' }}>Cargando módulo...</p>
+    <style>{`
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    `}</style>
+  </div>
+);
+
 const Routing = () => (
   <Router>
-    <Routes>
-      {/* ── RUTAS PÚBLICAS ────────────────────────────────── */}
-      <Route path="/login"                element={<Login />} />
-      <Route path="/recuperarPassword"    element={<RecuperarPassword />} />
-      <Route path="/nuevoPassword/:token" element={<NuevoPassword />} />
+    <Suspense fallback={<LoadingSpinner />}>
+      <Routes>
+        {/* ── RUTAS PÚBLICAS ────────────────────────────────── */}
+        <Route path="/login"                element={<Login />} />
+        <Route path="/recuperarPassword"    element={<RecuperarPassword />} />
+        <Route path="/nuevoPassword/:token" element={<NuevoPassword />} />
 
-      {/* ── RUTAS PRIVADAS (ADMIN ONLY) ───────────────────── */}
-      <Route element={<PrivateRoute requiredRole="admin" />}>
-      
-        <Route path="/miPerfil" element={<PerfilAdmin />} />
+        {/* ── RUTAS PRIVADAS (ADMIN ONLY) ───────────────────── */}
+        <Route element={<PrivateRoute requiredRole="admin" />}>
+          {/* PerfilAdmin se renderiza SIN AdminLayout (sin aside ni header) */}
+          <Route path="/miPerfil" element={<PerfilAdmin />} />
 
-        <Route element={<AdminLayout />}>
-          <Route path="/inicio"         element={<Dashboard />} />
-          <Route path="/usuarios"       element={<PasajerosPage />} />
-          <Route path="/conductores"    element={<ConductoresPage />} />
-          <Route path="/vehiculos"      element={<VehiculosPage />} />
-          <Route path="/reservas"       element={<PlaceholderPage title="Gestión de Reservas" />} />
-          <Route path="/pagos"          element={<PlaceholderPage title="Historial de Pagos" />} />
-          <Route path="/notificaciones" element={<PlaceholderPage title="Notificaciones del Sistema" />} />
-          <Route path="/quejas"         element={<QuejasPage />} />
-          <Route path="/auditoria"      element={<PlaceholderPage title="Registros de Auditoría" />} />
-          <Route path="/configuracion"  element={<Configuracion />} />
+          {/* El resto de las páginas SÍ usan AdminLayout */}
+          <Route element={<AdminLayout />}>
+            <Route path="/inicio"         element={<Dashboard />} />
+            <Route path="/usuarios"       element={<PasajerosPage />} />
+            <Route path="/conductores"    element={<ConductoresPage />} />
+            <Route path="/vehiculos"      element={<VehiculosPage />} />
+            <Route path="/reservas"       element={<PlaceholderPage title="Gestión de Reservas" />} />
+            <Route path="/pagos"          element={<PlaceholderPage title="Historial de Pagos" />} />
+            <Route path="/notificaciones" element={<NotificacionesPage />} />
+            <Route path="/quejas"         element={<QuejasPage />} />
+            <Route path="/auditoria"      element={<PlaceholderPage title="Registros de Auditoría" />} />
+            <Route path="/configuracion"  element={<Configuracion />} />
+          </Route>
         </Route>
-      </Route>
 
-      {/* ── REDIRECCIONES ───────────────────────── */}
-      <Route path="/"  element={<Navigate to="/inicio" replace />} />
-      <Route path="*"  element={<Navigate to="/inicio" replace />} />
-    </Routes>
+        {/* ── REDIRECCIONES ───────────────────────── */}
+        <Route path="/"  element={<Navigate to="/inicio" replace />} />
+        <Route path="*"  element={<Navigate to="/inicio" replace />} />
+      </Routes>
+    </Suspense>
   </Router>
 );
 
 export default Routing;
-
