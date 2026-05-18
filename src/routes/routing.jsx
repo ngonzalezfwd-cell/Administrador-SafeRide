@@ -1,5 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+
+// IMPORTACIONES
 import PrivateRoute      from '../components/PrivateRoute/PrivateRoute';
 import Login             from '../pages/LoginPages/Login';
 import NuevoPassword     from '../pages/LoginPages/NuevoPassword';
@@ -10,9 +12,10 @@ import PasajerosPage     from '../pages/PasajerosPage/Pasajeros';
 import ConductoresPage   from '../pages/ConductoresPage/ConductoresPage';
 import VehiculosPage     from '../pages/VehiculosPage/Vehiculos';
 import QuejasPage        from '../pages/QuejasPage/Quejas';
+import Configuracion     from '../pages/Configuracion Page/Configuracion';
 import AdminLayout       from '../components/AdminLayout/AdminLayout';
 
-/** Placeholder temporal para páginas aún no implementadas */
+/** Placeholder para páginas aún no implementadas */
 const PlaceholderPage = ({ title }) => (
   <div style={{
     padding: '40px',
@@ -35,10 +38,9 @@ const Routing = () => (
 
       {/* ── RUTAS PRIVADAS (ADMIN ONLY) ───────────────────── */}
       <Route element={<PrivateRoute requiredRole="admin" />}>
-        {/* PerfilAdmin se renderiza SIN AdminLayout (sin aside ni header) */}
+      
         <Route path="/miPerfil" element={<PerfilAdmin />} />
 
-        {/* El resto de las páginas SÍ usan AdminLayout */}
         <Route element={<AdminLayout />}>
           <Route path="/inicio"         element={<Dashboard />} />
           <Route path="/usuarios"       element={<PasajerosPage />} />
@@ -49,7 +51,7 @@ const Routing = () => (
           <Route path="/notificaciones" element={<PlaceholderPage title="Notificaciones del Sistema" />} />
           <Route path="/quejas"         element={<QuejasPage />} />
           <Route path="/auditoria"      element={<PlaceholderPage title="Registros de Auditoría" />} />
-          <Route path="/configuracion"  element={<PlaceholderPage title="Configuración" />} />
+          <Route path="/configuracion"  element={<Configuracion />} />
         </Route>
       </Route>
 

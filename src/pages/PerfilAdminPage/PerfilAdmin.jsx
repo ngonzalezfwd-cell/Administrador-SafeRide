@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { uploadToCloudinary } from '../../services/cloudinary';
+import { InsertarEnCloudinary } from '../../services/cloudinary';
 import DefaultImageUser from '../../imgs/DefaultImageUser.png';
 import api from '../../services/api';
 import { Link } from 'react-router-dom';
@@ -143,7 +143,7 @@ const PerfilAdmin = () => {
 
             // 1. Subir a Cloudinary si hay una nueva foto
             if (nuevaFoto) {
-                profileImageUrl = await uploadToCloudinary(nuevaFoto);
+                profileImageUrl = await InsertarEnCloudinary(nuevaFoto);
             }
 
             // 2. Guardar en el backend (Limpiamos el teléfono de guiones antes de enviar)
