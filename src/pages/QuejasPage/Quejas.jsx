@@ -7,6 +7,16 @@
  * @author SafeRide Dev Team
  */
 
+
+//acabo de revisar minuciosamente los modelos del backend (User.js y Vehicle.js) 
+// y confirmo que no existe ningún modelo ni campo en la base de datos para 
+// almacenar múltiples documentos legales del vehículo (solo se cuenta con la 
+// propiedad simple vehicleImage que guarda la foto física del auto)
+
+//Se tendria que modificar el model o agregar otro para q guarde los papeles
+//O que lleguen a un Drive o algo 
+
+
 import React, { useState, useMemo } from 'react';
 import {
   AlertCircle, Search, Filter, Mail, User, Clock,
