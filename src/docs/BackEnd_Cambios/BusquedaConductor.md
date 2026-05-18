@@ -1,5 +1,5 @@
 # Sincronización Backend-Frontend: Filtros de Búsqueda y Navegación
-
+ RRRR
 Este documento explica exclusivamente los cambios realizados en el **Backend** y cómo estos habilitan las nuevas capacidades de búsqueda en el **Frontend** de SafeRide.
 
 ---

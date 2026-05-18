@@ -1,13 +1,59 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Plus, Search, Filter, MoreVertical, Truck,
   CheckCircle, AlertCircle, Clock, ShieldCheck,
-  ExternalLink, Eye, Check, X,
+  ExternalLink, Eye, Check, X, Upload,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight
 } from 'lucide-react';
 import vehicleService from '../../services/vehicleService';
+import driverService from '../../services/driverService';
+import api from '../../services/api';
 import { toast } from 'react-hot-toast';
 import './Vehiculos.css';
+
+const CAR_DATA = {
+  Acura: ['MDX', 'RDX', 'TLX', 'TSX', 'Integra'],
+  Audi: ['A3', 'A4', 'Q3', 'Q5', 'Q7'],
+  BMW: ['Serie 1', 'Serie 3', 'Serie 5', 'X1', 'X3', 'X5'],
+  BYD: ['S1 Pro', 'Yuan Plus', 'Tang', 'Song Plus', 'F3', 'Dolphin'],
+  Chery: ['Tiggo 2 Pro', 'Tiggo 4 Pro', 'Tiggo 7 Pro', 'Tiggo 8 Pro', 'QQ'],
+  Chevrolet: ['Colorado', 'Tracker', 'Spark', 'Aveo', 'Captiva', 'Groove'],
+  Citroen: ['C3', 'C4 Cactus', 'C5 Aircross', 'Berlingo', 'Jumpy'],
+  Daihatsu: ['Terios', 'Bego', 'Sirion', 'Delta', 'Gran Max'],
+  Dodge: ['RAM 1500', 'RAM 2500', 'Journey', 'Durango', 'Dakota'],
+  Fiat: ['Strada', 'Fiorino', 'Pulse', 'Uno', '500', 'Fastback'],
+  Ford: ['Ranger', 'Everest', 'Explorer', 'EcoSport', 'F-150', 'Focus'],
+  Geely: ['Coolray', 'Azkarra', 'Okavango', 'GX3 Pro', 'Geometry C'],
+  GMC: ['Sierra', 'Acadia', 'Terrain', 'Yukon', 'Canyon'],
+  GreatWall: ['Wingle 5', 'Wingle 7', 'Poer', 'Haval M4', 'Voleex'],
+  Haval: ['H6', 'Jolion', 'H2', 'H9', 'M4'],
+  Honda: ['CR-V', 'Civic', 'HR-V', 'Accord', 'Fit', 'Pilot'],
+  Hyundai: ['Tucson', 'Accent Blue', 'Elantra', 'Creta', 'Grand i10', 'Santa Fe', 'Kona'],
+  Isuzu: ['D-Max', 'MU-X', 'NLR', 'NPR', 'FTR'],
+  JAC: ['T8', 'JS2', 'JS4', 'S2', 'Sunray', 'E10X'],
+  Jeep: ['Grand Cherokee', 'Wrangler', 'Compass', 'Renegade', 'Cherokee'],
+  Jetour: ['Dashing', 'X70 Plus', 'X70', 'X90 Plus'],
+  Kia: ['Sportage', 'Picanto', 'Rio', 'Seltos', 'Sorento', 'Cerato', 'Soluto'],
+  LandRover: ['Defender', 'Discovery', 'Range Rover Evoque', 'Range Rover Sport'],
+  Lexus: ['RX', 'NX', 'UX', 'GX', 'IS'],
+  Mazda: ['CX-5', 'Mazda 3', 'CX-3', 'CX-30', 'BT-50', 'CX-9'],
+  MercedesBenz: ['GLC', 'GLE', 'Clase C', 'Clase A', 'Clase E', 'Vito'],
+  MG: ['ZS', 'HS', 'MG3', 'MG5', 'Marvel R', 'MG4'],
+  Mitsubishi: ['Montero Sport', 'L200', 'Outlander', 'ASX', 'Eclipse Cross', 'Montero'],
+  Nissan: ['Frontier', 'Sentra', 'Qashqai', 'Kicks', 'Versa', 'X-Trail', 'March'],
+  Peugeot: ['2008', '3008', '5008', '208', 'Partner', 'Landtrek'],
+  Renault: ['Kwid', 'Duster', 'Oroch', 'Stepway', 'Koleos', 'Logan'],
+  Subaru: ['XV', 'Forester', 'Outback', 'Impreza', 'Crosstrek'],
+  Suzuki: ['Vitara', 'Swift', 'Jimny', 'S-Presso', 'Ertiga', 'Dzire', 'Baleno'],
+  Tesla: ['Model 3', 'Model Y', 'Model S', 'Model X'],
+  Toyota: ['Hilux', 'Corolla', 'Yaris', 'RAV4', 'Prado', 'Fortuner', 'Rush', 'Agya'],
+  Volkswagen: ['Amarok', 'Tiguan', 'Jetta', 'T-Cross', 'Gol', 'Taos', 'Nivus'],
+  Volvo: ['XC40', 'XC60', 'XC90', 'S60', 'V40', 'C40'],
+};
+
+const BRANDS = Object.keys(CAR_DATA);
+const COLORS = ['Blanco', 'Negro', 'Gris', 'Plateado', 'Rojo', 'Azul', 'Verde', 'Amarillo', 'Naranja', 'Café', 'Beige', 'Vinilado'];
+const YEARS = Array.from({ length: 30 }, (_, i) => String(new Date().getFullYear() - i));
 
 // ─────────────────────────────────────────────────────────────
 // COMPONENTE: Skeleton para carga de vehículos
@@ -44,6 +90,121 @@ const VehiculosPage = () => {
     active: 0,
     pending: 0
   });
+
+  // Formulario de añadir vehículo
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [drivers, setDrivers] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({
+    driver_id: '',
+    brand: BRANDS[0] || '',
+    model: (BRANDS[0] && CAR_DATA[BRANDS[0]] && CAR_DATA[BRANDS[0]][0]) || '',
+    license_plate: '',
+    color: COLORS[0] || '',
+    year: YEARS[0] || '',
+    capacity: 4
+  });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => {
+      const updated = { ...prev, [name]: value };
+      if (name === 'brand') {
+        updated.model = CAR_DATA[value] ? CAR_DATA[value][0] : '';
+      }
+      return updated;
+    });
+  };
+
+  const currentModels = useMemo(() => {
+    if (!form.brand) return [];
+    return CAR_DATA[form.brand] || [];
+  }, [form.brand]);
+
+  const handleOpenAddModal = async () => {
+    setIsAddModalOpen(true);
+    setForm({
+      driver_id: '',
+      brand: BRANDS[0] || '',
+      model: (BRANDS[0] && CAR_DATA[BRANDS[0]] && CAR_DATA[BRANDS[0]][0]) || '',
+      license_plate: '',
+      color: COLORS[0] || '',
+      year: YEARS[0] || '',
+      capacity: 4
+    });
+    setImageFile(null);
+    setImagePreview('');
+
+    try {
+      const response = await driverService.getAllDrivers({ limit: 100 });
+      if (response && response.data) {
+        setDrivers(response.data);
+        if (response.data.length > 0) {
+          setForm(prev => ({ ...prev, driver_id: response.data[0]._id }));
+        }
+      }
+    } catch (error) {
+      console.error('Error loading drivers for modal:', error);
+      toast.error('Error al cargar la lista de conductores');
+    }
+  };
+
+  const validateForm = () => {
+    if (!form.driver_id) return 'Debes seleccionar un conductor';
+    if (!form.brand) return 'La marca es obligatoria';
+    if (!form.model) return 'El modelo es obligatorio';
+    if (!form.license_plate) return 'La placa es obligatoria';
+    if (!/^[A-Z0-9]{6}$/.test(form.license_plate.toUpperCase())) {
+      return 'La placa debe tener exactamente 6 caracteres alfanuméricos';
+    }
+    if (!form.color) return 'El color es obligatorio';
+    if (!form.year) return 'El año es obligatorio';
+    if (!form.capacity || form.capacity < 1 || form.capacity > 7) {
+      return 'La capacidad debe ser entre 1 y 7 asientos';
+    }
+    return null;
+  };
+
+  const handleAddSubmit = async (e) => {
+    e.preventDefault();
+    const errorMsg = validateForm();
+    if (errorMsg) return toast.error(errorMsg);
+
+    setSubmitting(true);
+    try {
+      const payload = {
+        brand: form.brand,
+        model: form.model,
+        license_plate: form.license_plate.toUpperCase(),
+        color: form.color,
+        year: parseInt(form.year),
+        capacity: parseInt(form.capacity),
+        driver_id: form.driver_id
+      };
+
+      const response = await vehicleService.createVehicle(payload);
+
+      if (imageFile && response?.data?._id) {
+        const formData = new FormData();
+        formData.append('image', imageFile);
+        await api.post(`/vehicles/${response.data._id}/image`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      }
+
+      toast.success(response.message || 'Vehículo registrado con éxito');
+      setIsAddModalOpen(false);
+      loadVehicles();
+    } catch (error) {
+      console.error('Error creating vehicle:', error);
+      const errMsg = error.response?.data?.message || 'Error al registrar el vehículo';
+      toast.error(errMsg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   // Debounce para la búsqueda
   useEffect(() => {
@@ -147,7 +308,7 @@ const VehiculosPage = () => {
           <h1>Inventario de Vehículos</h1>
           <p>Gestiona y monitorea el estado de la flota activa.</p>
         </div>
-        <button className="add-vehicle-btn">
+        <button className="add-vehicle-btn" onClick={handleOpenAddModal}>
           <Plus size={20} />
           Añadir Vehículo
         </button>
@@ -421,6 +582,147 @@ const VehiculosPage = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE REGISTRO DE VEHÍCULO */}
+      {isAddModalOpen && (
+        <div className="doc-modal-overlay" onClick={() => setIsAddModalOpen(false)}>
+          <div className="doc-modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', maxHeight: '90vh' }}>
+            <div className="doc-modal-header">
+              <div>
+                <h2>Registrar Nuevo Vehículo</h2>
+                <p>Introduce los datos del vehículo y asígnalo a un conductor.</p>
+              </div>
+              <button className="close-modal-btn" onClick={() => setIsAddModalOpen(false)}>
+                <X size={24} />
+              </button>
+            </div>
+
+            <form className="add-vehicle-form" onSubmit={handleAddSubmit}>
+              <div className="form-grid-admin">
+                <div className="form-group-admin full-width">
+                  <label>Conductor Asignado *</label>
+                  <select name="driver_id" value={form.driver_id} onChange={handleFormChange} required>
+                    <option value="" disabled>Seleccione un conductor...</option>
+                    {drivers.map(d => (
+                      <option key={d._id} value={d._id}>
+                        {d.name} ({d.email})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group-admin">
+                  <label>Marca *</label>
+                  <select name="brand" value={form.brand} onChange={handleFormChange} required>
+                    {BRANDS.map(b => (
+                      <option key={b} value={b}>{b}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group-admin">
+                  <label>Modelo *</label>
+                  <select name="model" value={form.model} onChange={handleFormChange} required>
+                    {currentModels.map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group-admin">
+                  <label>Placa (6 caracteres alfanuméricos) *</label>
+                  <input
+                    type="text"
+                    name="license_plate"
+                    value={form.license_plate}
+                    onChange={handleFormChange}
+                    maxLength={6}
+                    placeholder="Ej: ABC123"
+                    style={{ textTransform: 'uppercase' }}
+                    required
+                  />
+                </div>
+
+                <div className="form-group-admin">
+                  <label>Color *</label>
+                  <select name="color" value={form.color} onChange={handleFormChange} required>
+                    {COLORS.map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group-admin">
+                  <label>Año *</label>
+                  <select name="year" value={form.year} onChange={handleFormChange} required>
+                    {YEARS.map(y => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group-admin">
+                  <label>Capacidad (Asientos) *</label>
+                  <input
+                    type="number"
+                    name="capacity"
+                    value={form.capacity}
+                    onChange={handleFormChange}
+                    min={1}
+                    max={7}
+                    required
+                  />
+                </div>
+
+                <div className="form-group-admin full-width">
+                  <label>Imagen del Vehículo</label>
+                  <div className="file-upload-zone">
+                    <label className="file-label">
+                      <Upload size={20} style={{ marginRight: '8px', color: '#64748B' }} />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={e => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            setImageFile(file);
+                            setImagePreview(URL.createObjectURL(file));
+                          }
+                        }}
+                        style={{ display: 'none' }}
+                      />
+                      {imagePreview ? (
+                        <div className="file-selected-status" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <CheckCircle size={18} color="#10B981" />
+                          <span style={{ fontSize: '0.9rem', color: '#334155' }}>{imageFile?.name}</span>
+                        </div>
+                      ) : (
+                        <div className="file-placeholder-status">
+                          <span style={{ fontSize: '0.9rem', color: '#64748B' }}>Haga clic para subir una imagen</span>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                  {imagePreview && (
+                    <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center' }}>
+                      <img src={imagePreview} alt="Vista previa del auto" style={{ maxWidth: '120px', borderRadius: '8px', border: '1px solid #E2E8F0' }} />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="form-actions-admin">
+                <button type="button" className="cancel-btn-admin" onClick={() => setIsAddModalOpen(false)}>
+                  Cancelar
+                </button>
+                <button type="submit" className="submit-btn-admin" disabled={submitting}>
+                  {submitting ? 'Registrando...' : 'Registrar Vehículo'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

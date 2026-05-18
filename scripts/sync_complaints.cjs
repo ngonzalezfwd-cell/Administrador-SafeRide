@@ -13,6 +13,7 @@ const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
+const nodemailer = require('nodemailer');
 
 // Configuración
 const PORT = 3001;
@@ -32,6 +33,16 @@ const imapConfig = {
     connTimeout: 10000,
     tlsOptions: { rejectUnauthorized: false }
 };
+
+const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // Use SSL
+    auth: {
+        user: process.env.SUPPORT_EMAIL || 'saferidefwd@gmail.com',
+        pass: process.env.SUPPORT_EMAIL_PASSWORD,
+    },
+});
 
 const app = express();
 app.use(cors());
@@ -121,6 +132,42 @@ app.post('/api/resolve/:uid', (req, res) => {
         });
     });
     imap.connect();
+});
+
+app.post('/api/reply', async (req, res) => {
+    const { to, subject, message } = req.body;
+    
+    if (!to || !subject || !message) {
+        return res.status(400).json({ error: 'Faltan destinatario, asunto o mensaje.' });
+    }
+
+    try {
+        const mailOptions = {
+            from: `"Soporte SafeRide" <${process.env.SUPPORT_EMAIL || 'saferidefwd@gmail.com'}>`,
+            to: to,
+            subject: `Re: ${subject}`,
+            text: message,
+            html: `
+                <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; line-height: 1.6;">
+                    <div style="background: #2563EB; color: white; padding: 15px 20px; border-radius: 8px 8px 0 0;">
+                        <h2 style="margin: 0; font-size: 18px;">Respuesta de Soporte SafeRide</h2>
+                    </div>
+                    <div style="padding: 20px; border: 1px solid #E2E8F0; border-top: none; border-radius: 0 0 8px 8px; background: #F8FAFC;">
+                        <p style="white-space: pre-wrap; font-size: 15px; color: #1E293B;">${message}</p>
+                        <hr style="border: 0; border-top: 1px solid #E2E8F0; margin: 20px 0;">
+                        <p style="font-size: 12px; color: #64748B;">Este es un correo automático enviado en respuesta a su reporte. Por favor no responda directamente a este mensaje.</p>
+                    </div>
+                </div>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log(`✉️ Correo de respuesta enviado a ${to}`);
+        res.json({ success: true, message: 'Correo enviado con éxito.' });
+    } catch (err) {
+        console.error('Error al enviar correo de respuesta:', err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 app.listen(PORT, () => {

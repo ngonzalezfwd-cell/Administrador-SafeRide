@@ -1,4 +1,4 @@
-# 📊 Cambios en el Backend (Explicados Fácil)
+# 📊 Cambios en el Backend (Explicados Fácil) RRR
 
 Este documento explica de forma sencilla qué mejoras le hicimos al "cerebro" de SafeRide para que los paneles de **Conductores** y **Pasajeros** funcionen mucho mejor y de forma sincronizada.
 

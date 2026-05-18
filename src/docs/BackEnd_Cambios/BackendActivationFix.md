@@ -65,3 +65,5 @@ Al reactivar a un usuario, su `expoPushToken` y perfil vuelven a estar disponibl
 ### Admin Panel (React)
 El panel ahora es **bidireccional**: puede "dar de baja" por seguridad y "reincorporar" por operatividad, cerrando el ciclo de vida de la gestión de usuarios de manera profesional.
 
+--- RESUMEN MAS RESUMEN
+

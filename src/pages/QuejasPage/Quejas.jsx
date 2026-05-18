@@ -42,6 +42,8 @@ const QuejasPage = () => {
   const [filterCategory, setFilterCategory] = useState('Todos');
   const [selectedQueja, setSelectedQueja] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [replyMessage, setReplyMessage] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
 
   // Filtrado dinámico
   const filteredQuejas = useMemo(() => {
@@ -56,7 +58,52 @@ const QuejasPage = () => {
 
   const handleOpenDetail = (queja) => {
     setSelectedQueja(queja);
+    setReplyMessage('');
     setIsModalOpen(true);
+  };
+
+  const handleSendReply = async () => {
+    if (!selectedQueja) return;
+    setSendingReply(true);
+    toast.loading('Enviando correo de respuesta...', { id: 'reply' });
+    
+    try {
+      const response = await fetch('http://localhost:3001/api/reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: selectedQueja.email,
+          subject: selectedQueja.subject,
+          message: replyMessage
+        })
+      });
+
+      if (response.ok) {
+        toast.success('¡Respuesta enviada con éxito!', { id: 'reply' });
+        
+        // Auto-resolver
+        try {
+          await fetch(`http://localhost:3001/api/resolve/${selectedQueja.uid}`, {
+            method: 'POST'
+          });
+          toast.success('Incidencia marcada como atendida');
+        } catch (resolveErr) {
+          console.error('Error auto-resolving:', resolveErr);
+        }
+        
+        setReplyMessage('');
+        setIsModalOpen(false);
+        setTimeout(handleSync, 500);
+      } else {
+        const errData = await response.json();
+        toast.error(`Error: ${errData.error || 'No se pudo enviar el correo'}`, { id: 'reply' });
+      }
+    } catch (error) {
+      console.error('Error sending reply:', error);
+      toast.error('El Agente no está respondiendo', { id: 'reply' });
+    } finally {
+      setSendingReply(false);
+    }
   };
 
   const handleCopyId = (id) => {
@@ -141,18 +188,21 @@ const QuejasPage = () => {
           <h1>Atención de Quejas</h1>
           <p>Monitorea y resuelve los reportes enviados por los usuarios vía email</p>
         </div>
-        <div className="q-header-actions">
-          <div className="q-stats-summary">
-            <div className="q-stat-item">
-              <span className="q-stat-val">{quejas.length}</span>
-              <span className="q-stat-lab">Pendientes</span>
-            </div>
+      </div>
+
+      {/* Badge de pendientes + botón de sincronizar */}
+      <div className="q-header-actions">
+        <div className="q-stats-summary">
+          <div className="q-stat-item">
+            <span className="q-stat-val">{quejas.length}</span>
+            <span className="q-stat-lab">Pendientes</span>
           </div>
-          <button className="q-sync-btn" onClick={handleSync}>
-            <RefreshCw size={15} />
-            Sincronizar Gmail
-          </button>
         </div>
+        <div style={{ width: '1px', height: '28px', background: '#E2E8F0', flexShrink: 0 }} />
+        <button className="q-sync-btn" onClick={handleSync}>
+          <RefreshCw size={15} />
+          Sincronizar Gmail
+        </button>
       </div>
 
       {/* Tabla de Quejas */}
@@ -275,7 +325,66 @@ const QuejasPage = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="q-modal-badges">
+                  <div className="q-reply-section" style={{ marginTop: '24px' }}>
+                    <h3 className="q-section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Mail size={16} /> Responder a Usuario
+                    </h3>
+                    <textarea
+                      className="q-reply-textarea"
+                      placeholder="Escribe la respuesta oficial que se enviará por correo..."
+                      value={replyMessage}
+                      onChange={(e) => setReplyMessage(e.target.value)}
+                      style={{
+                        width: '100%',
+                        height: '100px',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '2px solid #F1F5F9',
+                        fontSize: '0.9rem',
+                        resize: 'none',
+                        marginTop: '8px',
+                        background: '#F8FAFC',
+                        color: '#0F172A',
+                        fontFamily: 'inherit',
+                        outline: 'none',
+                        transition: 'all 0.2s'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#2563EB';
+                        e.target.style.background = 'white';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#F1F5F9';
+                        e.target.style.background = '#F8FAFC';
+                      }}
+                    />
+                    <button
+                      className="q-send-reply-btn"
+                      onClick={handleSendReply}
+                      disabled={sendingReply || !replyMessage.trim()}
+                      style={{
+                        marginTop: '12px',
+                        background: '#2563EB',
+                        color: 'white',
+                        border: 'none',
+                        padding: '10px 20px',
+                        borderRadius: '8px',
+                        fontWeight: '700',
+                        fontSize: '0.9rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)',
+                        opacity: sendingReply || !replyMessage.trim() ? 0.6 : 1
+                      }}
+                    >
+                      {sendingReply ? 'Enviando...' : 'Enviar Correo y Resolver'}
+                    </button>
+                  </div>
+
+                  <div className="q-modal-badges" style={{ marginTop: '20px' }}>
                     <span className="q-cat-tag">{selectedQueja.category}</span>
                   </div>
                 </div>
