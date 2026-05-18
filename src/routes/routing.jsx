@@ -15,6 +15,7 @@ const VehiculosPage     = lazy(() => import('../pages/VehiculosPage/Vehiculos'))
 const QuejasPage        = lazy(() => import('../pages/QuejasPage/Quejas'));
 const NotificacionesPage = lazy(() => import('../pages/NotificacionesPage/Notificaciones'));
 const Configuracion     = lazy(() => import('../pages/Configuracion Page/Configuracion'));
+const AuditoriaPage     = lazy(() => import('../pages/AuditoriaPage/Auditoria'));
 
 /** Placeholder temporal para páginas aún no implementadas */
 const PlaceholderPage = ({ title }) => (
@@ -82,7 +83,7 @@ const Routing = () => (
             <Route path="/pagos"          element={<PlaceholderPage title="Historial de Pagos" />} />
             <Route path="/notificaciones" element={<NotificacionesPage />} />
             <Route path="/quejas"         element={<QuejasPage />} />
-            <Route path="/auditoria"      element={<PlaceholderPage title="Registros de Auditoría" />} />
+            <Route path="/auditoria"      element={<AuditoriaPage />} />
             <Route path="/configuracion"  element={<Configuracion />} />
           </Route>
         </Route>
