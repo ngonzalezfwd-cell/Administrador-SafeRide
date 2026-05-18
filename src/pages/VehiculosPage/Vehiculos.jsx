@@ -3,7 +3,8 @@ import {
   Plus, Search, Filter, MoreVertical, Truck,
   CheckCircle, AlertCircle, Clock, ShieldCheck,
   ExternalLink, Eye, Check, X, Upload,
-  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
+  FileText, Trash2
 } from 'lucide-react';
 import vehicleService from '../../services/vehicleService';
 import driverService from '../../services/driverService';
@@ -215,6 +216,80 @@ const VehiculosPage = () => {
   }, [searchTerm]);
 
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const [activeDocTab, setActiveDocTab] = useState('photo'); // 'photo' | 'poliza' | 'rtv'
+  const [localDocs, setLocalDocs] = useState({ poliza: null, rtv: null });
+
+  // Cargar documentos del localStorage al abrir el modal
+  useEffect(() => {
+    if (selectedDoc) {
+      setActiveDocTab('photo');
+      const stored = localStorage.getItem(`saferide_docs_${selectedDoc._id}`);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setLocalDocs({
+            poliza: parsed.poliza || null,
+            rtv: parsed.rtv || null
+          });
+        } catch {
+          setLocalDocs({ poliza: null, rtv: null });
+        }
+      } else {
+        setLocalDocs({ poliza: null, rtv: null });
+      }
+    }
+  }, [selectedDoc]);
+
+  const handleLocalDocUpload = (type, e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 1.5 * 1024 * 1024) {
+      toast.error('El archivo es demasiado grande (máximo 1.5 MB para almacenamiento local)');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const updated = {
+        ...localDocs,
+        [type]: {
+          name: file.name,
+          type: file.type,
+          data: event.target.result,
+          uploadedAt: new Date().toLocaleDateString()
+        }
+      };
+      setLocalDocs(updated);
+      localStorage.setItem(`saferide_docs_${selectedDoc._id}`, JSON.stringify(updated));
+      toast.success(`Documento '${file.name}' cargado con éxito`);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleLocalDocDelete = (type) => {
+    const updated = {
+      ...localDocs,
+      [type]: null
+    };
+    setLocalDocs(updated);
+    localStorage.setItem(`saferide_docs_${selectedDoc._id}`, JSON.stringify(updated));
+    toast.success('Documento eliminado');
+  };
+
+  const getDocumentCount = (vehicleId) => {
+    const stored = localStorage.getItem(`saferide_docs_${vehicleId}`);
+    if (!stored) return 0;
+    try {
+      const docs = JSON.parse(stored);
+      let count = 0;
+      if (docs.poliza) count++;
+      if (docs.rtv) count++;
+      return count;
+    } catch {
+      return 0;
+    }
+  };
 
   const loadVehicles = useCallback(async () => {
     setLoading(true);
@@ -426,6 +501,28 @@ const VehiculosPage = () => {
                   </span>
                 </div>
 
+                {/* Badge de completitud de papeles */}
+                <div className="doc-status-row" style={{ marginTop: '8px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: '600' }}>
+                  {(() => {
+                    const count = getDocumentCount(vehicle._id);
+                    let color = '#EF4444'; // Rojo por defecto
+                    let text = `Papeles: ${count}/2 (Faltan documentos)`;
+                    if (count === 2) {
+                      color = '#16A34A'; // Verde
+                      text = 'Papeles: 2/2 (Completo)';
+                    } else if (count > 0) {
+                      color = '#CA8A04'; // Amarillo/Mostaza
+                      text = `Papeles: ${count}/2 (Incompleto)`;
+                    }
+                    return (
+                      <span style={{ color, display: 'flex', alignItems: 'center', gap: '6px', background: `${color}10`, padding: '4px 10px', borderRadius: '20px', border: `1px solid ${color}25` }}>
+                        <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: color }}></span>
+                        {text}
+                      </span>
+                    );
+                  })()}
+                </div>
+
                 <div className="driver-info">
                   <div className="driver-avatar-mini">
                     {vehicle.driver_id?.profileImage ? (
@@ -541,12 +638,95 @@ const VehiculosPage = () => {
 
             <div className="doc-modal-body">
               <div className="doc-viewer-container">
-                <img
-                  src={selectedDoc.vehicleImage}
-                  alt="Documentación"
-                  className="full-doc-image"
-                />
-                <div className="zoom-hint">Usa el mouse para desplazarte por el documento</div>
+                {/* Selector de pestañas de documentos */}
+                <div className="doc-tabs-container">
+                  <button
+                    className={`doc-tab-btn ${activeDocTab === 'photo' ? 'active' : ''}`}
+                    onClick={() => setActiveDocTab('photo')}
+                  >
+                    <Truck size={16} /> Foto Auto
+                  </button>
+                  <button
+                    className={`doc-tab-btn ${activeDocTab === 'poliza' ? 'active' : ''}`}
+                    onClick={() => setActiveDocTab('poliza')}
+                  >
+                    <FileText size={16} /> Póliza INS {localDocs.poliza && '✓'}
+                  </button>
+                  <button
+                    className={`doc-tab-btn ${activeDocTab === 'rtv' ? 'active' : ''}`}
+                    onClick={() => setActiveDocTab('rtv')}
+                  >
+                    <FileText size={16} /> Dekra RTV {localDocs.rtv && '✓'}
+                  </button>
+                </div>
+
+                {/* Contenido dinámico según pestaña */}
+                <div className="doc-viewer-viewport" style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, justifyContent: 'center' }}>
+                  {activeDocTab === 'photo' && (
+                    <>
+                      <img
+                        src={selectedDoc.vehicleImage || 'https://via.placeholder.com/600x400?text=Sin+Foto'}
+                        alt="Foto del Vehículo"
+                        className="full-doc-image"
+                      />
+                      <div className="zoom-hint">Fotografía oficial del vehículo físico</div>
+                    </>
+                  )}
+
+                  {activeDocTab !== 'photo' && (() => {
+                    const doc = localDocs[activeDocTab];
+                    const tabLabels = { poliza: 'Póliza INS', rtv: 'Dekra RTV' };
+                    
+                    if (doc) {
+                      return (
+                        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                          <div className="doc-viewer-actions">
+                            <span style={{ fontSize: '0.9rem', color: '#94A3B8' }}>
+                              Cargado el: {doc.uploadedAt} ({doc.name})
+                            </span>
+                            <button
+                              className="delete-doc-btn"
+                              onClick={() => handleLocalDocDelete(activeDocTab)}
+                            >
+                              <Trash2 size={14} /> Eliminar
+                            </button>
+                          </div>
+                          <div style={{ flex: 1, background: '#0F172A', borderRadius: '12px', overflow: 'hidden', minHeight: '380px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px' }}>
+                            {doc.type.includes('pdf') ? (
+                              <iframe
+                                src={doc.data}
+                                title={tabLabels[activeDocTab]}
+                                width="100%"
+                                height="420px"
+                                style={{ border: 'none', borderRadius: '8px' }}
+                              />
+                            ) : (
+                              <img
+                                src={doc.data}
+                                alt={tabLabels[activeDocTab]}
+                                style={{ maxWidth: '100%', maxHeight: '420px', borderRadius: '8px', objectFit: 'contain' }}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <label className="doc-upload-zone">
+                        <Upload size={36} />
+                        <h3>Cargar {tabLabels[activeDocTab]}</h3>
+                        <p style={{ fontSize: '0.8rem', marginTop: '4px' }}>Soporta PDF o Imágenes (Máx. 1.5MB)</p>
+                        <input
+                          type="file"
+                          accept=".pdf, image/*"
+                          style={{ display: 'none' }}
+                          onChange={(e) => handleLocalDocUpload(activeDocTab, e)}
+                        />
+                      </label>
+                    );
+                  })()}
+                </div>
               </div>
 
               <div className="doc-validation-sidebar">
