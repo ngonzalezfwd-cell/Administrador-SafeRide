@@ -56,25 +56,25 @@ const AdminLayout = () => {
         </div>
 
         <nav className="sidebarNav">
-          <NavItem 
-            to="/inicio" 
-            icon={LayoutDashboard} 
-            label="Panel" 
-            active={location.pathname === '/inicio'} 
-            onClick={handleCloseSidebar} 
+          <NavItem
+            to="/inicio"
+            icon={LayoutDashboard}
+            label="Panel"
+            active={location.pathname === '/inicio'}
+            onClick={handleCloseSidebar}
           />
 
           {/* SUB-MENÚ USUARIOS */}
           <div className="navGroup">
-            <div 
-              className={`navItem ${location.pathname.includes('/usuarios') || location.pathname.includes('/conductores') ? 'active' : ''}`} 
+            <div
+              className={`navItem ${location.pathname.includes('/usuarios') || location.pathname.includes('/conductores') ? 'active' : ''}`}
               onClick={() => {
                 setUsuariosOpen(!usuariosOpen);
                 navigate('/usuarios');
               }}
               style={{ cursor: 'pointer' }}
             >
-              <Users size={20} /> 
+              <Users size={20} />
               <span style={{ flex: 1 }}>Usuarios</span>
               <ChevronDown size={16} style={{ transform: usuariosOpen ? 'rotate(180deg)' : 'none', transition: '0.3s' }} />
             </div>
@@ -91,44 +91,44 @@ const AdminLayout = () => {
             )}
           </div>
 
-          <NavItem 
-            to="/vehiculos" 
-            icon={Car} 
-            label="Vehículos" 
-            active={location.pathname === '/vehiculos'} 
-            onClick={handleCloseSidebar} 
+          <NavItem
+            to="/vehiculos"
+            icon={Car}
+            label="Vehículos"
+            active={location.pathname === '/vehiculos'}
+            onClick={handleCloseSidebar}
           />
 
-          <NavItem 
-            to="/notificaciones" 
-            icon={Bell} 
-            label="Notificaciones" 
-            active={location.pathname === '/notificaciones'} 
-            onClick={handleCloseSidebar} 
+          <NavItem
+            to="/notificaciones"
+            icon={Bell}
+            label="Notificaciones"
+            active={location.pathname === '/notificaciones'}
+            onClick={handleCloseSidebar}
           />
 
-          <NavItem 
-            to="/quejas" 
-            icon={AlertCircle} 
-            label="Quejas" 
-            active={location.pathname === '/quejas'} 
-            onClick={handleCloseSidebar} 
+          <NavItem
+            to="/quejas"
+            icon={AlertCircle}
+            label="Quejas"
+            active={location.pathname === '/quejas'}
+            onClick={handleCloseSidebar}
           />
 
-          <NavItem 
-            to="/auditoria" 
-            icon={ShieldCheck} 
-            label="Auditoría" 
-            active={location.pathname === '/auditoria'} 
-            onClick={handleCloseSidebar} 
+          <NavItem
+            to="/auditoria"
+            icon={ShieldCheck}
+            label="Auditoría"
+            active={location.pathname === '/auditoria'}
+            onClick={handleCloseSidebar}
           />
 
-          <NavItem 
-            to="/configuracion" 
-            icon={Settings} 
-            label="Configuración" 
-            active={location.pathname === '/configuracion'} 
-            onClick={handleCloseSidebar} 
+          <NavItem
+            to="/configuracion"
+            icon={Settings}
+            label="Configuración"
+            active={location.pathname === '/configuracion'}
+            onClick={handleCloseSidebar}
           />
         </nav>
 
@@ -165,10 +165,10 @@ const AdminLayout = () => {
             </div>
 
             <div className="menuIconContainer" style={{ position: 'relative' }} ref={menuRef}>
-              <Menu 
-                size={24} 
-                className="IconMenu" 
-                onClick={() => setMenuAbierto(!menuAbierto)} 
+              <Menu
+                size={24}
+                className="IconMenu"
+                onClick={() => setMenuAbierto(!menuAbierto)}
                 style={{ cursor: 'pointer' }}
               />
 
