@@ -42,17 +42,21 @@ const Notificaciones = () => {
       });
 
       // 2. Mapear quejas del archivo real complaints.json
-      const complaintsMapped = (complaintsData || []).map(q => ({
-        _id: `complaint_${q.id}`,
-        message: `✉️ Nueva Queja de ${q.user} (${q.email}): ${q.subject}`,
-        subject: q.subject,
-        fullMessage: q.fullMessage,
-        type: 'system',
-        status: q.status === 'Pendiente' ? 'unread' : 'read',
-        createdAt: q.createdAt,
-        category: 'correo',
-        isComplaint: true
-      }));
+      const readComplaints = JSON.parse(localStorage.getItem('readComplaints') || '[]');
+      const complaintsMapped = (complaintsData || []).map(q => {
+        const cId = `complaint_${q.id}`;
+        return {
+          _id: cId,
+          message: `✉️ Nueva Queja de ${q.user} (${q.email}): ${q.subject}`,
+          subject: q.subject,
+          fullMessage: q.fullMessage,
+          type: 'system',
+          status: (q.status === 'Pendiente' && !readComplaints.includes(cId)) ? 'unread' : 'read',
+          createdAt: q.createdAt,
+          category: 'correo',
+          isComplaint: true
+        };
+      });
 
       // 3. Combinar y ordenar cronológicamente
       const combined = [...categorizedBackend, ...complaintsMapped];
@@ -76,15 +80,20 @@ const Notificaciones = () => {
   const handleMarkAsRead = async (id) => {
     try {
       if (id.startsWith('complaint_')) {
-        // Para quejas del JSON, actualizamos el estado en memoria de la lista
+        const readList = JSON.parse(localStorage.getItem('readComplaints') || '[]');
+        if (!readList.includes(id)) {
+          localStorage.setItem('readComplaints', JSON.stringify([...readList, id]));
+        }
         setNotifications(prev => prev.map(n => n._id === id ? { ...n, status: 'read' } : n));
         toast.success('Queja marcada como leída');
+        window.dispatchEvent(new Event('notificationsUpdated'));
         return;
       }
 
       await notificationService.markAsRead(id);
       setNotifications(prev => prev.map(n => n._id === id ? { ...n, status: 'read' } : n));
       toast.success('Notificación marcada como leída');
+      window.dispatchEvent(new Event('notificationsUpdated'));
     } catch (err) {
       console.error(err);
       toast.error('Error al actualizar la notificación en el servidor');
@@ -98,12 +107,23 @@ const Notificaciones = () => {
         .filter(n => !n._id.startsWith('complaint_') && n.status === 'unread')
         .map(n => n._id);
 
+      const complaintIds = notifications
+        .filter(n => n._id.startsWith('complaint_') && n.status === 'unread')
+        .map(n => n._id);
+
       if (realIds.length > 0) {
         await notificationService.markAllAsRead();
       }
 
+      if (complaintIds.length > 0) {
+        const readList = JSON.parse(localStorage.getItem('readComplaints') || '[]');
+        const updatedList = Array.from(new Set([...readList, ...complaintIds]));
+        localStorage.setItem('readComplaints', JSON.stringify(updatedList));
+      }
+
       setNotifications(prev => prev.map(n => ({ ...n, status: 'read' })));
       toast.success('Todas las notificaciones y quejas marcadas como leídas');
+      window.dispatchEvent(new Event('notificationsUpdated'));
     } catch (err) {
       console.error(err);
       toast.error('Error al actualizar las notificaciones');

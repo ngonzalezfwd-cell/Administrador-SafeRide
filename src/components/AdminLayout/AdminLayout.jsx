@@ -1,26 +1,39 @@
 import React, { useState, useCallback, memo, useEffect, useRef } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
+
+// Contextos
 import { useAuth } from '../../context/AuthContext';
+
+// Iconos e imagenes
 import {
-  LayoutDashboard, Users, UserCheck, Car,
+  LayoutDashboard, Users, User, UserCheck, Car,
   Bell, AlertCircle, ShieldCheck, Settings, ChevronDown, Menu, Search
 } from 'lucide-react';
 import IconSafeRide from '../../imgs/IconSafeRide.png';
 import DefaultImageUser from '../../imgs/DefaultImageUser.png';
 import { Toaster } from 'react-hot-toast';
+
+// Services
 import notificationService from '../../services/notificationService';
 import './AdminLayout.css';
 
-// ───────────────────────────────────────────────────────────────────────────────────────────────────
-// ──────────────────────────────────────────────────────────────────────
-
-const NavItem = memo(({ to, icon: Icon, label, active, onClick }) => (
-  <Link to={to} className={`navItem ${active ? 'active' : ''}`} onClick={onClick}>
-    <Icon size={20} /> <span>{label}</span>
+const NavItem = memo(({ to, icon: Icon, label, active, onClick, badge }) => (
+  <Link to={to} className={"navItem " + (active ? 'active' : '')} onClick={onClick}>
+    <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+      <Icon size={20} /> 
+      <span style={{ marginLeft: '14px', flex: 1 }}>{label}</span>
+      {badge > 0 && (
+        <span className="sidebarBadge">{badge}</span>
+      )}
+    </div>
   </Link>
 ));
 
+// ───────────────────────────────────────────────────────────────────────────────────────────────────
+import complaintsData from '../../data/complaints.json';
+
 const AdminLayout = () => {
+  
   const { user, cerrarSesion } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -34,7 +47,12 @@ const AdminLayout = () => {
     try {
       const res = await notificationService.getNotifications();
       const list = res?.data || [];
-      setUnreadCount(list.filter(n => n.status === 'unread').length);
+      const backendUnread = list.filter(n => n.status === 'unread').length;
+      
+      const readComplaints = JSON.parse(localStorage.getItem('readComplaints') || '[]');
+      const complaintsUnread = (complaintsData || []).filter(q => q.status === 'Pendiente' && !readComplaints.includes(`complaint_${q.id}`)).length;
+      
+      setUnreadCount(backendUnread + complaintsUnread);
     } catch {
       setUnreadCount(0);
     }
@@ -56,9 +74,12 @@ const AdminLayout = () => {
     }, 10000); // Equilibrado a 10 segundos para mayor fluidez de red
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('notificationsUpdated', loadUnreadCount);
+
     return () => {
       clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('notificationsUpdated', loadUnreadCount);
     };
   }, [loadUnreadCount]);
 
@@ -100,11 +121,11 @@ const AdminLayout = () => {
 
           {/* SUB-MENÚ USUARIOS */}
           <div className="navGroup">
+
             <div
               className={`navItem ${location.pathname.includes('/usuarios') || location.pathname.includes('/conductores') ? 'active' : ''}`}
               onClick={() => {
                 setUsuariosOpen(!usuariosOpen);
-                navigate('/usuarios');
               }}
               style={{ cursor: 'pointer' }}
             >
@@ -115,9 +136,11 @@ const AdminLayout = () => {
 
             {usuariosOpen && (
               <div className="subPanel">
+
                 <Link to="/usuarios" className={`subNavItem ${location.pathname === '/usuarios' ? 'active' : ''}`} onClick={handleCloseSidebar}>
-                  <Users size={18} /> <span>Pasajeros</span>
+                  <User size={18} /> <span>Pasajeros</span>
                 </Link>
+
                 <Link to="/conductores" className={`subNavItem ${location.pathname === '/conductores' ? 'active' : ''}`} onClick={handleCloseSidebar}>
                   <UserCheck size={18} /> <span>Conductores</span>
                 </Link>
@@ -139,6 +162,7 @@ const AdminLayout = () => {
             label="Notificaciones"
             active={location.pathname === '/notificaciones'}
             onClick={handleCloseSidebar}
+            badge={unreadCount}
           />
 
           <NavItem
@@ -175,8 +199,11 @@ const AdminLayout = () => {
         </div>
       </aside>
 
+
+      {/* --- CONTENIDO PRINCIPAL --- */}
       <main>
         <header>
+
           <div className="headerIzquierdo">
             <div className="buscadorContainer">
               <Search size={18} className="buscadorIcono" />
@@ -190,16 +217,16 @@ const AdminLayout = () => {
             </div>
 
             <div className="userInfo">
+              
               <img src={getDefaultImagen(user?.profileImage)} alt="Admin" className="FotoPerfilHeader" />
             </div>
 
             <Link 
               to="/notificaciones" 
               className="notificacionCampana" 
-              style={{ color: 'inherit', textDecoration: 'none', position: 'relative' }}
               title="Centro de Notificaciones"
             >
-              <Bell size={24} />
+              <Bell size={24} className={unreadCount > 0 ? "animacion-tintineo" : ""} />
               {unreadCount > 0 && (
                 <span className="notificacionBadge">{unreadCount}</span>
               )}
