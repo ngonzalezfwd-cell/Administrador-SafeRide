@@ -417,6 +417,9 @@ header {
   padding: 40px;
   overflow-y: auto;
   background: var(--layout-bg);
+  /* Aceleración por hardware y optimización de scroll para macOS */
+  will-change: scroll-position;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Menu Desplegable */
