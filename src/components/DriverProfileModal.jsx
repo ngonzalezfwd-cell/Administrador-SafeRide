@@ -10,6 +10,7 @@ import passengerService from '../services/passengerService';
 import api from '../services/api';
 import rideService from '../services/rideService';
 import { toast } from 'react-hot-toast';
+import { InsertarEnCloudinary } from '../services/cloudinary';
 import './DriverProfileModal.css';
 
 const CAR_DATA = {
@@ -265,7 +266,7 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
       });
     } else {
       if (name === 'name') {
-        const filteredValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+        const filteredValue = value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.\-']/g, '');
         setForm(prev => ({ ...prev, [name]: filteredValue }));
       } else {
         setForm(prev => ({ ...prev, [name]: value }));
@@ -277,7 +278,7 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
 
   const validate = () => {
     if (!form.name.trim() || form.name.trim().length < 4) return 'El nombre completo debe tener al menos 4 caracteres';
-    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s.\-']+$/.test(form.name)) return 'El nombre contiene caracteres no permitidos (solo se permiten letras, espacios, puntos y guiones)';
+    if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.\-']+$/.test(form.name)) return 'El nombre contiene caracteres no permitidos (solo se permiten letras, números, espacios, puntos y guiones)';
     if (form.username && !/^[a-zA-Z0-9._-]+$/.test(form.username)) return 'El nombre de usuario solo puede contener letras, números, puntos, guiones y guiones bajos';
     if (!/^\d{8}$/.test(form.phone)) return 'El teléfono debe tener exactamente 8 dígitos';
     if (!form.email || !form.username) return 'Email y Usuario son obligatorios';
@@ -302,11 +303,20 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
     setSubmitting(true);
     try {
       let savedDriverId = driver ? driver._id : null;
+      let profileImageUrl = null;
+
+      if (avatarFile) {
+        setStep('Subiendo imagen a Cloudinary...');
+        profileImageUrl = await InsertarEnCloudinary(avatarFile);
+      }
 
       if (!isEditMode) {
         setStep('Registrando usuario...');
         const userPayload = { ...form, password: generateTempPassword(), type: userType };
         delete userPayload.vehicle;
+        if (profileImageUrl) {
+          userPayload.profileImage = profileImageUrl;
+        }
 
         const regRes = await api.post('/auth/register', userPayload);
         savedDriverId = regRes.data?.data?.user?._id;
@@ -335,6 +345,9 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
           company: form.company,
           work_schedule: form.work_schedule
         };
+        if (profileImageUrl) {
+          userUpdatePayload.profileImage = profileImageUrl;
+        }
 
         if (isPassenger) {
           await passengerService.updatePassenger(savedDriverId, userUpdatePayload);
@@ -365,15 +378,6 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
             };
             await api.post('/vehicles', vehiclePayload);
           }
-        }
-      }
-
-      if (avatarFile && savedDriverId) {
-        setStep('Subiendo imagen...');
-        if (isPassenger) {
-          await passengerService.uploadImage(savedDriverId, avatarFile);
-        } else {
-          await driverService.uploadImage(savedDriverId, avatarFile);
         }
       }
 
