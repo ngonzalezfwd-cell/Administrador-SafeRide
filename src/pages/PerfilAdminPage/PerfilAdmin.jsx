@@ -56,7 +56,7 @@ const PerfilAdmin = () => {
                 name: user.name || '',
                 username: user.username || '',
                 email: user.email || '',
-                phone: user.phone ? `${user.phone.slice(0, 4)}-${user.phone.slice(4, 8)}` : '',
+                phone: user.phone ? `${String(user.phone).slice(0, 4)}-${String(user.phone).slice(4, 8)}` : '',
                 company: user.company || '',
                 status: user.isActive || ''
             });
@@ -67,13 +67,13 @@ const PerfilAdmin = () => {
     useEffect(() => {
         // Cargar lista de empresas
         api.get('/users/companies')
-            .then(res => setEmpresas(res.data.data))
+            .then(res => setEmpresas(res.data.data || []))
             .catch(err => console.error(err));
 
         // Cargar estadísticas globales
         api.get('/metrics/global')
             .then(res => {
-                if (res.data.success) {
+                if (res.data.success && res.data.data) {
                     setEstadisticas(res.data.data);
                 }
             })
@@ -82,7 +82,7 @@ const PerfilAdmin = () => {
         // Cargar actividad reciente (notificaciones)
         api.get('/notifications')
             .then(res => {
-                if (res.data.success) {
+                if (res.data.success && Array.isArray(res.data.data)) {
                     setNotificaciones(res.data.data.slice(0, 3));
                 }
             })
@@ -149,7 +149,7 @@ const PerfilAdmin = () => {
             // 2. Guardar en el backend (Limpiamos el teléfono de guiones antes de enviar)
             const response = await api.put('/users/profile', {
                 ...datosPerfil,
-                phone: datosPerfil.phone.replace(/-/g, ''),
+                phone: (datosPerfil.phone || '').replace(/-/g, ''),
                 profileImage: profileImageUrl
             });
 
@@ -458,7 +458,7 @@ const PerfilAdmin = () => {
                     </div>
 
                     <p className="estadisticaEtiqueta">Viajes Corporativos</p>
-                    <h3 className="estadisticaValor">{estadisticas.totalRides.toLocaleString()}</h3>
+                    <h3 className="estadisticaValor">{(estadisticas.totalRides || 0).toLocaleString()}</h3>
                 </div>
 
                 <div className="tarjetaEstadistica">
@@ -469,7 +469,7 @@ const PerfilAdmin = () => {
                     </div>
 
                     <p className="estadisticaEtiqueta">Conductores Registrados</p>
-                    <h3 className="estadisticaValor">{estadisticas.totalDrivers}</h3>
+                    <h3 className="estadisticaValor">{estadisticas.totalDrivers || 0}</h3>
                 </div>
 
                 <div className="tarjetaEstadistica">
@@ -480,7 +480,7 @@ const PerfilAdmin = () => {
                     </div>
 
                     <p className="estadisticaEtiqueta">Funcionarios Beneficiados</p>
-                    <h3 className="estadisticaValor">{estadisticas.totalPassengers.toLocaleString()}</h3>
+                    <h3 className="estadisticaValor">{(estadisticas.totalPassengers || 0).toLocaleString()}</h3>
                 </div>
 
                 <div className="tarjetaEstadistica">
@@ -549,7 +549,7 @@ const PerfilAdmin = () => {
                                 notificaciones.map((notif, index) => (
                                     <div key={notif._id} className={`eventoTiempo ${index % 2 === 0 ? 'azul' : 'verde'}`}>
                                         <div className="infoEvento">
-                                            <h4>{notif.type.replace(/_/g, ' ').toUpperCase()}</h4>
+                                            <h4>{(notif.type || '').replace(/_/g, ' ').toUpperCase()}</h4>
                                             <p>{notif.message}</p>
                                             <span className="tagTiempo">
                                                 {new Date(notif.date).toLocaleDateString()}

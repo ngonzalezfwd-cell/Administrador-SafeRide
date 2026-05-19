@@ -127,6 +127,7 @@ const PasajerosPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearch] = useState('');
   const [selectedLetter, setSelectedLetter] = useState('');
+  const [sortOrder, setSortOrder] = useState('desc'); // 'desc' = más nuevos primero, 'asc' = más viejos primero
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -149,7 +150,8 @@ const PasajerosPage = () => {
         search: searchTerm,
         initial: selectedLetter,
         page: currentPage,
-        limit: 9
+        limit: 9,
+        sort: sortOrder
       });
 
       if (requestId !== lastRequestId.current) return;
@@ -176,7 +178,7 @@ const PasajerosPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, selectedLetter, currentPage]);
+  }, [searchTerm, selectedLetter, currentPage, sortOrder]);
 
   useEffect(() => { loadPassengers(); }, []);
 
@@ -190,6 +192,14 @@ const PasajerosPage = () => {
     }, 300);
     return () => clearTimeout(timeoutId);
   }, [searchTerm, selectedLetter]);
+
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    } else {
+      loadPassengers();
+    }
+  }, [sortOrder]);
 
   useEffect(() => {
     loadPassengers();
@@ -304,36 +314,47 @@ const PasajerosPage = () => {
     <>
       <Toaster position="top-right" />
 
-      {/* Barra de búsqueda local */}
-      <div className="local-header-actions">
-        <div className="buscadorContainer">
-          <Search size={18} className="buscadorIcono" />
-          <input
-            type="text"
-            placeholder="Filtrar pasajeros..."
-            value={searchTerm}
-            onChange={e => {
-              setSearch(e.target.value);
-              if (e.target.value && selectedLetter) setSelectedLetter('');
-            }}
-          />
-          <button className="btn-search-header" onClick={loadPassengers}>
-            Buscar
-          </button>
-          <div className="search-status-indicator" style={{ right: '85px' }}>
-            {loading && <div className="spinner-mini" />}
-          </div>
-        </div>
-      </div>
-
       <div id="encabezadoPagina" className="page-header">
-        <div>
+        <div className="page-header-title">
           <h1>Gestión de Pasajeros</h1>
           <p>Supervisa y administra los usuarios registrados en la plataforma</p>
         </div>
-        <button className="btn-add-passenger" onClick={() => handleOpenModal(null)}>
-          <Plus size={18} /> Nuevo Pasajero
-        </button>
+
+        <div className="page-header-actions">
+          <div className="buscadorContainer">
+            <Search size={18} className="buscadorIcono" />
+            <input
+              type="text"
+              placeholder="Filtrar pasajeros..."
+              value={searchTerm}
+              onChange={e => {
+                setSearch(e.target.value);
+                if (e.target.value && selectedLetter) setSelectedLetter('');
+              }}
+            />
+            <button className="btn-search-header" onClick={loadPassengers}>
+              Buscar
+            </button>
+            <div className="search-status-indicator" style={{ right: '85px' }}>
+              {loading && <div className="spinner-mini" />}
+            </div>
+          </div>
+
+          <div className="ordenamientoContainer">
+            <select
+              value={sortOrder}
+              onChange={e => setSortOrder(e.target.value)}
+              className="ordenamientoSelect"
+            >
+              <option value="desc">Más nuevos primero</option>
+              <option value="asc">Más viejos primero</option>
+            </select>
+          </div>
+
+          <button className="btn-add-passenger" onClick={() => handleOpenModal(null)}>
+            <Plus size={18} /> Nuevo Pasajero
+          </button>
+        </div>
       </div>
 
       {/* --- ALPHABET FILTER --- */}
