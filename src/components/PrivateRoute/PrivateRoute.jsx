@@ -1,4 +1,3 @@
-import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './PrivateRoute.css';
@@ -15,7 +14,7 @@ const PrivateRoute = ({ requiredRole }) => {
     }
 
     if (!user) {
-        return <Navigate to="/Login" replace />;
+        return <Navigate to="/login" replace />;
     }
 
     // Verificación de rol: acepta 'admin' y 'administrador'

@@ -5,12 +5,12 @@ import {
   Users, Palette, CheckCircle, AlertCircle, MapPin, Clock,
   History, Navigation
 } from 'lucide-react';
-import driverService from '../services/driverService';
-import passengerService from '../services/passengerService';
-import api from '../services/api';
-import rideService from '../services/rideService';
+import driverService from '../../services/driverService';
+import passengerService from '../../services/passengerService';
+import api from '../../services/api';
+import rideService from '../../services/rideService';
 import { toast } from 'react-hot-toast';
-import { InsertarEnCloudinary } from '../services/cloudinary';
+import { InsertarEnCloudinary } from '../../services/cloudinary';
 import './DriverProfileModal.css';
 
 const CAR_DATA = {

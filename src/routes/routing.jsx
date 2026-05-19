@@ -14,7 +14,7 @@ const ConductoresPage   = lazy(() => import('../pages/ConductoresPage/Conductore
 const VehiculosPage     = lazy(() => import('../pages/VehiculosPage/Vehiculos'));
 const QuejasPage        = lazy(() => import('../pages/QuejasPage/Quejas'));
 const NotificacionesPage = lazy(() => import('../pages/NotificacionesPage/Notificaciones'));
-const Configuracion     = lazy(() => import('../pages/Configuracion Page/Configuracion'));
+const Configuracion     = lazy(() => import('../pages/ConfiguracionPage/Configuracion'));
 const AuditoriaPage     = lazy(() => import('../pages/AuditoriaPage/Auditoria'));
 
 /** Placeholder temporal para páginas aún no implementadas */

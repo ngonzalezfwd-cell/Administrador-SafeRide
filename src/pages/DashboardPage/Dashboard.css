@@ -106,20 +106,20 @@ header {
 }
 
 .notificacionBadge {
-   position: absolute;
-   top: 3px;
-   right: 12px;
-   background-color: #EF4444;
-   color: white;
-   font-size: 11px;
-   font-weight: bold;
-   width: 17px;
-   height: 17px;
-   border-radius: 50%;
-   display: flex;
-   align-items: center;
-   justify-content: center;
-   border: 2px solid white;
+    position: absolute;
+    top: 3px;
+    right: 12px;
+    background-color: #EF4444;
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
 }
 
 .userInfo {
