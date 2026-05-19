@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Building, ShieldCheck, Lock, Palette, Mail, Phone, Info } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import SupportImage from '../../imgs/SupportConfig.png';
