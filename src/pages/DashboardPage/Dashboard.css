@@ -296,6 +296,9 @@ img {
     flex: 1;
     overflow-y: auto;
     padding: 32px;
+    /* Aceleración por hardware y optimización de scroll para macOS */
+    will-change: scroll-position;
+    -webkit-overflow-scrolling: touch;
 }
 
 .TituloPagina {
