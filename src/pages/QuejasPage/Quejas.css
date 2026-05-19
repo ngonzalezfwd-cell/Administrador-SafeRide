@@ -622,3 +622,202 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* --- ESTILOS OPTIMIZADOS PARA LAS TARJETAS DE QUEJAS --- */
+.q-cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.n-card {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #E2E8F0;
+  overflow: hidden;
+  display: flex;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
+  transform: translateZ(0);
+}
+
+.n-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+}
+
+.n-stripe {
+  width: 5px;
+  background-color: #F59E0B;
+  flex-shrink: 0;
+}
+
+.n-card-body {
+  padding: 16px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  width: 100%;
+}
+
+.n-icon-wrapper {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #F59E0B;
+  flex-shrink: 0;
+}
+
+.n-card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.n-card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.n-id-badge {
+  font-size: 11px;
+  font-weight: 800;
+  background: #F1F5F9;
+  color: #475569;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.n-status-tag {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.n-status-tag.pendiente {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #EF4444;
+}
+
+.n-status-tag.atendido {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10B981;
+}
+
+.n-message {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #1E293B;
+  margin: 0;
+}
+
+.n-preview-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.n-toggle-preview-btn {
+  border: none;
+  background: transparent;
+  color: var(--q-blue);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.n-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.n-time {
+  font-size: 12px;
+  color: #94A3B8;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.n-badge-category.correo {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: rgba(245, 158, 11, 0.15);
+  color: #B45309;
+}
+
+.n-card-actions {
+  display: flex;
+  gap: 8px;
+  align-self: center;
+  margin-left: 16px;
+}
+
+.n-action-btn.check {
+  border: none;
+  background: transparent;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: #94A3B8;
+}
+
+.n-action-btn.check:hover {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10B981;
+}
+
+.n-action-btn.view {
+  border: none;
+  background: #2563EB;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: white;
+}
+
+.n-action-btn.view:hover {
+  background: #1D4ED8;
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+}
+
+.n-empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  background: white;
+  border-radius: 20px;
+  border: 1.5px dashed #E2E8F0;
+  color: #64748B;
+}
