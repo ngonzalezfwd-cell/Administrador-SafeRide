@@ -218,7 +218,7 @@ const QuejasPage = () => {
       </div>
 
       {/* Listado de Quejas en formato Cards Premium */}
-      <div className="q-cards-grid animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+      <div className="q-cards-grid animate-fade-in">
         {filteredQuejas.length > 0 ? (
           filteredQuejas.map((q) => {
             const isExpanded = expandedQuejaId === q.id;
@@ -226,46 +226,36 @@ const QuejasPage = () => {
               <div
                 key={q.id}
                 className={`n-card ${q.status === 'Pendiente' ? 'unread' : 'read'} correo`}
-                style={{
-                  background: 'white',
-                  borderRadius: '16px',
-                  border: '1px solid #E2E8F0',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  position: 'relative',
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01)'
-                }}
               >
                 {/* Banda dorada decorativa de correo */}
-                <div className="n-stripe" style={{ width: '5px', backgroundColor: '#F59E0B', flexShrink: 0 }} />
+                <div className="n-stripe" />
 
-                <div className="n-card-body" style={{ padding: '16px 20px', display: 'flex', alignItems: 'flex-start', gap: '16px', width: '100%' }}>
+                <div className="n-card-body">
                   {/* Ícono de Correo */}
-                  <div className="n-icon-wrapper" style={{ width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', backgroundColor: 'rgba(245, 158, 11, 0.15)', flexShrink: 0, justifyContent: 'center' }}>
-                    <Mail size={20} style={{ color: '#F59E0B' }} />
+                  <div className="n-icon-wrapper">
+                    <Mail size={20} />
                   </div>
 
-                  <div className="n-card-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div className="n-card-content">
                     {/* Header de la tarjeta */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: '800', background: '#F1F5F9', color: '#475569', padding: '2px 8px', borderRadius: '4px' }}>
+                    <div className="n-card-header-row">
+                      <span className="n-id-badge">
                         {q.id}
                       </span>
-                      <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', padding: '2px 8px', borderRadius: '20px', backgroundColor: q.status === 'Pendiente' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', color: q.status === 'Pendiente' ? '#EF4444' : '#10B981' }}>
+                      <span className={`n-status-tag ${q.status === 'Pendiente' ? 'pendiente' : 'atendido'}`}>
                         {q.status}
                       </span>
                     </div>
 
-                    <p className="n-message" style={{ fontSize: '14.5px', fontWeight: '600', color: '#1E293B', margin: 0 }}>
+                    <p className="n-message">
                       Nueva Queja de {q.user} ({q.email})
                     </p>
 
                     {/* Preview box */}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                      <div className="n-preview-box" style={{ margin: '8px 0 0 0', width: '100%' }}>
+                    <div className="n-preview-container">
+                      <div className="n-preview-box">
                         <strong>Asunto: {q.subject}</strong>
-                        <p style={{ margin: 0 }}>
+                        <p>
                           {isExpanded 
                             ? q.fullMessage || q.message 
                             : `${(q.fullMessage || q.message).substring(0, 160)}...`}
@@ -274,7 +264,6 @@ const QuejasPage = () => {
                       <button 
                         className="n-toggle-preview-btn" 
                         onClick={() => setExpandedQuejaId(prev => prev === q.id ? null : q.id)}
-                        style={{ marginTop: '8px' }}
                       >
                         {isExpanded ? (
                           <>Ocultar detalles <ChevronUp size={12} /></>
@@ -285,37 +274,24 @@ const QuejasPage = () => {
                     </div>
 
                     {/* Meta info */}
-                    <div className="n-meta" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
-                      <span className="n-time" style={{ fontSize: '12px', color: '#94A3B8', fontWeight: '500', display: 'flex', alignItems: 'center' }}>
-                        <Clock size={12} style={{ marginRight: '4px' }} />
+                    <div className="n-meta">
+                      <span className="n-time">
+                        <Clock size={12} />
                         {new Date(q.createdAt).toLocaleDateString()} a las {new Date(q.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
-                      <span className="n-badge-category correo" style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', padding: '2px 8px', borderRadius: '20px', background: 'rgba(245, 158, 11, 0.15)', color: '#B45309' }}>
+                      <span className="n-badge-category correo">
                         {q.category}
                       </span>
                     </div>
                   </div>
 
                   {/* Acciones de la Tarjeta */}
-                  <div className="n-card-actions" style={{ display: 'flex', gap: '8px', alignSelf: 'center', marginLeft: '16px' }}>
+                  <div className="n-card-actions">
                     {q.status === 'Pendiente' && (
                       <button
                         className="n-action-btn check"
                         title="Marcar como atendida"
                         onClick={() => handleResolve(q)}
-                        style={{
-                          border: 'none',
-                          background: 'transparent',
-                          width: '32px',
-                          height: '32px',
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease',
-                          color: '#94A3B8'
-                        }}
                       >
                         <CheckCircle size={18} />
                       </button>
@@ -324,19 +300,6 @@ const QuejasPage = () => {
                       className="n-action-btn view"
                       title="Ver Detalles Completos y Responder"
                       onClick={() => handleOpenDetail(q)}
-                      style={{
-                        border: 'none',
-                        background: '#2563EB',
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                        color: 'white'
-                      }}
                     >
                       <ChevronRight size={18} />
                     </button>
@@ -346,7 +309,7 @@ const QuejasPage = () => {
             );
           })
         ) : (
-          <div className="n-empty-state" style={{ textAlign: 'center', padding: '80px 20px', background: 'white', borderRadius: '20px', border: '1.5px dashed #E2E8F0', color: '#64748B' }}>
+          <div className="n-empty-state">
             <MessageSquare size={56} style={{ color: '#64748B', marginBottom: '16px' }} />
             <h3>No hay quejas</h3>
             <p>No se encontraron reportes que coincidan con los filtros seleccionados.</p>

@@ -76,6 +76,72 @@ async function processEmailWithAI(mail, uid) {
     }
 }
 
+// --- LÓGICA DE AUTORESPUESTA ---
+const AUTOREPLIES_FILE = path.join(__dirname, 'sent_autoreplies.json');
+
+function getSentAutoreplies() {
+    try {
+        if (fs.existsSync(AUTOREPLIES_FILE)) {
+            return JSON.parse(fs.readFileSync(AUTOREPLIES_FILE, 'utf8'));
+        }
+    } catch (e) {
+        console.error("Error al leer autorepuestas enviadas:", e);
+    }
+    return [];
+}
+
+function saveSentAutoreply(uid) {
+    const sent = getSentAutoreplies();
+    if (!sent.includes(uid)) {
+        sent.push(uid);
+        try {
+            fs.writeFileSync(AUTOREPLIES_FILE, JSON.stringify(sent, null, 2));
+        } catch (e) {
+            console.error("Error al guardar autorepuesta enviada:", e);
+        }
+    }
+}
+
+async function sendAutoReply(toEmail, caseId, originalSubject) {
+    const mailOptions = {
+        from: `"Soporte SafeRide" <${process.env.SUPPORT_EMAIL || 'saferidefwd@gmail.com'}>`,
+        to: toEmail,
+        subject: `[SafeRide] Recepción de Reporte: ${originalSubject}`,
+        html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; border: 1px solid #E2E8F0; border-radius: 8px;">
+                <div style="background: #2563EB; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+                    <h2 style="margin: 0; font-size: 20px;">SafeRide - Recepción de Reporte</h2>
+                </div>
+                <div style="padding: 24px; background: #F8FAFC; border: 1px solid #E2E8F0; border-top: none; border-radius: 0 0 8px 8px;">
+                    <p style="font-size: 16px; font-weight: 600; color: #0F172A; margin-top: 0;">¡Hola!</p>
+                    <p style="font-size: 15px; color: #334155;">
+                        Hemos recibido tu reporte en nuestro sistema de atención. Queremos informarte que <strong>tu caso ya se encuentra en revisión</strong> por nuestro equipo de soporte técnico y atención al cliente.
+                    </p>
+                    <p style="font-size: 15px; color: #334155;">
+                        <strong>Detalles preliminares de tu caso:</strong>
+                    </p>
+                    <ul style="background: white; padding: 16px 24px; border-radius: 8px; border: 1px solid #E2E8F0; list-style-type: none; margin: 0 0 20px 0; padding-left: 20px;">
+                        <li style="margin-bottom: 8px; font-size: 14px; color: #475569;"><strong>ID de Seguimiento:</strong> ${caseId}</li>
+                        <li style="margin-bottom: 8px; font-size: 14px; color: #475569;"><strong>Asunto:</strong> ${originalSubject}</li>
+                        <li style="font-size: 14px; color: #475569;"><strong>Estado:</strong> En Revisión</li>
+                    </ul>
+                    <p style="font-size: 15px; color: #334155;">
+                        Un miembro de nuestro equipo se pondrá en contacto contigo a la brevedad posible para darte una solución detallada. Agradecemos tu paciencia y preferencia para mantener a SafeRide seguro y de primera calidad.
+                    </p>
+                    <hr style="border: 0; border-top: 1px solid #E2E8F0; margin: 24px 0;">
+                    <p style="font-size: 12px; color: #64748B; text-align: center; margin-bottom: 0;">
+                        Este es un correo automático enviado por el Agente de Soporte de SafeRide. Por favor no respondas a este mensaje.<br>
+                        © 2026 SafeRide S.A. Todos los derechos reservados.
+                    </p>
+                </div>
+            </div>
+        `
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`✉️ Autorespuesta enviada automáticamente a ${toEmail} para el caso ${caseId}`);
+}
+
 // --- FUNCIONES DEL AGENTE ---
 function syncWithGmail(res) {
     const imap = new Imap(imapConfig);
@@ -96,7 +162,20 @@ function syncWithGmail(res) {
                     msg.once('attributes', (a) => uid = a.uid);
                     msg.on('body', (s) => {
                         simpleParser(s, async (e, m) => {
-                            complaints.push(await processEmailWithAI(m, uid));
+                            const processed = await processEmailWithAI(m, uid);
+                            complaints.push(processed);
+
+                            // Lógica de autorepuesta
+                            const sentList = getSentAutoreplies();
+                            if (!sentList.includes(uid)) {
+                                try {
+                                    await sendAutoReply(processed.email, processed.id, m.subject);
+                                    saveSentAutoreply(uid);
+                                } catch (err) {
+                                    console.error(`Error al enviar autorepuesta a ${processed.email} para UID ${uid}:`, err);
+                                }
+                            }
+
                             if (++completed === results.length) {
                                 fs.writeFileSync(COMPLAINTS_FILE, JSON.stringify(complaints, null, 2));
                                 res?.json(complaints);

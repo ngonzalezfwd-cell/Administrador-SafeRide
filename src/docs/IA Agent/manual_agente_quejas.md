@@ -10,8 +10,9 @@ El sistema funciona como un **Orquestador Autónomo** sin tocar el backend princ
 2. **Activación**: Se ejecuta el script `sync_complaints.cjs` (vía `npm run sync-complaints`).
 3. **Cerebro (IA)**: El script envía el contenido a **Google Gemini 1.5 Flash**.
 4. **Procesamiento**: La IA extrae: Categoría, TripID, Asunto y un resumen ejecutivo.
-5. **Persistencia**: Se guarda en `src/data/complaints.json`.
-6. **Visualización**: El Admin Panel (React) detecta el cambio y actualiza la tabla automáticamente.
+5. **Autorespuesta**: Si el correo es nuevo (no registrado en `sent_autoreplies.json`), el agente le envía de inmediato una confirmación HTML automática ("Tu caso se estará revisando") y registra el UID para evitar correos duplicados.
+6. **Persistencia**: Se guarda en `src/data/complaints.json`.
+7. **Visualización**: El Admin Panel (React) detecta el cambio y actualiza la tabla automáticamente.
 
 ---
 
@@ -55,6 +56,14 @@ El archivo `src/data/complaints.json` guarda el historial.
 ## 5. Comandos Rápidos
 * **Sincronizar ahora:** `npm run sync-complaints`
 * **Modo Desarrollo:** `npm run dev`
+
+---
+
+## 6. Autorespuesta Automática (Auto-Reply)
+El Agente de Sincronización cuenta con un mecanismo de respuesta automática integrado para nuevos reportes:
+* **Envío Inmediato:** En cuanto el agente detecta un correo no leído (`UNSEEN`), le envía un correo electrónico de confirmación con diseño HTML adaptado al estilo corporativo de SafeRide.
+* **Contenido Premium:** La plantilla HTML incluye el identificador único del caso (ej: `CMP-1234-56`), el asunto original del correo y un mensaje formal de confirmación ("Tu caso ya se encuentra en revisión").
+* **Prevención de Duplicados:** Las respuestas enviadas se registran en el archivo local `scripts/sent_autoreplies.json` mapeado por el UID de Gmail. Esto previene que se vuelva a enviar confirmaciones al mismo correo si el script se vuelve a ejecutar antes de resolver el ticket.
 
 ---
 **Desarrollado por Antigravity (Google DeepMind Team) para SafeRide.**

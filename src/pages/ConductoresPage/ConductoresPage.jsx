@@ -140,6 +140,7 @@ const ConductoresPage = () => {
     onTrip: 0,
   });
   const [selectedLetter, setSelectedLetter] = useState('');
+  const [sortOrder, setSortOrder] = useState('desc'); // 'desc' = más nuevos primero, 'asc' = más viejos primero
 
 
   const loadDrivers = useCallback(async () => {
@@ -150,7 +151,8 @@ const ConductoresPage = () => {
         search: searchTerm,
         initial: selectedLetter,
         page: currentPage,
-        limit: 9
+        limit: 9,
+        sort: sortOrder
       });
 
       const list = response?.data;
@@ -198,7 +200,7 @@ const ConductoresPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, selectedLetter, currentPage]);
+  }, [searchTerm, selectedLetter, currentPage, sortOrder]);
 
   useEffect(() => { loadDrivers(); }, []);
 
@@ -212,6 +214,14 @@ const ConductoresPage = () => {
     }, 300);
     return () => clearTimeout(timeoutId);
   }, [searchTerm, selectedLetter]);
+
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    } else {
+      loadDrivers();
+    }
+  }, [sortOrder]);
 
   useEffect(() => {
     loadDrivers();
@@ -323,35 +333,47 @@ const ConductoresPage = () => {
     <>
       <Toaster position="top-right" />
 
-      <div className="local-header-actions">
-        <div className="buscadorContainer">
-          <Search size={18} className="buscadorIcono" />
-          <input
-            type="text"
-            placeholder="Filtrar conductores..."
-            value={searchTerm}
-            onChange={e => {
-              setSearch(e.target.value);
-              if (e.target.value && selectedLetter) setSelectedLetter('');
-            }}
-          />
-          <button className="btn-search-header" onClick={loadDrivers}>
-            Buscar
-          </button>
-          <div className="search-status-indicator" style={{ right: '85px' }}>
-            {loading && <div className="spinner-mini" />}
-          </div>
-        </div>
-      </div>
-
       <div id="encabezadoPagina" className="page-header">
-        <div>
+        <div className="page-header-title">
           <h1>Gestión de Conductores</h1>
           <p>Gestiona y monitorea el rendimiento y disponibilidad de la flota</p>
         </div>
-        <button className="btn-add-passenger" onClick={() => handleOpenModal(null)}>
-          <Plus size={18} /> Registrar Conductor
-        </button>
+
+        <div className="page-header-actions">
+          <div className="buscadorContainer">
+            <Search size={18} className="buscadorIcono" />
+            <input
+              type="text"
+              placeholder="Filtrar conductores..."
+              value={searchTerm}
+              onChange={e => {
+                setSearch(e.target.value);
+                if (e.target.value && selectedLetter) setSelectedLetter('');
+              }}
+            />
+            <button className="btn-search-header" onClick={loadDrivers}>
+              Buscar
+            </button>
+            <div className="search-status-indicator" style={{ right: '85px' }}>
+              {loading && <div className="spinner-mini" />}
+            </div>
+          </div>
+
+          <div className="ordenamientoContainer">
+            <select
+              value={sortOrder}
+              onChange={e => setSortOrder(e.target.value)}
+              className="ordenamientoSelect"
+            >
+              <option value="desc">Más nuevos primero</option>
+              <option value="asc">Más viejos primero</option>
+            </select>
+          </div>
+
+          <button className="btn-add-passenger" onClick={() => handleOpenModal(null)}>
+            <Plus size={18} /> Registrar Conductor
+          </button>
+        </div>
       </div>
 
       {/* --- ALPHABET FILTER --- */}

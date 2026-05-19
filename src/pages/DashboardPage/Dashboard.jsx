@@ -161,7 +161,7 @@ const Dashboard = () => {
 
                         <div className="graficoBody">
 
-                            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                            <ResponsiveContainer width="100%" height={250}>
 
                                 <LineChart data={lineData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
 
@@ -188,7 +188,7 @@ const Dashboard = () => {
 
                             <div className="envolturaTorta">
 
-                                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                                <ResponsiveContainer width="100%" height={180}>
 
                                     <PieChart>
 
@@ -239,7 +239,7 @@ const Dashboard = () => {
 
                             <div className="envolturaTorta">
 
-                                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                                <ResponsiveContainer width="100%" height={180}>
 
                                     <PieChart>
 
