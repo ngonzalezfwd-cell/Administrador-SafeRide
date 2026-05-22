@@ -1,16 +1,25 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  Plus, Search, Filter, MoreVertical, Truck,
+  Plus, Search, Truck,
   CheckCircle, AlertCircle, Clock, ShieldCheck,
-  ExternalLink, Eye, Check, X, Upload,
+  Eye, Check, X, Upload,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  FileText, Trash2
+  Bot
 } from 'lucide-react';
 import vehicleService from '../../services/vehicleService';
 import driverService from '../../services/driverService';
+import documentService from '../../services/documentService';
+import DocumentReviewPanel from '../../components/DocumentReviewPanel';
 import api from '../../services/api';
 import { toast } from 'react-hot-toast';
 import './Vehiculos.css';
+
+// Todos los documentos relevantes que verifica el Agente
+// (4 del vehículo + 2 del conductor que opera ese vehículo).
+const VEHICLE_DOC_TYPES = [
+  'cedula', 'licencia',
+  'poliza', 'marchamo', 'rtv', 'tarjeta_circulacion',
+];
 
 const CAR_DATA = {
   Acura: ['MDX', 'RDX', 'TLX', 'TSX', 'Integra'],
@@ -216,94 +225,9 @@ const VehiculosPage = () => {
   }, [searchTerm]);
 
   const [selectedDoc, setSelectedDoc] = useState(null);
-  const [activeDocTab, setActiveDocTab] = useState('photo'); // 'photo' | 'poliza' | 'rtv'
-  const [localDocs, setLocalDocs] = useState({ poliza: null, rtv: null });
 
-  // CAMBIOS HECHOS: Integración de Bóveda de Documentos (Carga asíncrona, carga real y eliminación física de Pólizas e RTV)
-  // Cargar documentos del servidor al abrir el modal
-  useEffect(() => {
-    if (selectedDoc) {
-      setActiveDocTab('photo');
-      setLocalDocs({
-        poliza: selectedDoc.polizaUrl
-          ? {
-            name: 'Póliza Guardada',
-            data: selectedDoc.polizaUrl,
-            type: selectedDoc.polizaUrl.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg',
-            uploadedAt: 'Servidor'
-          }
-          : null,
-        rtv: selectedDoc.rtvUrl
-          ? {
-            name: 'RTV Guardado',
-            data: selectedDoc.rtvUrl,
-            type: selectedDoc.rtvUrl.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg',
-            uploadedAt: 'Servidor'
-          }
-          : null
-      });
-    }
-  }, [selectedDoc]);
-
-  const handleLocalDocUpload = async (type, e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    try {
-      const formData = new FormData();
-      formData.append('document', file);
-      formData.append('docType', type);
-
-      const loadToast = toast.loading('Subiendo documento al servidor...');
-
-      const response = await api.post(`/vehicles/${selectedDoc._id}/documents`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-
-      toast.dismiss(loadToast);
-
-      if (response.data?.success) {
-        const updatedVehicle = response.data.data;
-        const newUrl = type === 'poliza' ? updatedVehicle.polizaUrl : updatedVehicle.rtvUrl;
-
-        setLocalDocs(prev => ({
-          ...prev,
-          [type]: {
-            name: file.name,
-            type: file.type,
-            data: newUrl,
-            uploadedAt: new Date().toLocaleDateString()
-          }
-        }));
-
-        setVehicles(prev => prev.map(v => v._id === selectedDoc._id ? updatedVehicle : v));
-        toast.success(`Documento '${file.name}' guardado con éxito en el servidor`);
-      }
-    } catch (error) {
-      toast.dismiss();
-      console.error(error);
-      toast.error('Error al subir el documento al servidor');
-    }
-  };
-
-  const handleLocalDocDelete = async (type) => {
-    try {
-      const loadToast = toast.loading('Eliminando documento del servidor...');
-      const response = await api.delete(`/vehicles/${selectedDoc._id}/documents/${type}`);
-      toast.dismiss(loadToast);
-
-      if (response.data?.success) {
-        const updatedVehicle = response.data.data;
-        setLocalDocs(prev => ({ ...prev, [type]: null }));
-        setVehicles(prev => prev.map(v => v._id === selectedDoc._id ? updatedVehicle : v));
-        toast.success('Documento eliminado del servidor');
-      }
-    } catch (error) {
-      toast.dismiss();
-      console.error(error);
-      toast.error('Error al eliminar el documento');
-    }
-  };
+  // Conteos del agente: { [driverId]: { approved: N, total: M } }
+  const [agentDocCounts, setAgentDocCounts] = useState({});
 
   const getDocumentCount = (vehicle) => {
     let count = 0;
@@ -347,6 +271,34 @@ const VehiculosPage = () => {
     loadVehicles();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentPage]);
+
+  // Cuando cambian los vehículos visibles, traemos en paralelo los docs vehiculares
+  // del agente para alimentar el badge "X/N aprobados".
+  useEffect(() => {
+    if (!vehicles?.length) return;
+    let cancelled = false;
+    (async () => {
+      const driverIds = [...new Set(
+        vehicles.map(v => (typeof v.driver_id === 'object' ? v.driver_id?._id : v.driver_id)).filter(Boolean)
+      )];
+      const pending = driverIds.filter(id => !(id in agentDocCounts));
+      if (pending.length === 0) return;
+      const results = await Promise.all(
+        pending.map(id => documentService.getDocumentsByDriver(id).catch(() => []))
+      );
+      if (cancelled) return;
+      const next = { ...agentDocCounts };
+      pending.forEach((id, i) => {
+        const docs = results[i] || [];
+        const vehDocs = docs.filter(d => VEHICLE_DOC_TYPES.includes(d.type));
+        const approved = vehDocs.filter(d => d.status === 'approved').length;
+        next[id] = { approved, total: VEHICLE_DOC_TYPES.length };
+      });
+      setAgentDocCounts(next);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vehicles]);
 
   useEffect(() => {
     if (currentPage !== 1) {
@@ -522,23 +474,37 @@ const VehiculosPage = () => {
                   </span>
                 </div>
 
-                {/* Badge de completitud de papeles */}
+                {/* Badge de completitud de documentos (Agente IA) */}
                 <div className="doc-status-row" style={{ marginTop: '8px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: '600' }}>
                   {(() => {
-                    const count = getDocumentCount(vehicle);
-                    let color = '#EF4444'; // Rojo por defecto
-                    let text = `Papeles: ${count}/2 (Faltan documentos)`;
-                    if (count === 2) {
-                      color = '#16A34A'; // Verde
-                      text = 'Papeles: 2/2 (Completo)';
-                    } else if (count > 0) {
-                      color = '#CA8A04'; // Amarillo/Mostaza
-                      text = `Papeles: ${count}/2 (Incompleto)`;
+                    const driverId = typeof vehicle.driver_id === 'object' ? vehicle.driver_id?._id : vehicle.driver_id;
+                    const agentInfo = driverId ? agentDocCounts[driverId] : null;
+                    const approved = agentInfo?.approved ?? 0;
+                    const total = agentInfo?.total ?? VEHICLE_DOC_TYPES.length;
+                    const ready = !!agentInfo;
+
+                    let color = '#94A3B8';
+                    let label = ready ? `${approved}/${total}` : 'Cargando…';
+                    let suffix = ready ? '(Faltan documentos)' : '';
+                    if (ready) {
+                      if (approved === total) {
+                        color = '#16A34A';
+                        suffix = '(Completo)';
+                      } else if (approved > 0) {
+                        color = '#CA8A04';
+                        suffix = '(Incompleto)';
+                      } else {
+                        color = '#EF4444';
+                      }
                     }
                     return (
-                      <span style={{ color, display: 'flex', alignItems: 'center', gap: '6px', background: `${color}10`, padding: '4px 10px', borderRadius: '20px', border: `1px solid ${color}25` }}>
+                      <span
+                        title="Conteo provisto por el Agente de verificación"
+                        style={{ color, display: 'flex', alignItems: 'center', gap: '6px', background: `${color}10`, padding: '4px 10px', borderRadius: '20px', border: `1px solid ${color}25` }}
+                      >
                         <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: color }}></span>
-                        {text}
+                        Docs IA: {label} {suffix}
+                        {ready && <Bot size={12} style={{ marginLeft: 2, opacity: 0.7 }} />}
                       </span>
                     );
                   })()}
@@ -571,7 +537,7 @@ const VehiculosPage = () => {
                       className="action-btn approve"
                       onClick={() => handleApprove(vehicle._id)}
                     >
-                      Aprobar Marchamo
+                      Aprobar Vehículo
                     </button>
                   )}
                   <button
@@ -657,130 +623,39 @@ const VehiculosPage = () => {
               </button>
             </div>
 
-            <div className="doc-modal-body">
-              <div className="doc-viewer-container">
-                {/* Selector de pestañas de documentos */}
-                <div className="doc-tabs-container">
-                  <button
-                    className={`doc-tab-btn ${activeDocTab === 'photo' ? 'active' : ''}`}
-                    onClick={() => setActiveDocTab('photo')}
-                  >
-                    <Truck size={16} /> Foto Auto
-                  </button>
-                  <button
-                    className={`doc-tab-btn ${activeDocTab === 'poliza' ? 'active' : ''}`}
-                    onClick={() => setActiveDocTab('poliza')}
-                  >
-                    <FileText size={16} /> Póliza INS {localDocs.poliza && '✓'}
-                  </button>
-                  <button
-                    className={`doc-tab-btn ${activeDocTab === 'rtv' ? 'active' : ''}`}
-                    onClick={() => setActiveDocTab('rtv')}
-                  >
-                    <FileText size={16} /> Dekra RTV {localDocs.rtv && '✓'}
-                  </button>
+            <div className="doc-modal-body doc-modal-body--agent">
+              <div className="doc-agent-header">
+                <div className="doc-agent-title">
+                  <Bot size={18} />
+                  <span>Verificación por Agente IA</span>
                 </div>
-
-                {/* Contenido dinámico según pestaña */}
-                <div className="doc-viewer-viewport" style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, justifyContent: 'center' }}>
-                  {activeDocTab === 'photo' && (
-                    <>
-                      <img
-                        src={selectedDoc.vehicleImage || 'https://via.placeholder.com/600x400?text=Sin+Foto'}
-                        alt="Foto del Vehículo"
-                        className="full-doc-image"
-                      />
-                      <div className="zoom-hint">Fotografía oficial del vehículo físico</div>
-                    </>
-                  )}
-
-                  {activeDocTab !== 'photo' && (() => {
-                    const doc = localDocs[activeDocTab];
-                    const tabLabels = { poliza: 'Póliza INS', rtv: 'Dekra RTV' };
-
-                    if (doc) {
-                      return (
-                        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                          <div className="doc-viewer-actions">
-                            <span style={{ fontSize: '0.9rem', color: '#94A3B8' }}>
-                              Cargado el: {doc.uploadedAt} ({doc.name})
-                            </span>
-                            <button
-                              className="delete-doc-btn"
-                              onClick={() => handleLocalDocDelete(activeDocTab)}
-                            >
-                              <Trash2 size={14} /> Eliminar
-                            </button>
-                          </div>
-                          <div style={{ flex: 1, background: '#0F172A', borderRadius: '12px', overflow: 'hidden', minHeight: '380px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px' }}>
-                            {doc.type.includes('pdf') ? (
-                              <iframe
-                                src={doc.data}
-                                title={tabLabels[activeDocTab]}
-                                width="100%"
-                                height="420px"
-                                style={{ border: 'none', borderRadius: '8px' }}
-                              />
-                            ) : (
-                              <img
-                                src={doc.data}
-                                alt={tabLabels[activeDocTab]}
-                                style={{ maxWidth: '100%', maxHeight: '420px', borderRadius: '8px', objectFit: 'contain' }}
-                              />
-                            )}
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <label className="doc-upload-zone">
-                        <Upload size={36} />
-                        <h3>Cargar {tabLabels[activeDocTab]}</h3>
-                        <p style={{ fontSize: '0.8rem', marginTop: '4px' }}>Soporta PDF o Imágenes (Máx. 1.5MB)</p>
-                        <input
-                          type="file"
-                          accept=".pdf, image/*"
-                          style={{ display: 'none' }}
-                          onChange={(e) => handleLocalDocUpload(activeDocTab, e)}
-                        />
-                      </label>
-                    );
-                  })()}
-                </div>
+                <span className="doc-agent-hint">
+                  Cédula y licencia corresponden al conductor; póliza, marchamo, RTV y tarjeta al vehículo.
+                </span>
               </div>
 
-              <div className="doc-validation-sidebar">
-                <div className="validation-item">
-                  <ShieldCheck size={20} />
-                  <span>Verificar Número de Póliza</span>
-                </div>
-                <div className="validation-item">
-                  <Clock size={20} />
-                  <span>Verificar Fecha de Vencimiento</span>
-                </div>
-                <div className="validation-item">
-                  <Truck size={20} />
-                  <span>Coincidencia de Placa</span>
-                </div>
+              <DocumentReviewPanel
+                driver={typeof selectedDoc.driver_id === 'object' ? selectedDoc.driver_id : { _id: selectedDoc.driver_id }}
+                vehicle={selectedDoc}
+                filterTypes={VEHICLE_DOC_TYPES}
+              />
 
-                <div className="doc-modal-footer">
-                  {!selectedDoc.isActive ? (
-                    <button
-                      className="approve-doc-btn"
-                      onClick={() => {
-                        handleApprove(selectedDoc._id);
-                        setSelectedDoc(null);
-                      }}
-                    >
-                      Aprobar y Activar Vehículo
-                    </button>
-                  ) : (
-                    <div className="already-approved-badge">
-                      <Check size={20} /> Vehículo ya está activo
-                    </div>
-                  )}
-                </div>
+              <div className="doc-modal-footer doc-modal-footer--standalone">
+                {!selectedDoc.isActive ? (
+                  <button
+                    className="approve-doc-btn"
+                    onClick={() => {
+                      handleApprove(selectedDoc._id);
+                      setSelectedDoc(null);
+                    }}
+                  >
+                    <Check size={16} /> Aprobar y Activar Vehículo
+                  </button>
+                ) : (
+                  <div className="already-approved-badge">
+                    <Check size={20} /> Vehículo ya está activo
+                  </div>
+                )}
               </div>
             </div>
           </div>
