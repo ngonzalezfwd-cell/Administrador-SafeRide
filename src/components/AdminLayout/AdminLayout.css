@@ -5,22 +5,42 @@
 :root {
   --sidebar-width: 280px;
   --header-height: 80px;
-  --sidebar-bg: rgba(15, 23, 42, 0.95);
-  --sidebar-text: white;
-  --accent-blue: #3b82f6;
-  --accent-blue-light: #60a5fa;
-  --text-muted: #94a3b8;
-  --sidebar-hover-bg: rgba(255, 255, 255, 0.05);
+  --sidebar-bg: #111827;
+  --accent-blue: #2563EB;
+  --accent-blue-light: #60A5FA;
+  --sidebar-hover-bg: rgba(255, 255, 255, 0.08);
 
-  --layout-bg: #f8fafc;
-  --header-bg: rgba(255, 255, 255, 0.95);
-  --header-text: #1e293b;
-  --header-border: rgba(226, 232, 240, 0.8);
-  --card-background: #ffffff;
-  --card-border: #E2E8F0;
-  --card-text: #0F172A;
-  --card-text-muted: #64748B;
-  --icon-menu-color: #64748b;
+  --layout-bg: #F1F5F9;
+  --header-bg: #F8FAFC;
+  --header-border: #E2E8F0;
+  --card-background: #FFFFFF;
+  --card-border: #E5E7EB;
+  --icon-menu-color: #4B5563;
+
+  /* Sidebar Granular Texts */
+  --sidebar-logo-text: #FFFFFF;
+  --sidebar-profile-name: #F9FAFB;
+  --sidebar-profile-role: #9CA3AF;
+  --sidebar-nav-text: #F9FAFB;
+  --sidebar-nav-muted: #9CA3AF;
+  --sidebar-subnav-text: #9CA3AF;
+
+  /* Header Granular Texts */
+  --header-welcome-text: #1E293B;
+  --header-search-text: #1E293B;
+  --header-search-placeholder: #64748B;
+  --header-badge-text: #FFFFFF;
+
+  /* Card/Block Granular Texts */
+  --card-title-text: #1F2937;
+  --card-value-text: #1F2937;
+  --card-body-text: #1F2937;
+  --card-muted-text: #6B7280;
+  --card-legend-text: #6B7280;
+
+  /* Compatibility Aliases */
+  --card-text: var(--card-title-text);
+  --card-text-muted: var(--card-muted-text);
 }
 
 
@@ -88,7 +108,7 @@ aside.open {
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: -0.5px;
-  background: linear-gradient(90deg, #fff, #94a3b8);
+  background: linear-gradient(90deg, var(--sidebar-logo-text), var(--sidebar-nav-muted));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -129,7 +149,7 @@ aside.open {
   gap: 14px;
   padding: 12px 16px;
   border-radius: 12px;
-  color: var(--text-muted);
+  color: var(--sidebar-nav-muted);
   text-decoration: none;
   font-weight: 500;
   transition: all 0.3s ease;
@@ -144,7 +164,7 @@ aside.open {
 
 .navItem.active {
   background: rgba(59, 130, 246, 0.1);
-  color: var(--accent-blue-light);
+  color: var(--sidebar-nav-text);
   font-weight: 600;
 }
 
@@ -195,7 +215,7 @@ aside.open {
   gap: 12px;
   padding: 10px 16px;
   border-radius: 10px;
-  color: var(--text-muted);
+  color: var(--sidebar-subnav-text);
   text-decoration: none;
   font-size: 0.85rem;
   font-weight: 400;
@@ -209,7 +229,7 @@ aside.open {
 
 .subNavItem.active {
   background: rgba(59, 130, 246, 0.05);
-  color: var(--accent-blue-light);
+  color: var(--sidebar-nav-text);
   font-weight: 500;
 }
 
@@ -251,12 +271,12 @@ aside.open {
 .NombrePerfil {
   font-size: 20px;
   font-weight: 600;
-  color: var(--sidebar-text);
+  color: var(--sidebar-profile-name);
 }
 
 .RolPerfil {
   font-size: 14px;
-  color: var(--text-muted);
+  color: var(--sidebar-profile-role);
 }
 
 /* ── MAIN CONTENT ─────────────────────────────────────────── */
@@ -270,11 +290,11 @@ main {
 
 header {
   height: var(--header-height);
-  background: var(--header-bg);
+  background: var(--header-bg) !important;
   backdrop-filter: blur(6px);
   /* Reducido de 12px a 6px */
   -webkit-backdrop-filter: blur(6px);
-  border-bottom: 1px solid var(--header-border);
+  border-bottom: 1px solid var(--header-border) !important;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -316,8 +336,12 @@ header {
   padding: 0 12px;
   flex: 1;
   outline: none;
-  color: var(--header-text);
+  color: var(--header-search-text);
   font-size: 14px;
+}
+
+.buscadorContainer input::placeholder {
+  color: var(--header-search-placeholder);
 }
 
 .headerDerecho {
@@ -337,7 +361,7 @@ header {
 .userInfo span {
   font-size: 18px;
   font-weight: 500;
-  color: var(--header-text);
+  color: var(--header-welcome-text);
 }
 
 .notificacionCampana {
@@ -370,22 +394,59 @@ header {
 }
 
 @keyframes tintineo {
-  0% { transform: rotate(0); }
-  20% { transform: rotate(15deg); }
-  40% { transform: rotate(-10deg); }
-  60% { transform: rotate(10deg); }
-  80% { transform: rotate(-5deg); }
-  100% { transform: rotate(0); }
+  0% {
+    transform: rotate(0);
+  }
+
+  20% {
+    transform: rotate(15deg);
+  }
+
+  40% {
+    transform: rotate(-10deg);
+  }
+
+  60% {
+    transform: rotate(10deg);
+  }
+
+  80% {
+    transform: rotate(-5deg);
+  }
+
+  100% {
+    transform: rotate(0);
+  }
 }
 
 @keyframes tintineo-largo {
-  0% { transform: rotate(0); }
-  5% { transform: rotate(15deg); }
-  10% { transform: rotate(-10deg); }
-  15% { transform: rotate(10deg); }
-  20% { transform: rotate(-5deg); }
-  25% { transform: rotate(0); }
-  100% { transform: rotate(0); }
+  0% {
+    transform: rotate(0);
+  }
+
+  5% {
+    transform: rotate(15deg);
+  }
+
+  10% {
+    transform: rotate(-10deg);
+  }
+
+  15% {
+    transform: rotate(10deg);
+  }
+
+  20% {
+    transform: rotate(-5deg);
+  }
+
+  25% {
+    transform: rotate(0);
+  }
+
+  100% {
+    transform: rotate(0);
+  }
 }
 
 .FotoPerfilHeader {
@@ -502,57 +563,118 @@ header {
    ============================================================ */
 
 /* --- TEMA OSCURO --- */
-[data-theme="oscuro"] {
-  --sidebar-bg: #090d16;
-  --sidebar-text: #f8fafc;
-  --accent-blue: #3b82f6;
-  --accent-blue-light: #60a5fa;
-  --sidebar-hover-bg: rgba(255, 255, 255, 0.03);
-  --layout-bg: #0b0f19;
-  --header-bg: rgba(15, 23, 42, 0.95);
-  --header-text: #f8fafc;
-  --header-border: rgba(255, 255, 255, 0.05);
-  --card-background: #111827;
-  --card-border: rgba(255, 255, 255, 0.08);
-  --card-text: #f8fafc;
-  --card-text-muted: #94a3b8;
-  --icon-menu-color: #94a3b8;
+:root[data-theme="oscuro"] {
+  --sidebar-bg: #111e31;
+  --accent-blue: #4b74b6;
+  --accent-blue-light: #21354e;
+  --sidebar-hover-bg: rgba(135, 146, 245, 0.05);
+  --layout-bg: #111827;
+  --header-bg: #1F2937;
+  --header-border: #485161;
+  --card-background: #1F2937;
+  --card-border: #374151;
+  --icon-menu-color: #D1D5DB;
+
+  /* Sidebar Granular Texts */
+  --sidebar-logo-text: #FFFFFF;
+  --sidebar-profile-name: #d0deec;
+  --sidebar-profile-role: #8b9bb4;
+  --sidebar-nav-text: #d0deec;
+  --sidebar-nav-muted: #8b9bb4;
+  --sidebar-subnav-text: #8b9bb4;
+
+  /* Header Granular Texts */
+  --header-welcome-text: #d1deeb;
+  --header-search-text: #d1deeb;
+  --header-search-placeholder: #8e9cae;
+  --header-badge-text: #FFFFFF;
+
+  /* Card/Block Granular Texts */
+  --card-title-text: #F9FAFB;
+  --card-value-text: #F9FAFB;
+  --card-body-text: #F9FAFB;
+  --card-muted-text: #bec7d6;
+  --card-legend-text: #bec7d6;
+
+  /* Compatibility Aliases */
+  --card-text: var(--card-title-text);
+  --card-text-muted: var(--card-muted-text);
 }
 
 /* --- TEMA GRIS --- */
-[data-theme="gris"] {
-  --sidebar-bg: #334155;
-  --sidebar-text: #f8fafc;
-  --text-muted: #94a3b8;
-  --sidebar-hover-bg: rgba(255, 255, 255, 0.05);
-  --accent-blue: #475569;
-  --accent-blue-light: #64748b;
-  --layout-bg: #eceef1;
-  --header-bg: #f1f5f9;
-  --header-text: #1e293b;
-  --header-border: #cbd5e1;
-  --card-background: #ffffff;
-  --card-border: #cbd5e1;
-  --card-text: #1e293b;
-  --card-text-muted: #475569;
-  --icon-menu-color: #475569;
+:root[data-theme="gris"] {
+  --sidebar-bg: #3e4349;
+  --sidebar-hover-bg: rgba(195, 198, 216, 0.171);
+  --accent-blue: #95a7a7;
+  --accent-blue-light: #c3cddb;
+  --layout-bg: #bec9d3;
+  --header-bg: #696e74;
+  --header-border: #c3cdd6;
+  --card-background: #d7d9e9;
+  --card-border: #c0c2c4;
+  --icon-menu-color: #636e7c;
+
+  /* Sidebar Granular Texts */
+  --sidebar-logo-text: #ffffff;
+  --sidebar-profile-name: #dbd5d5;
+  --sidebar-profile-role: #bbbfc4;
+  --sidebar-nav-text: #ffffff;
+  --sidebar-nav-muted: #bfc5ce;
+  --sidebar-subnav-text: #88919e;
+
+  /* Header Granular Texts */
+  --header-welcome-text: #fbfcff;
+  --header-search-text: #fbfcff;
+  --header-search-placeholder: #fdfeff;
+  --header-badge-text: #ffffff;
+
+  /* Card/Block Granular Texts */
+  --card-title-text: #323438;
+  --card-value-text: #cbcfd6;
+  --card-body-text: #bfc2c7;
+  --card-muted-text: #1f2124;
+  --card-legend-text: #627fbe;
+
+  /* Compatibility Aliases */
+  --card-text: var(--card-title-text);
+  --card-text-muted: var(--card-muted-text);
 }
 
 /* --- TEMA SALVIA --- */
-[data-theme="salvia"] {
-  --sidebar-bg: #1e3a27;
-  --sidebar-text: #f0fdf4;
-  --text-muted: #a7f3d0;
-  --sidebar-hover-bg: rgba(255, 255, 255, 0.05);
-  --accent-blue: #0f766e;
-  --accent-blue-light: #14b8a6;
-  --layout-bg: #f4f7f6;
-  --header-bg: #ffffff;
-  --header-text: #11221f;
-  --header-border: #d1dedb;
-  --card-background: #ffffff;
-  --card-border: #d1dedb;
-  --card-text: #11221f;
-  --card-text-muted: #4a605b;
-  --icon-menu-color: #4a605b;
+:root[data-theme="salvia"] {
+  --sidebar-bg: #1E3A27;
+  --sidebar-hover-bg: rgba(65, 122, 77, 0.432);
+  --accent-blue: #4ec768;
+  --accent-blue-light: #6de086;
+  --layout-bg: #d2f3e0;
+  --header-bg: #3e704c;
+  --header-border: #588873;
+  --card-background: #FFFFFF;
+  --card-border: #84c594;
+  --icon-menu-color: #2f7060;
+
+  /* Sidebar Granular Texts */
+  --sidebar-logo-text: #b0e0bf;
+  --sidebar-profile-name: #b0e0bf;
+  --sidebar-profile-role: #71bb98;
+  --sidebar-nav-text: #b0e0bf;
+  --sidebar-nav-muted: #71bb98;
+  --sidebar-subnav-text: #71bb98;
+
+  /* Header Granular Texts */
+  --header-welcome-text: #c5fddb;
+  --header-search-text: #b8e0c8;
+  --header-search-placeholder: #7dbfa1;
+  --header-badge-text: #ffffff;
+
+  /* Card/Block Granular Texts */
+  --card-title-text: #19241e;
+  --card-value-text: #2c5840;
+  --card-body-text: #16442b;
+  --card-muted-text: #0a1811;
+  --card-legend-text: #31644b;
+
+  /* Compatibility Aliases */
+  --card-text: var(--card-title-text);
+  --card-text-muted: var(--card-muted-text);
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, ChevronRight } from 'lucide-react';
@@ -13,7 +13,7 @@ const Login = () => {
     const navigate = useNavigate();
 
     // Seguridad: Limpiar campos siempre al entrar
-    React.useEffect(() => {
+    useEffect(() => {
         setEmail('');
         setPassword('');
     }, []);
@@ -36,7 +36,7 @@ const Login = () => {
             const result = await login(email, password);
 
             if (result.success) {
-                if (result.user.type !== 'admin') {
+                if (result.user.type !== 'admin' && result.user.type !== 'administrador') {
                     localStorage.removeItem('token'); 
                     Swal.fire({
                         icon: "error",
@@ -109,7 +109,7 @@ const Login = () => {
                                 <Mail size={18} className="iconoEntrada" />
                                 <input
                                     type="email"
-                                    placeholder="admin@saferide.cr"
+                                    placeholder="Ejemplo@admin.cr"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required

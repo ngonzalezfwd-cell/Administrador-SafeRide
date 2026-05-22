@@ -1,4 +1,3 @@
-import React from 'react';
 import Routing from './routes/routing';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
