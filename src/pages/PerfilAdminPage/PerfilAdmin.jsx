@@ -103,17 +103,17 @@ const PerfilAdmin = () => {
 
     const manejarCambioPerfil = (e) => {
         const { name, value } = e.target;
-        
+
         if (name === 'phone') {
             // Eliminar cualquier caracter que no sea dígito
             const soloNumeros = value.replace(/\D/g, '');
             let valorFormateado = soloNumeros;
-            
+
             // Aplicar formato 0000-0000
             if (soloNumeros.length > 4) {
                 valorFormateado = `${soloNumeros.slice(0, 4)}-${soloNumeros.slice(4, 8)}`;
             }
-            
+
             setDatosPerfil({
                 ...datosPerfil,
                 [name]: valorFormateado

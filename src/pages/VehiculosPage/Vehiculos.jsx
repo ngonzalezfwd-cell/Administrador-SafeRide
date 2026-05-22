@@ -219,76 +219,97 @@ const VehiculosPage = () => {
   const [activeDocTab, setActiveDocTab] = useState('photo'); // 'photo' | 'poliza' | 'rtv'
   const [localDocs, setLocalDocs] = useState({ poliza: null, rtv: null });
 
-  // Cargar documentos del localStorage al abrir el modal
+  // CAMBIOS HECHOS: Integración de Bóveda de Documentos (Carga asíncrona, carga real y eliminación física de Pólizas e RTV)
+  // Cargar documentos del servidor al abrir el modal
   useEffect(() => {
     if (selectedDoc) {
       setActiveDocTab('photo');
-      const stored = localStorage.getItem(`saferide_docs_${selectedDoc._id}`);
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          setLocalDocs({
-            poliza: parsed.poliza || null,
-            rtv: parsed.rtv || null
-          });
-        } catch {
-          setLocalDocs({ poliza: null, rtv: null });
-        }
-      } else {
-        setLocalDocs({ poliza: null, rtv: null });
-      }
+      setLocalDocs({
+        poliza: selectedDoc.polizaUrl
+          ? {
+            name: 'Póliza Guardada',
+            data: selectedDoc.polizaUrl,
+            type: selectedDoc.polizaUrl.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg',
+            uploadedAt: 'Servidor'
+          }
+          : null,
+        rtv: selectedDoc.rtvUrl
+          ? {
+            name: 'RTV Guardado',
+            data: selectedDoc.rtvUrl,
+            type: selectedDoc.rtvUrl.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg',
+            uploadedAt: 'Servidor'
+          }
+          : null
+      });
     }
   }, [selectedDoc]);
 
-  const handleLocalDocUpload = (type, e) => {
+  const handleLocalDocUpload = async (type, e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (file.size > 1.5 * 1024 * 1024) {
-      toast.error('El archivo es demasiado grande (máximo 1.5 MB para almacenamiento local)');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const updated = {
-        ...localDocs,
-        [type]: {
-          name: file.name,
-          type: file.type,
-          data: event.target.result,
-          uploadedAt: new Date().toLocaleDateString()
-        }
-      };
-      setLocalDocs(updated);
-      localStorage.setItem(`saferide_docs_${selectedDoc._id}`, JSON.stringify(updated));
-      toast.success(`Documento '${file.name}' cargado con éxito`);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleLocalDocDelete = (type) => {
-    const updated = {
-      ...localDocs,
-      [type]: null
-    };
-    setLocalDocs(updated);
-    localStorage.setItem(`saferide_docs_${selectedDoc._id}`, JSON.stringify(updated));
-    toast.success('Documento eliminado');
-  };
-
-  const getDocumentCount = (vehicleId) => {
-    const stored = localStorage.getItem(`saferide_docs_${vehicleId}`);
-    if (!stored) return 0;
     try {
-      const docs = JSON.parse(stored);
-      let count = 0;
-      if (docs.poliza) count++;
-      if (docs.rtv) count++;
-      return count;
-    } catch {
-      return 0;
+      const formData = new FormData();
+      formData.append('document', file);
+      formData.append('docType', type);
+
+      const loadToast = toast.loading('Subiendo documento al servidor...');
+
+      const response = await api.post(`/vehicles/${selectedDoc._id}/documents`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      toast.dismiss(loadToast);
+
+      if (response.data?.success) {
+        const updatedVehicle = response.data.data;
+        const newUrl = type === 'poliza' ? updatedVehicle.polizaUrl : updatedVehicle.rtvUrl;
+
+        setLocalDocs(prev => ({
+          ...prev,
+          [type]: {
+            name: file.name,
+            type: file.type,
+            data: newUrl,
+            uploadedAt: new Date().toLocaleDateString()
+          }
+        }));
+
+        setVehicles(prev => prev.map(v => v._id === selectedDoc._id ? updatedVehicle : v));
+        toast.success(`Documento '${file.name}' guardado con éxito en el servidor`);
+      }
+    } catch (error) {
+      toast.dismiss();
+      console.error(error);
+      toast.error('Error al subir el documento al servidor');
     }
+  };
+
+  const handleLocalDocDelete = async (type) => {
+    try {
+      const loadToast = toast.loading('Eliminando documento del servidor...');
+      const response = await api.delete(`/vehicles/${selectedDoc._id}/documents/${type}`);
+      toast.dismiss(loadToast);
+
+      if (response.data?.success) {
+        const updatedVehicle = response.data.data;
+        setLocalDocs(prev => ({ ...prev, [type]: null }));
+        setVehicles(prev => prev.map(v => v._id === selectedDoc._id ? updatedVehicle : v));
+        toast.success('Documento eliminado del servidor');
+      }
+    } catch (error) {
+      toast.dismiss();
+      console.error(error);
+      toast.error('Error al eliminar el documento');
+    }
+  };
+
+  const getDocumentCount = (vehicle) => {
+    let count = 0;
+    if (vehicle.polizaUrl) count++;
+    if (vehicle.rtvUrl) count++;
+    return count;
   };
 
   const loadVehicles = useCallback(async () => {
@@ -306,7 +327,7 @@ const VehiculosPage = () => {
         if (response.pagination) {
           setTotalPages(response.pagination.pages || 1);
         }
-        
+
         // Calcular stats (usamos los totales del backend si vienen)
         const total = response.pagination?.total || response.data.length;
         const active = response.stats?.active || response.data.filter(v => v.isActive).length;
@@ -470,8 +491,8 @@ const VehiculosPage = () => {
           <div className="empty-state">No se encontraron vehículos.</div>
         ) : (
           vehicles.map((vehicle, index) => (
-            <div 
-              key={vehicle._id} 
+            <div
+              key={vehicle._id}
               className={`vehicle-card ${!vehicle.isActive ? 'is-pending' : ''}`}
               style={{ '--card-index': index }}
             >
@@ -504,7 +525,7 @@ const VehiculosPage = () => {
                 {/* Badge de completitud de papeles */}
                 <div className="doc-status-row" style={{ marginTop: '8px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: '600' }}>
                   {(() => {
-                    const count = getDocumentCount(vehicle._id);
+                    const count = getDocumentCount(vehicle);
                     let color = '#EF4444'; // Rojo por defecto
                     let text = `Papeles: ${count}/2 (Faltan documentos)`;
                     if (count === 2) {
@@ -570,23 +591,23 @@ const VehiculosPage = () => {
       {/* --- PAGINACIÓN --- */}
       {totalPages > 1 && (
         <div className="pagination-container">
-          <button 
-            className="pagination-btn" 
+          <button
+            className="pagination-btn"
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(1)}
             title="Primera página"
           >
             <ChevronsLeft size={18} />
           </button>
-          
-          <button 
-            className="pagination-btn" 
+
+          <button
+            className="pagination-btn"
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(prev => prev - 1)}
           >
             <ChevronLeft size={18} />
           </button>
-          
+
           <div className="pagination-numbers">
             {getPageNumbers.map((num, i) => (
               num === '...' ? (
@@ -603,16 +624,16 @@ const VehiculosPage = () => {
             ))}
           </div>
 
-          <button 
-            className="pagination-btn" 
+          <button
+            className="pagination-btn"
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(prev => prev + 1)}
           >
             <ChevronRight size={18} />
           </button>
 
-          <button 
-            className="pagination-btn" 
+          <button
+            className="pagination-btn"
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(totalPages)}
             title="Última página"
@@ -676,7 +697,7 @@ const VehiculosPage = () => {
                   {activeDocTab !== 'photo' && (() => {
                     const doc = localDocs[activeDocTab];
                     const tabLabels = { poliza: 'Póliza INS', rtv: 'Dekra RTV' };
-                    
+
                     if (doc) {
                       return (
                         <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
