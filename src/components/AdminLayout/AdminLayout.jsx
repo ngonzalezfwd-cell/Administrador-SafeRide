@@ -20,7 +20,7 @@ import './AdminLayout.css';
 const NavItem = memo(({ to, icon: Icon, label, active, onClick, badge }) => (
   <Link to={to} className={"navItem " + (active ? 'active' : '')} onClick={onClick}>
     <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-      <Icon size={20} /> 
+      <Icon size={20} />
       <span style={{ marginLeft: '14px', flex: 1 }}>{label}</span>
       {badge > 0 && (
         <span className="sidebarBadge">{badge}</span>
@@ -33,7 +33,7 @@ const NavItem = memo(({ to, icon: Icon, label, active, onClick, badge }) => (
 import complaintsData from '../../data/complaints.json';
 
 const AdminLayout = () => {
-  
+
   const { user, cerrarSesion } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -48,10 +48,10 @@ const AdminLayout = () => {
       const res = await notificationService.getNotifications();
       const list = res?.data || [];
       const backendUnread = list.filter(n => n.status === 'unread').length;
-      
+
       const readComplaints = JSON.parse(localStorage.getItem('readComplaints') || '[]');
       const complaintsUnread = (complaintsData || []).filter(q => q.status === 'Pendiente' && !readComplaints.includes(`complaint_${q.id}`)).length;
-      
+
       setUnreadCount(backendUnread + complaintsUnread);
     } catch {
       setUnreadCount(0);
@@ -60,7 +60,7 @@ const AdminLayout = () => {
 
   useEffect(() => {
     loadUnreadCount();
-    
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         loadUnreadCount();
@@ -217,13 +217,13 @@ const AdminLayout = () => {
             </div>
 
             <div className="userInfo">
-              
+
               <img src={getDefaultImagen(user?.profileImage)} alt="Admin" className="FotoPerfilHeader" />
             </div>
 
-            <Link 
-              to="/notificaciones" 
-              className="notificacionCampana" 
+            <Link
+              to="/notificaciones"
+              className="notificacionCampana"
               title="Centro de Notificaciones"
             >
               <Bell size={24} className={unreadCount > 0 ? "animacion-tintineo" : ""} />
