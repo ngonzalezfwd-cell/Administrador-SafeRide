@@ -152,7 +152,7 @@ aside.open {
   color: var(--sidebar-nav-muted);
   text-decoration: none;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
   position: relative;
 }
 
@@ -219,7 +219,7 @@ aside.open {
   text-decoration: none;
   font-size: 0.85rem;
   font-weight: 400;
-  transition: all 0.2s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .subNavItem:hover {
@@ -318,7 +318,7 @@ header {
   border-radius: 12px;
   padding: 8px 16px;
   width: 350px;
-  transition: all 0.3s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .buscadorContainer:focus-within {
@@ -374,7 +374,7 @@ header {
   color: var(--icon-menu-color);
   padding-right: 17px;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: background 0.2s, color 0.2s;
 }
 
 .notificacionCampana:hover {
@@ -478,7 +478,7 @@ header {
 .IconMenu {
   cursor: pointer;
   color: #64748b;
-  transition: all 0.3s;
+  transition: color 0.2s, transform 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -551,7 +551,7 @@ header {
   padding: 12px 16px;
   color: var(--card-text);
   text-decoration: none;
-  transition: all 0.2s;
+  transition: background-color 0.15s, color 0.15s;
   border: none;
   background: transparent;
   width: 100%;
