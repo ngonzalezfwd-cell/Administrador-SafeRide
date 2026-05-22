@@ -37,10 +37,10 @@ const Configuracion = () => {
             </div>
 
             <div className="cuerpoConfiguracion">
-                
+
                 {/* ───────────────────────────────────────────────────────── */}
                 {/* FILA 1: Identidad & Salud del Sistema */}
-                
+
                 <div className="tarjetaConfiguracion">
                     <div className="tarjetaTitulo">
                         <div className="iconoTituloWrap bg-celeste">
@@ -50,19 +50,20 @@ const Configuracion = () => {
                     </div>
                     <div className="tarjetaCuerpo flexCol">
                         <div className="gridFormularioDosCols">
+                            
                             <div className="grupoInput">
                                 <label>Nombre del Sistema</label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     name="nombreSitio"
-                                    className="inputEstilizado" 
+                                    className="inputEstilizado"
                                     value={ajustes.nombreSitio}
                                     onChange={manejarCambioAjustes}
                                 />
                             </div>
                             <div className="grupoInput">
                                 <label>Zona Horaria</label>
-                                <select 
+                                <select
                                     name="zonaHoraria"
                                     className="selectEstilizado"
                                     value={ajustes.zonaHoraria}
@@ -76,10 +77,10 @@ const Configuracion = () => {
                         </div>
                         <div className="grupoInput mT-16">
                             <label>Email de Contacto</label>
-                            <input 
-                                type="email" 
+                            <input
+                                type="email"
                                 name="emailSoporte"
-                                className="inputEstilizado" 
+                                className="inputEstilizado"
                                 value={ajustes.emailSoporte}
                                 onChange={manejarCambioAjustes}
                             />
@@ -131,7 +132,7 @@ const Configuracion = () => {
 
                 {/* ───────────────────────────────────────────────────────── */}
                 {/* FILA 2: Acceso & Temas */}
-                
+
                 <div className="tarjetaConfiguracion">
                     <div className="tarjetaTitulo">
                         <div className="iconoTituloWrap bg-naranjaClaro">
@@ -146,8 +147,8 @@ const Configuracion = () => {
                                 <p>Solo los empleados con correo corporativo pueden unirse.</p>
                             </div>
                             <label className="switch">
-                                <input 
-                                    type="checkbox" 
+                                <input
+                                    type="checkbox"
                                     checked={accesos.dominioVerificado}
                                     onChange={() => toggleAcceso('dominioVerificado')}
                                 />
@@ -161,8 +162,8 @@ const Configuracion = () => {
                                 <p>Oculta el teléfono de los empleados hasta confirmar el viaje.</p>
                             </div>
                             <label className="switch">
-                                <input 
-                                    type="checkbox" 
+                                <input
+                                    type="checkbox"
                                     checked={accesos.modoPrivacidad}
                                     onChange={() => toggleAcceso('modoPrivacidad')}
                                 />
@@ -176,8 +177,8 @@ const Configuracion = () => {
                                 <p>Permitir acceso temporal para socios o visitas externas.</p>
                             </div>
                             <label className="switch">
-                                <input 
-                                    type="checkbox" 
+                                <input
+                                    type="checkbox"
                                     checked={accesos.transitoInvitados}
                                     onChange={() => toggleAcceso('transitoInvitados')}
                                 />
@@ -196,7 +197,7 @@ const Configuracion = () => {
                     </div>
                     <div className="tarjetaCuerpo flexCol">
                         <p className="textoDescriptivo">Personaliza la apariencia de la plataforma para ajustarla a la identidad corporativa y preferencias de los usuarios.</p>
-                        
+
                         <div className="gridTemas">
                             <div className="temaOpcion" onClick={() => setTheme('estandar')}>
                                 <div className={`cajaColor bg-temaEstandar ${theme === 'estandar' ? 'seleccionado' : ''}`}></div>
@@ -228,7 +229,7 @@ const Configuracion = () => {
                     <div className="soporteContenido">
                         <h2>Soporte Dedicado al Staff</h2>
                         <p>Nuestra misión principal es asegurar que cada empleado tenga un viaje seguro y libre de estrés. Si necesitas ayuda con integraciones avanzadas del sistema, nuestro equipo de soporte interno está disponible de 8 AM a 6 PM de Lunes a Viernes.</p>
-                        
+
                         <div className="contactoSoporteList">
                             <div className="contactoItem">
                                 <Mail size={18} />
