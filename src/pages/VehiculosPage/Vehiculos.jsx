@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Plus, Search, Filter, MoreVertical, Truck,
   CheckCircle, AlertCircle, Clock, ShieldCheck,
@@ -357,7 +357,7 @@ const VehiculosPage = () => {
   }, [filterStatus, debouncedSearch]);
 
   // Lógica de números de página
-  const getPageNumbers = React.useMemo(() => {
+  const getPageNumbers = useMemo(() => {
     const pages = [];
     const maxVisible = 5;
     if (totalPages <= maxVisible + 2) {
