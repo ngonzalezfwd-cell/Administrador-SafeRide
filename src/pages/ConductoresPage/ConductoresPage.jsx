@@ -15,9 +15,11 @@ import {
   Bell, AlertCircle, ShieldCheck, Settings, Search, Menu,
   ChevronDown, Plus, Truck, Star, Zap, MapPin, Clock,
   Award, Activity, Eye, Edit, Trash2, CheckCircle, Mail, Phone,
-  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
+  FileCheck
 } from 'lucide-react';
 import driverService from '../../services/driverService';
+import documentService from '../../services/documentService';
 import DriverProfileModal from '../../components/DriverProfileModal';
 import Swal from 'sweetalert2';
 import { toast, Toaster } from 'react-hot-toast';
@@ -56,7 +58,7 @@ const CardSkeleton = () => (
   </div>
 );
 
-const DriverCard = React.memo(({ driver, onEdit, onDelete, onActivate, onView, index }) => {
+const DriverCard = React.memo(({ driver, onEdit, onDelete, onActivate, onView, onViewDocuments, docFlag, index }) => {
   return (
     <div className="conductor-card" style={{ '--card-index': index }}>
       <div className="card-header">
@@ -69,6 +71,18 @@ const DriverCard = React.memo(({ driver, onEdit, onDelete, onActivate, onView, i
         <div className={`status-badge ${driver.isActive ? 'active' : 'inactive'}`}>
           {driver.isActive ? 'Activo' : 'Inactivo'}
         </div>
+        {docFlag && (
+          <div
+            className={`doc-flag doc-flag--${docFlag}`}
+            title={
+              docFlag === 'rejected' ? 'Documento rechazado' :
+              docFlag === 'needs_review' ? 'Documento por revisar' :
+              'Documento en cola'
+            }
+          >
+            <FileCheck size={11} />
+          </div>
+        )}
       </div>
 
       <div className="card-content">
@@ -77,7 +91,7 @@ const DriverCard = React.memo(({ driver, onEdit, onDelete, onActivate, onView, i
           <Mail size={13} style={{ marginRight: '6px' }} />
           {driver.email}
         </p>
-        
+
         <div className="vehicle-info-mini" style={{ marginTop: '12px' }}>
           <div className="info-item">
             <Phone size={14} />
@@ -92,9 +106,9 @@ const DriverCard = React.memo(({ driver, onEdit, onDelete, onActivate, onView, i
 
       <div className="card-actions">
         {!driver.isActive ? (
-          <button 
-            className="action-btn activate" 
-            title="Activar" 
+          <button
+            className="action-btn activate"
+            title="Activar"
             onClick={() => onActivate(driver)}
             style={{ color: '#10B981', background: 'rgba(16, 185, 129, 0.1)' }}
           >
@@ -105,6 +119,13 @@ const DriverCard = React.memo(({ driver, onEdit, onDelete, onActivate, onView, i
             <Eye size={18} />
           </button>
         )}
+        <button
+          className={`action-btn documents ${docFlag ? `has-flag has-flag--${docFlag}` : ''}`}
+          title="Revisar Documentos"
+          onClick={() => onViewDocuments(driver)}
+        >
+          <FileCheck size={18} />
+        </button>
         <button className="action-btn edit" title="Editar" onClick={() => onEdit(driver)}>
           <Edit size={18} />
         </button>
@@ -141,6 +162,8 @@ const ConductoresPage = () => {
   });
   const [selectedLetter, setSelectedLetter] = useState('');
   const [sortOrder, setSortOrder] = useState('desc'); // 'desc' = más nuevos primero, 'asc' = más viejos primero
+  const [docFlagsByDriver, setDocFlagsByDriver] = useState({}); // driverId -> 'rejected' | 'needs_review' | 'pending'
+  const [showOnlyWithDocIssues, setShowOnlyWithDocIssues] = useState(false);
 
 
   const loadDrivers = useCallback(async () => {
@@ -204,6 +227,35 @@ const ConductoresPage = () => {
 
   useEffect(() => { loadDrivers(); }, []);
 
+  // Carga los documentos con observación una sola vez por sesión (endpoint paginado).
+  // Construye un mapa driverId -> peor estado para mostrar badges en las cards.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await documentService.getPendingDocuments({ limit: 200 });
+        if (cancelled) return;
+        const priority = { rejected: 3, needs_review: 2, pending: 1, processing: 1 };
+        const next = {};
+        for (const d of data || []) {
+          const drvId = typeof d.driver_id === 'object' ? d.driver_id?._id : d.driver_id;
+          if (!drvId) continue;
+          const flag = d.status === 'rejected' ? 'rejected'
+                     : d.status === 'needs_review' ? 'needs_review'
+                     : 'pending';
+          if (!next[drvId] || priority[flag] > priority[next[drvId]]) {
+            next[drvId] = flag;
+          }
+        }
+        setDocFlagsByDriver(next);
+      } catch (err) {
+        // El endpoint puede no existir aún; el service ya hace fallback a mock.
+        console.warn('[ConductoresPage] no se pudieron cargar docs pendientes:', err?.message);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (currentPage !== 1) {
@@ -238,6 +290,12 @@ const ConductoresPage = () => {
   const handleViewTrips = (driver) => {
     setSelectedDriver(driver);
     setModalTab('history');
+    setIsModalOpen(true);
+  };
+
+  const handleViewDocuments = (driver) => {
+    setSelectedDriver(driver);
+    setModalTab('documents');
     setIsModalOpen(true);
   };
 
@@ -370,6 +428,18 @@ const ConductoresPage = () => {
             </select>
           </div>
 
+          <button
+            className={`btn-doc-filter ${showOnlyWithDocIssues ? 'is-active' : ''}`}
+            onClick={() => setShowOnlyWithDocIssues(v => !v)}
+            title="Mostrar solo conductores con documentos pendientes o rechazados"
+          >
+            <FileCheck size={16} />
+            Docs pendientes
+            {Object.keys(docFlagsByDriver).length > 0 && (
+              <span className="btn-doc-filter-count">{Object.keys(docFlagsByDriver).length}</span>
+            )}
+          </button>
+
           <button className="btn-add-passenger" onClick={() => handleOpenModal(null)}>
             <Plus size={18} /> Registrar Conductor
           </button>
@@ -440,17 +510,21 @@ const ConductoresPage = () => {
             // Mostrar 6 esqueletos mientras carga
             Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={`sk-${i}`} />)
           ) : drivers.length > 0 ? (
-            drivers.map((driver, index) => (
-              <DriverCard
-                key={driver._id}
-                driver={driver}
-                index={index}
-                onEdit={handleOpenModal}
-                onDelete={handleDelete}
-                onActivate={handleActivate}
-                onView={handleViewTrips}
-              />
-            ))
+            drivers
+              .filter(d => !showOnlyWithDocIssues || docFlagsByDriver[d._id])
+              .map((driver, index) => (
+                <DriverCard
+                  key={driver._id}
+                  driver={driver}
+                  index={index}
+                  docFlag={docFlagsByDriver[driver._id]}
+                  onEdit={handleOpenModal}
+                  onDelete={handleDelete}
+                  onActivate={handleActivate}
+                  onView={handleViewTrips}
+                  onViewDocuments={handleViewDocuments}
+                />
+              ))
           ) : (
             <div className="empty-state-dashboard">
               <Truck size={48} />

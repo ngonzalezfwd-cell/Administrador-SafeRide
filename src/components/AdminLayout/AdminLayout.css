@@ -582,19 +582,19 @@ header {
 :root[data-theme="oscuro"] {
   --sidebar-bg: #111e31;
   --accent-blue: #4b74b6;
-  --accent-blue-light: #21354e;
-  --sidebar-hover-bg: rgba(135, 146, 245, 0.05);
+  --accent-blue-light: #f4f9ff;
+  --sidebar-hover-bg: rgba(125, 135, 224, 0.05);
   --layout-bg: #111827;
   --header-bg: #1F2937;
   --header-border: #485161;
   --card-background: #1F2937;
-  --card-border: #374151;
+  --card-border: #3e4a5c;
   --icon-menu-color: #D1D5DB;
 
   /* Sidebar Granular Texts */
   --sidebar-logo-text: #FFFFFF;
   --sidebar-profile-name: #d0deec;
-  --sidebar-profile-role: #8b9bb4;
+  --sidebar-profile-role: #71829c;
   --sidebar-nav-text: #d0deec;
   --sidebar-nav-muted: #8b9bb4;
   --sidebar-subnav-text: #8b9bb4;
@@ -667,7 +667,7 @@ header {
   --header-border: #588873;
   --card-background: #FFFFFF;
   --card-border: #84c594;
-  --icon-menu-color: #76cab5;
+  --icon-menu-color: #6ac4ad;
 
   /* Sidebar Granular Texts */
   --sidebar-logo-text: #b0e0bf;

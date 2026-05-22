@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   X, Save, Upload, User, Truck, Mail, AtSign, Calendar,
   Users, Palette, CheckCircle, AlertCircle, MapPin, Clock,
-  History, Navigation
+  History, Navigation, FileCheck, IdCard
 } from 'lucide-react';
 import driverService from '../../services/driverService';
 import passengerService from '../../services/passengerService';
@@ -11,6 +11,7 @@ import api from '../../services/api';
 import rideService from '../../services/rideService';
 import { toast } from 'react-hot-toast';
 import { InsertarEnCloudinary } from '../../services/cloudinary';
+import DocumentReviewPanel from '../DocumentReviewPanel';
 import './DriverProfileModal.css';
 
 const CAR_DATA = {
@@ -404,15 +405,48 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
 
   const modalContent = (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-glass" onClick={e => e.stopPropagation()}>
+      <div
+        className={`modal-glass ${activeTab === 'documents' ? 'is-wide' : ''}`}
+        onClick={e => e.stopPropagation()}
+      >
         <header className="modal-header">
           <h2>
             {activeTab === 'history'
               ? `Historial de Viajes: ${driver?.name || ''}`
-              : (isEditMode ? `Editar Perfil ${isPassenger ? 'Pasajero' : 'Conductor'}` : 'Nuevo Registro')}
+              : activeTab === 'documents'
+                ? `Documentos: ${driver?.name || ''}`
+                : (isEditMode ? `Editar Perfil ${isPassenger ? 'Pasajero' : 'Conductor'}` : 'Nuevo Registro')}
           </h2>
           <button className="close-btn" onClick={onClose}><X size={20} /></button>
         </header>
+
+        {isEditMode && (
+          <nav className="modal-tabs" role="tablist">
+            <button
+              type="button"
+              className={`tab-btn ${activeTab === 'info' ? 'active' : ''}`}
+              onClick={() => setActiveTab('info')}
+            >
+              <User size={14} /> Información
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
+              onClick={() => setActiveTab('history')}
+            >
+              <History size={14} /> Historial
+            </button>
+            {!isPassenger && (
+              <button
+                type="button"
+                className={`tab-btn ${activeTab === 'documents' ? 'active' : ''}`}
+                onClick={() => setActiveTab('documents')}
+              >
+                <FileCheck size={14} /> Documentos
+              </button>
+            )}
+          </nav>
+        )}
 
         {activeTab === 'info' ? (
           <form className="modal-body" onSubmit={handleSubmit}>
@@ -529,6 +563,13 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
               </button>
             </div>
           </form>
+        ) : activeTab === 'documents' ? (
+          <div className="modal-body documents-body">
+            <DocumentReviewPanel
+              driver={driver}
+              vehicle={driver?.vehicle}
+            />
+          </div>
         ) : (
           <div className="modal-body history-body">
             {loadingTrips ? (

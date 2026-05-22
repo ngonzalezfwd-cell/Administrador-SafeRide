@@ -467,6 +467,55 @@
   overflow: hidden;
 }
 
+/* Variante: modal centrado en el panel del Agente (sin sidebar). */
+.doc-modal-body--agent {
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  background: #FFFFFF;
+}
+
+.doc-agent-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #E2E8F0;
+  background: linear-gradient(135deg, #EEF2FF 0%, #F8FAFC 100%);
+}
+
+.doc-agent-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  color: #4338CA;
+  font-size: 0.95rem;
+}
+
+.doc-agent-hint {
+  font-size: 0.75rem;
+  color: #64748B;
+  font-style: italic;
+  max-width: 60%;
+  text-align: right;
+}
+
+.doc-modal-footer--standalone {
+  margin-top: auto;
+  padding: 14px 20px;
+  border-top: 1px solid #E2E8F0;
+  background: #F8FAFC;
+}
+
+.doc-modal-body--agent .approve-doc-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
 .doc-viewer-container {
   background: #1E293B;
   overflow: auto;

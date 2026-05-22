@@ -83,6 +83,8 @@ const Configuracion = () => {
                                 className="inputEstilizado"
                                 value={ajustes.emailSoporte}
                                 onChange={manejarCambioAjustes}
+
+                                
                             />
                         </div>
                         <button className="botonGuardarPrimario mT-24">
