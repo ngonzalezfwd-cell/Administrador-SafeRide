@@ -178,6 +178,10 @@ const ConductoresPage = () => {
         sort: sortOrder
       });
 
+
+      console.log(response);
+      
+
       const list = response?.data;
       const pagination = response?.pagination;
 

@@ -229,6 +229,13 @@ const VehiculosPage = () => {
   // Conteos del agente: { [driverId]: { approved: N, total: M } }
   const [agentDocCounts, setAgentDocCounts] = useState({});
 
+  const getDocumentCount = (vehicle) => {
+    let count = 0;
+    if (vehicle.polizaUrl) count++;
+    if (vehicle.rtvUrl) count++;
+    return count;
+  };
+
   const loadVehicles = useCallback(async () => {
     setLoading(true);
     try {
@@ -244,7 +251,7 @@ const VehiculosPage = () => {
         if (response.pagination) {
           setTotalPages(response.pagination.pages || 1);
         }
-        
+
         // Calcular stats (usamos los totales del backend si vienen)
         const total = response.pagination?.total || response.data.length;
         const active = response.stats?.active || response.data.filter(v => v.isActive).length;
@@ -436,8 +443,8 @@ const VehiculosPage = () => {
           <div className="empty-state">No se encontraron vehículos.</div>
         ) : (
           vehicles.map((vehicle, index) => (
-            <div 
-              key={vehicle._id} 
+            <div
+              key={vehicle._id}
               className={`vehicle-card ${!vehicle.isActive ? 'is-pending' : ''}`}
               style={{ '--card-index': index }}
             >
@@ -550,23 +557,23 @@ const VehiculosPage = () => {
       {/* --- PAGINACIÓN --- */}
       {totalPages > 1 && (
         <div className="pagination-container">
-          <button 
-            className="pagination-btn" 
+          <button
+            className="pagination-btn"
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(1)}
             title="Primera página"
           >
             <ChevronsLeft size={18} />
           </button>
-          
-          <button 
-            className="pagination-btn" 
+
+          <button
+            className="pagination-btn"
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(prev => prev - 1)}
           >
             <ChevronLeft size={18} />
           </button>
-          
+
           <div className="pagination-numbers">
             {getPageNumbers.map((num, i) => (
               num === '...' ? (
@@ -583,16 +590,16 @@ const VehiculosPage = () => {
             ))}
           </div>
 
-          <button 
-            className="pagination-btn" 
+          <button
+            className="pagination-btn"
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(prev => prev + 1)}
           >
             <ChevronRight size={18} />
           </button>
 
-          <button 
-            className="pagination-btn" 
+          <button
+            className="pagination-btn"
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(totalPages)}
             title="Última página"
