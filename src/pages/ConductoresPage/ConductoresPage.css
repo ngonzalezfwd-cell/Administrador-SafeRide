@@ -171,6 +171,87 @@
   background: #ECFDF5;
 }
 
+/* ── Documentos: botón en la card ───────────────────── */
+.action-btn.documents.has-flag {
+  position: relative;
+}
+.action-btn.documents.has-flag::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.05);
+}
+.action-btn.documents.has-flag--rejected::after     { background: #EF4444; }
+.action-btn.documents.has-flag--needs_review::after { background: #F59E0B; }
+.action-btn.documents.has-flag--pending::after      { background: #94A3B8; }
+.action-btn.documents:hover {
+  border-color: #6366F1;
+  color: #6366F1;
+  background: #EEF2FF;
+}
+
+/* ── Documentos: badge sobre la imagen del card ──────── */
+.doc-flag {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  border: 2px solid white;
+}
+.doc-flag--rejected     { background: #EF4444; }
+.doc-flag--needs_review { background: #F59E0B; }
+.doc-flag--pending      { background: #64748B; }
+
+/* ── Filtro "Docs pendientes" en el header ──────────── */
+.btn-doc-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid #E2E8F0;
+  background: white;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-doc-filter:hover {
+  border-color: #6366F1;
+  color: #4F46E5;
+}
+.btn-doc-filter.is-active {
+  border-color: #6366F1;
+  color: #4F46E5;
+  background: #EEF2FF;
+}
+.btn-doc-filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #EF4444;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
 /* --- FILTRO ALFABÉTICO (CORREGIDO) --- */
 .alphabet-filter {
   display: flex;
