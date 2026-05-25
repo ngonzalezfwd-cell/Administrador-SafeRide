@@ -141,22 +141,10 @@ const PerfilAdmin = () => {
         try {
             let profileImageUrl = user.profileImage;
 
-            // 1. Subir a Cloudinary si hay una nueva foto
-            if (nuevaFoto) {
-                profileImageUrl = await InsertarEnCloudinary(nuevaFoto);
-            }
-
-            // 2. Guardar en el backend (Limpiamos el teléfono de guiones antes de enviar)
-            const response = await api.put('/users/profile', {
-                ...datosPerfil,
-                phone: (datosPerfil.phone || '').replace(/-/g, ''),
-                profileImage: profileImageUrl
-            });
-
-
-            // ───────────────── VALIDACIONES DEL POST ─────────────────
-
-            if (datosPerfil.username === user.username && datosPerfil.name == user.name && datosPerfil.email == user.email && datosPerfil.phone == user.phone && datosPerfil.company == user.company && !nuevaFoto) {
+            // ───────────────── VALIDACIONES PREVIAS ─────────────────
+            // Validar si hubo algún cambio real
+            const phoneVal = user.phone ? `${String(user.phone).slice(0, 4)}-${String(user.phone).slice(4, 8)}` : '';
+            if (datosPerfil.name == user.name && datosPerfil.phone == phoneVal && datosPerfil.company == (user.company || '') && !nuevaFoto) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Sin Cambios',
@@ -164,21 +152,23 @@ const PerfilAdmin = () => {
                     confirmButtonText: 'De acuerdo',
                     confirmButtonColor: '#2563EB'
                 });
+                setCargando(false);
                 return;
             }
 
-            if (datosPerfil.username === '' || datosPerfil.name.trim() === '' || datosPerfil.phone.trim() === '' || datosPerfil.email.trim() === '' || datosPerfil.company.trim() === '') {
+            if (datosPerfil.name.trim() === '') {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
-                    text: 'Los campos no pueden estar vacios',
+                    text: 'El nombre no puede estar vacío',
                     confirmButtonText: 'De acuerdo',
                     confirmButtonColor: '#2563EB'
                 });
+                setCargando(false);
                 return;
             }
 
-            if (!/[a-z A-Z]/.test(datosPerfil.name)) {
+            if (!/^[a-zA-Z\s]+$/.test(datosPerfil.name)) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
@@ -186,10 +176,12 @@ const PerfilAdmin = () => {
                     confirmButtonText: 'De acuerdo',
                     confirmButtonColor: '#2563EB'
                 });
+                setCargando(false);
                 return;
             }
 
-            if (!/^[0-9]/.test(datosPerfil.phone)) {
+            const phoneLimpio = (datosPerfil.phone || '').replace(/-/g, '');
+            if (phoneLimpio && !/^\d+$/.test(phoneLimpio)) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
@@ -197,8 +189,31 @@ const PerfilAdmin = () => {
                     confirmButtonText: 'De acuerdo',
                     confirmButtonColor: '#2563EB'
                 });
+                setCargando(false);
                 return;
             }
+
+            // 1. Subir a Cloudinary si hay una nueva foto
+            if (nuevaFoto) {
+                profileImageUrl = await InsertarEnCloudinary(nuevaFoto);
+            }
+
+            // 2. Guardar en el backend (Limpiamos el teléfono de guiones antes de enviar)
+            const datosParaEnviar = {
+                name: datosPerfil.name,
+                profileImage: profileImageUrl
+            };
+            
+            // Solo enviar phone si tiene valor válido (8 dígitos)
+            if (phoneLimpio && /^\d{8}$/.test(phoneLimpio)) {
+                datosParaEnviar.phone = phoneLimpio;
+            }
+            // Solo enviar company si tiene valor
+            if (datosPerfil.company && datosPerfil.company.trim() !== '') {
+                datosParaEnviar.company = datosPerfil.company;
+            }
+
+            const response = await api.put('/users/profile', datosParaEnviar);
 
             if (response.data.success) {
 
@@ -394,43 +409,6 @@ const PerfilAdmin = () => {
                                         <User size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: '#94A3B8' }} />
                                     </div>
                                 </div>
-
-                                <div className="grupoInput">
-
-                                    <label className="labelInput">Teléfono</label>
-                                    <div style={{ position: 'relative' }}>
-                                        <input
-                                            type="tel"
-                                            name="phone"
-                                            className="inputEstilizado"
-                                            placeholder="0000-0000"
-                                            maxLength={9}
-                                            value={datosPerfil.phone}
-                                            onChange={manejarCambioPerfil}
-                                            style={{ paddingLeft: '40px' }}
-                                        />
-                                        <Phone size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: '#94A3B8' }} />
-                                    </div>
-                                </div>
-
-                                <div className="grupoInputEmpresa">
-
-                                    <label className="labelInput">Empresa</label>
-                                    <div className="contenedorSelectEmpresa">
-                                        <select
-                                            name="company"
-                                            className="selectEstilizado"
-                                            value={datosPerfil.company}
-                                            onChange={manejarCambioPerfil}
-                                            style={{ paddingLeft: '40px', width: '100%' }}
-                                        >
-                                            {empresas.map(emp => (
-                                                <option key={emp} value={emp}>{emp}</option>
-                                            ))}
-                                        </select>
-                                        <Building2 size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: '#94A3B8' }} />
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
@@ -495,91 +473,6 @@ const PerfilAdmin = () => {
                 </div>
             </div>
 
-            {/* CUERPO DEL PERFIL */}
-            <div className="cuerpoPerfil">
-
-                <div className="columnaIzquierda">
-
-                    <div className="tarjetaFormulario">
-
-                        <div className="encabezadoTarjeta">
-                            <h2>Preferencias Operativas</h2>
-                            <p>Configura cómo deseas supervisar la logística de SafeRide.</p>
-                        </div>
-                        <div className="contenidoTarjeta">
-                            <div className="itemAjuste">
-                                <div className="infoAjuste">
-                                    <h4>Alertas de Emergencia (SOS)</h4>
-                                    <p>Recibe notificaciones críticas cuando un conductor reporte un incidente.</p>
-                                </div>
-                                <label className="switch">
-                                    <input type="checkbox" checked={ajustes.alertasEmergencia} onChange={() => toggleAjuste('alertasEmergencia')} />
-                                    <span className="slider"></span>
-                                </label>
-                            </div>
-                            <div className="itemAjuste">
-                                <div className="infoAjuste">
-                                    <h4>Reportes Diarios Automáticos</h4>
-                                    <p>Recibe un resumen del total de viajes y ahorro de CO₂ al finalizar el día.</p>
-                                </div>
-                                <label className="switch">
-                                    <input type="checkbox" checked={ajustes.reportesDiarios} onChange={() => toggleAjuste('reportesDiarios')} />
-                                    <span className="slider"></span>
-                                </label>
-                            </div>
-                            <div className="itemAjuste">
-                                <div className="infoAjuste">
-                                    <h4>Monitoreo en Tiempo Real</h4>
-                                    <p>Activa la actualización de alta frecuencia para el mapa de seguimiento.</p>
-                                </div>
-                                <label className="switch">
-                                    <input type="checkbox" checked={ajustes.monitoreoTiempoReal} onChange={() => toggleAjuste('monitoreoTiempoReal')} />
-                                    <span className="slider"></span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="columnaDerecha">
-                    <div className="tarjetaActividad">
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0F172A', margin: 0 }}>Logística Reciente</h2>
-                        <div className="lineaTiempo">
-                            {notificaciones.length > 0 ? (
-                                notificaciones.map((notif, index) => (
-                                    <div key={notif._id} className={`eventoTiempo ${index % 2 === 0 ? 'azul' : 'verde'}`}>
-                                        <div className="infoEvento">
-                                            <h4>{(notif.type || '').replace(/_/g, ' ').toUpperCase()}</h4>
-                                            <p>{notif.message}</p>
-                                            <span className="tagTiempo">
-                                                {new Date(notif.date).toLocaleDateString()}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <>
-                                    <div className="eventoTiempo azul">
-                                        <div className="infoEvento">
-                                            <h4>Nuevo conductor validado</h4>
-                                            <p>Licencia y documentación de Roberto Gómez verificada.</p>
-                                            <span className="tagTiempo">HACE 45 MINUTOS</span>
-                                        </div>
-                                    </div>
-                                    <div className="eventoTiempo verde">
-                                        <div className="infoEvento">
-                                            <h4>Meta de CO₂ alcanzada</h4>
-                                            <p>Se han ahorrado 500kg de CO₂ este mes en la zona norte.</p>
-                                            <span className="tagTiempo">HACE 3 HORAS</span>
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                        <button className="botonVerLogs">Ver Historial de Logística</button>
-                    </div>
-                </div>
-            </div>
         </div>
     );
 };

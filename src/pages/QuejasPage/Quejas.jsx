@@ -78,7 +78,7 @@ const QuejasPage = () => {
     if (!selectedQueja) return;
     setSendingReply(true);
     toast.loading('Enviando correo de respuesta...', { id: 'reply' });
-    
+
     try {
       const response = await fetch('http://localhost:3001/api/reply', {
         method: 'POST',
@@ -92,7 +92,7 @@ const QuejasPage = () => {
 
       if (response.ok) {
         toast.success('¡Respuesta enviada con éxito!', { id: 'reply' });
-        
+
         // Auto-resolver
         try {
           await fetch(`http://localhost:3001/api/resolve/${selectedQueja.uid}`, {
@@ -102,7 +102,7 @@ const QuejasPage = () => {
         } catch (resolveErr) {
           console.error('Error auto-resolving:', resolveErr);
         }
-        
+
         setReplyMessage('');
         setIsModalOpen(false);
         setTimeout(handleSync, 500);
@@ -256,13 +256,13 @@ const QuejasPage = () => {
                       <div className="n-preview-box">
                         <strong>Asunto: {q.subject}</strong>
                         <p>
-                          {isExpanded 
-                            ? q.fullMessage || q.message 
+                          {isExpanded
+                            ? q.fullMessage || q.message
                             : `${(q.fullMessage || q.message).substring(0, 160)}...`}
                         </p>
                       </div>
-                      <button 
-                        className="n-toggle-preview-btn" 
+                      <button
+                        className="n-toggle-preview-btn"
                         onClick={() => setExpandedQuejaId(prev => prev === q.id ? null : q.id)}
                       >
                         {isExpanded ? (
@@ -366,7 +366,7 @@ const QuejasPage = () => {
                   <div className="q-message-header">
                     <h3 className="q-section-title">Asunto: {selectedQueja.subject}</h3>
                   </div>
-                  
+
                   <div className="q-message-box-wrapper">
                     <div className="q-message-box">
                       <MessageSquare size={16} className="q-quote-icon" />
