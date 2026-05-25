@@ -468,6 +468,17 @@
     object-fit: cover;
 }
 
+.avatarIcono {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #EFF6FF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
 .infoElemento {
     flex: 1;
 }

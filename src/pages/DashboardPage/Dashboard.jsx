@@ -1,14 +1,15 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import Swal from 'sweetalert2';
+import { toast, Toaster } from 'react-hot-toast';
 import {
-    Users, Car, Calendar, AlertCircle, ShieldCheck, Search,
+    Users, Car, Calendar, AlertCircle, ShieldCheck,
     ArrowUpRight, ArrowDownRight, ChevronDown, Activity, Zap
 } from 'lucide-react';
 import {
-    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-    PieChart, Pie, Cell, Tooltip
+    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    PieChart, Pie, Cell
 } from 'recharts';
 import './Dashboard.css';
 import DefaultImageUser from '../../imgs/DefaultImageUser.png';
@@ -50,23 +51,27 @@ const TarjetaEstadistica = React.memo(({ icon, title, value, change, isPositive,
 
 
 const Dashboard = () => {
-    const { user } = useAuth();
+    const navigate = useNavigate();
     const [metricas, setMetricas] = useState({});
-    const [Reservas, setReservas] = useState([]);
+    const [vehiculos, setVehiculos] = useState([]);
     const [usuarios, setUsuarios] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [alertasSOS, setAlertasSOS] = useState([
+        { id: 'sos-1', tipo: 'critica', titulo: 'Botón SOS Activado', descripcion: 'Conductor: Roberto M. · Ruta 14-B', tiempo: 'Hace 2 min', atendida: false },
+        { id: 'sos-2', tipo: 'advertencia', titulo: 'Retraso por Tráfico Alto', descripcion: 'Zona Norte · 5 funcionarios afectados', tiempo: 'Hace 15 min', atendida: false },
+    ]);
 
     useEffect(() => {
         const CargarDatos = async () => {
             try {
-                const [metricasRes, reservasRes, usuariosRes] = await Promise.all([
+                const [metricasRes, vehiculosRes, usuariosRes] = await Promise.all([
                     api.get('/metrics/global').catch(() => ({ data: { data: {} } })),
-                    api.get('/bookings?limit=5').catch(() => ({ data: { data: [] } })),
+                    api.get('/vehicles?limit=5').catch(() => ({ data: { data: [] } })),
                     api.get('/users?limit=5').catch(() => ({ data: { data: [] } }))
                 ]);
 
                 setMetricas(metricasRes.data?.data || {});
-                setReservas(reservasRes.data?.data || reservasRes.data?.data?.docs || []);
+                setVehiculos(vehiculosRes.data?.data?.docs || vehiculosRes.data?.data || []);
                 setUsuarios(usuariosRes.data?.data || usuariosRes.data?.data?.docs || []);
                 setLoading(false);
 
@@ -78,14 +83,34 @@ const Dashboard = () => {
         CargarDatos();
     }, []);
 
-    const ObtenerColorPorEstado = (status) => {
-        switch (status?.toLowerCase()) {
-            case 'completada': return 'status-green';
-            case 'confirmada': return 'status-blue';
-            case 'pendiente': return 'status-yellow';
-            case 'cancelada': return 'status-red';
-            default: return '';
-        }
+    const handleAtenderAlerta = (alerta) => {
+        Swal.fire({
+            title: '¿Atender esta alerta?',
+            html: `<p style="color:#475569;font-size:0.95rem">
+                <strong>${alerta.titulo}</strong><br/>
+                ${alerta.descripcion}
+            </p>`,
+            icon: alerta.tipo === 'critica' ? 'warning' : 'info',
+            showCancelButton: true,
+            showDenyButton: true,
+            confirmButtonColor: '#10B981',
+            denyButtonColor: '#3B82F6',
+            cancelButtonColor: '#94A3B8',
+            confirmButtonText: '✓ Marcar como atendida',
+            denyButtonText: '↗ Ir a Quejas',
+            cancelButtonText: 'Cancelar',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                setAlertasSOS(prev => prev.filter(a => a.id !== alerta.id));
+                toast.success(`Alerta "${alerta.titulo}" marcada como atendida`, {
+                    duration: 3000,
+                    icon: '✅',
+                    style: { background: '#ECFDF5', color: '#065F46', border: '1px solid #6EE7B7' }
+                });
+            } else if (result.isDenied) {
+                navigate('/quejas');
+            }
+        });
     };
 
     const totalUsuarios = metricas.totalUsers || 0;
@@ -124,6 +149,7 @@ const Dashboard = () => {
     // ===================================================================
     return (
         <>
+            <Toaster position="top-right" />
             <div className="TituloPagina">
 
                     <div>
@@ -171,7 +197,7 @@ const Dashboard = () => {
 
                                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} />
 
-                                    <RechartsTooltip />
+                                    <Tooltip />
                                     <Line type="monotone" dataKey="value" stroke="#3B82F6" strokeWidth={3} dot={{ r: 4, fill: '#3B82F6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
                                 </LineChart>
                             </ResponsiveContainer>
@@ -333,25 +359,37 @@ const Dashboard = () => {
                                 <AlertCircle size={20} className="color-red" />
                                 <h3>Alertas de Seguridad (SOS)</h3>
                             </div>
+                            <Link to="/quejas" className="botonVerTodos" style={{fontSize:'12px'}}>Ver quejas</Link>
                         </div>
                         <div className="cuerpoAlertas">
-                            <div className="alertaItem critica">
-                                <div className="alertaIcono"><Zap size={16} /></div>
-                                <div className="alertaInfo">
-                                    <h4>Botón SOS Activado</h4>
-                                    <p>Conductor: Roberto M. · Ruta 14-B</p>
-                                    <span className="tiempoAlerta">Hace 2 min</span>
+                            {alertasSOS.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '24px 0', color: '#10B981' }}>
+                                    <ShieldCheck size={32} style={{ marginBottom: '8px', opacity: 0.7 }} />
+                                    <p style={{ fontSize: '0.85rem', fontWeight: 600 }}>Sin alertas activas</p>
+                                    <p style={{ fontSize: '0.78rem', color: '#94A3B8' }}>Todo en orden</p>
                                 </div>
-                                <button className="botonAtender">Atender</button>
-                            </div>
-                            <div className="alertaItem advertencia">
-                                <div className="alertaIcono"><AlertCircle size={16} /></div>
-                                <div className="alertaInfo">
-                                    <h4>Retraso por Tráfico Alto</h4>
-                                    <p>Zona Norte · 5 funcionarios afectados</p>
-                                    <span className="tiempoAlerta">Hace 15 min</span>
-                                </div>
-                            </div>
+                            ) : (
+                                alertasSOS.map((alerta) => (
+                                    <div key={alerta.id} className={`alertaItem ${alerta.tipo}`}>
+                                        <div className="alertaIcono">
+                                            {alerta.tipo === 'critica' ? <Zap size={16} /> : <AlertCircle size={16} />}
+                                        </div>
+                                        <div className="alertaInfo">
+                                            <h4>{alerta.titulo}</h4>
+                                            <p>{alerta.descripcion}</p>
+                                            <span className="tiempoAlerta">{alerta.tiempo}</span>
+                                        </div>
+                                        {alerta.tipo === 'critica' && (
+                                            <button
+                                                className="botonAtender"
+                                                onClick={() => handleAtenderAlerta(alerta)}
+                                            >
+                                                Atender
+                                            </button>
+                                        )}
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
 
@@ -380,38 +418,42 @@ const Dashboard = () => {
 
                         <div className="encabezadoLista">
 
-                            <h3>Reservas recientes</h3>
+                            <h3>Vehículos registrados</h3>
 
-                            <Link to="/reservas" className='botonVerTodos'><span>Ver todas</span></Link>
+                            <Link to="/vehiculos" className='botonVerTodos'><span>Ver todos</span></Link>
                         </div>
 
                         <div className="cuerpoLista">
 
-                            {Reservas.slice(0, 4).map((item, i) => (
+                            {vehiculos.slice(0, 4).map((item, i) => (
 
                                 <div className="filaElemento" key={item._id || i}>
 
-                                    <img src={getDefaultImagen(item.passenger_id?.profileImage)} alt={item.passenger_id?.name || 'Pasajero'} className="avatarPequeno" />
+                                    <div className="avatarIcono">
+                                        <Car size={20} className="color-blue" />
+                                    </div>
 
                                     <div className="infoElemento">
 
-                                        <div className="tituloElemento">#{item._id?.substring(0, 8) || 'R-0000'}</div>
-                                        <div className="descripcionElemento">{item.passenger_id?.name || 'Desconocido'}<br /><span className="textoGris">Destino: {item.ride_id?.destination?.address || 'Pendiente'}</span></div>
+                                        <div className="tituloElemento fuenteNegrita">{item.brand} {item.model}</div>
+                                        <div className="descripcionElemento textoGris">
+                                            {item.license_plate} &bull; {item.color} &bull; {item.year}
+                                        </div>
                                     </div>
 
                                     <div className="estadoElemento">
-
-                                        <span className={`insigniaEstado ${ObtenerColorPorEstado(item.status)}`}>{item.status || 'Pendiente'}</span>
+                                        <span className={`insigniaEstado ${item.isActive ? 'status-green' : 'status-red'}`}>
+                                            {item.isActive ? 'Activo' : 'Inactivo'}
+                                        </span>
                                     </div>
 
                                     <div className="precioElemento">
-
-                                        <div className="valorPrecio">${item.ride_id?.price || '0.00'}</div>
+                                        <div className="valorPrecio">{item.capacity} <span className="textoGris" style={{fontSize:'11px'}}>asientos</span></div>
                                         <div className="tiempoPrecio">{new Date(item.createdAt || Date.now()).toLocaleDateString()}</div>
                                     </div>
                                 </div>
                             ))}
-                            {Reservas.length === 0 && <div className="textoGris">No hay reservas recientes</div>}
+                            {vehiculos.length === 0 && <div className="textoGris">No hay vehículos registrados</div>}
                         </div>
                     </div>
 
