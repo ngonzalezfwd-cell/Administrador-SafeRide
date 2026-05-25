@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
     const fetchUserProfile = async () => {
         try {
             const response = await api.get('/auth/me');
-            
+
             if (response.data.success) {
                 setUser(response.data.data);
             }
@@ -35,15 +35,18 @@ export const AuthProvider = ({ children }) => {
         try {
             const response = await api.post('/auth/login', { email, password });
             if (response.data.success) {
-                const { accessToken, user } = response.data.data;
+                const { accessToken, refreshToken, user } = response.data.data;
                 localStorage.setItem('token', accessToken);
+                if (refreshToken) {
+                    localStorage.setItem('refreshToken', refreshToken);
+                }
                 setUser(user);
                 return { success: true, user: user };
             }
         } catch (error) {
-            return { 
-                success: false, 
-                message: error.response?.data?.message || 'Error al iniciar sesión' 
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Error al iniciar sesión'
             };
         }
     };
@@ -63,7 +66,16 @@ export const AuthProvider = ({ children }) => {
         });
 
         if (result.isConfirmed) {
+            // Mejor esfuerzo: invalidar el refresh token en el backend.
+            // _skipRefresh evita que un access token expirado dispare refresh inútil
+            // justo antes de invalidar la sesión.
+            try {
+                await api.post('/auth/logout', null, { _skipRefresh: true });
+            } catch {
+                /* el logout local procede aunque el backend falle */
+            }
             localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
             setUser(null);
             window.location.href = '/login';
         }

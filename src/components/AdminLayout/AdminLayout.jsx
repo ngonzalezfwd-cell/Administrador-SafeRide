@@ -7,7 +7,8 @@ import { useAuth } from '../../context/AuthContext';
 // Iconos e imagenes
 import {
   LayoutDashboard, Users, User, UserCheck, Car,
-  Bell, AlertCircle, ShieldCheck, Settings, ChevronDown, Menu, Search
+  Bell, AlertCircle, ShieldCheck, Settings, ChevronDown, Menu, Search,
+  Activity
 } from 'lucide-react';
 import IconSafeRide from '../../imgs/IconSafeRide.png';
 import DefaultImageUser from '../../imgs/DefaultImageUser.png';
@@ -15,6 +16,7 @@ import { Toaster } from 'react-hot-toast';
 
 // Services
 import notificationService from '../../services/notificationService';
+import { useInProgressRides, useMonitoringEnabled } from '../../hooks/useInProgressRides';
 import './AdminLayout.css';
 
 const NavItem = memo(({ to, icon: Icon, label, active, onClick, badge }) => (
@@ -42,6 +44,11 @@ const AdminLayout = () => {
   const navigate = useNavigate();
   const menuRef = useRef(null);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  // Monitoreo en tiempo real (controlado por toggle en PerfilAdmin → localStorage).
+  // El hook polea /rides/in-progress cada 8 s y dispara toast por cada viaje nuevo.
+  const monitoringEnabled = useMonitoringEnabled();
+  useInProgressRides({ enabled: monitoringEnabled, intervalMs: 8000, notify: true });
 
   const loadUnreadCount = useCallback(async () => {
     try {
@@ -157,6 +164,14 @@ const AdminLayout = () => {
           />
 
           <NavItem
+            to="/monitoreo"
+            icon={Activity}
+            label="Monitoreo"
+            active={location.pathname === '/monitoreo'}
+            onClick={handleCloseSidebar}
+          />
+
+          <NavItem
             to="/notificaciones"
             icon={Bell}
             label="Notificaciones"
@@ -213,7 +228,7 @@ const AdminLayout = () => {
 
           <div className="headerDerecho">
             <div className="userInfo">
-              <span>Bienvenido/a, {user?.name || 'Admin'}</span>
+              <span id="header-welcome">Bienvenido/a, {user?.name || 'Admin'}</span>
             </div>
 
             <div className="userInfo">

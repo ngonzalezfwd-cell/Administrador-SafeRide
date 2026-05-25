@@ -364,6 +364,12 @@ header {
   color: var(--header-welcome-text);
 }
 
+/* ID para ganarle al override global de spans en temas oscuro/gris/salvia
+   (index.css los pinta con --card-text-muted, que no corresponde al header). */
+#header-welcome {
+  color: var(--header-welcome-text) !important;
+}
+
 .notificacionCampana {
   position: relative;
   width: 50px;
@@ -627,29 +633,29 @@ header {
   --header-bg: #696e74;
   --header-border: #c3cdd6;
   --card-background: #d7d9e9;
-  --card-border: #c0c2c4;
+  --card-border: #a4a7ad;
   --icon-menu-color: #b4c4da;
 
   /* Sidebar Granular Texts */
   --sidebar-logo-text: #ffffff;
-  --sidebar-profile-name: #dbd5d5;
-  --sidebar-profile-role: #bbbfc4;
-  --sidebar-nav-text: #fcf6f6;
-  --sidebar-nav-muted: #bfc5ce;
-  --sidebar-subnav-text: #878f9b;
+  --sidebar-profile-name: #f4f4f6;
+  --sidebar-profile-role: #c6c9cf;
+  --sidebar-nav-text: #f4f4f6;
+  --sidebar-nav-muted: #b4b8c0;
+  --sidebar-subnav-text: #b4b8c0;
 
   /* Header Granular Texts */
-  --header-welcome-text: #fbfcff;
-  --header-search-text: #8e8f92;
-  --header-search-placeholder: #fdfeff;
+  --header-welcome-text: #ffffff;
+  --header-search-text: #ffffff;
+  --header-search-placeholder: #d6d9de;
   --header-badge-text: #ffffff;
 
-  /* Card/Block Granular Texts */
-  --card-title-text: #6d3333;
-  --card-value-text: #cbcfd6;
-  --card-body-text: #bfc2c7;
-  --card-muted-text: #38404b;
-  --card-legend-text: #5d79b6;
+  /* Card/Block Granular Texts — todos OSCUROS para contrastar con card-bg lavanda claro */
+  --card-title-text: #1e2433;
+  --card-value-text: #0f172a;
+  --card-body-text: #2d3548;
+  --card-muted-text: #5a6275;
+  --card-legend-text: #475569;
 
   /* Compatibility Aliases */
   --card-text: var(--card-title-text);
@@ -671,24 +677,24 @@ header {
 
   /* Sidebar Granular Texts */
   --sidebar-logo-text: #b0e0bf;
-  --sidebar-profile-name: #b0e0bf;
-  --sidebar-profile-role: #71bb98;
-  --sidebar-nav-text: #b0e0bf;
-  --sidebar-nav-muted: #71bb98;
-  --sidebar-subnav-text: #71bb98;
+  --sidebar-profile-name: #d6f1e0;
+  --sidebar-profile-role: #8ad3a7;
+  --sidebar-nav-text: #d6f1e0;
+  --sidebar-nav-muted: #8ad3a7;
+  --sidebar-subnav-text: #a4dab9;
 
   /* Header Granular Texts */
-  --header-welcome-text: #c5fddb;
-  --header-search-text: #b8e0c8;
-  --header-search-placeholder: #7dbfa1;
+  --header-welcome-text: #ffffff;
+  --header-search-text: #f0fff5;
+  --header-search-placeholder: #a4dab9;
   --header-badge-text: #ffffff;
 
-  /* Card/Block Granular Texts */
-  --card-title-text: #19241e;
-  --card-value-text: #2c5840;
-  --card-body-text: #16442b;
-  --card-muted-text: #0a1811;
-  --card-legend-text: #31644b;
+  /* Card/Block Granular Texts — jerarquía sobre fondo blanco */
+  --card-title-text: #14342a;
+  --card-value-text: #16442b;
+  --card-body-text: #2d4a3b;
+  --card-muted-text: #6b8478;
+  --card-legend-text: #2c5840;
 
   /* Compatibility Aliases */
   --card-text: var(--card-title-text);

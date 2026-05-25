@@ -16,6 +16,7 @@ const QuejasPage        = lazy(() => import('../pages/QuejasPage/Quejas'));
 const NotificacionesPage = lazy(() => import('../pages/NotificacionesPage/Notificaciones'));
 const Configuracion     = lazy(() => import('../pages/ConfiguracionPage/Configuracion'));
 const AuditoriaPage     = lazy(() => import('../pages/AuditoriaPage/Auditoria'));
+const MonitoreoPage     = lazy(() => import('../pages/MonitoreoPage/Monitoreo'));
 
 /** Placeholder temporal para páginas aún no implementadas */
 const PlaceholderPage = ({ title }) => (
@@ -67,7 +68,7 @@ const Routing = () => (
         <Route path="/login"                element={<Login />} />
         <Route path="/Login"                element={<Login />} />
         <Route path="/recuperarPassword"    element={<RecuperarPassword />} />
-        <Route path="/nuevoPassword/:token" element={<NuevoPassword />} />
+        <Route path="/nuevoPassword"        element={<NuevoPassword />} />
 
         {/* ── RUTAS PRIVADAS (ADMIN ONLY) ───────────────────── */}
         <Route element={<PrivateRoute requiredRole="admin" />}>
@@ -80,6 +81,7 @@ const Routing = () => (
             <Route path="/usuarios"       element={<PasajerosPage />} />
             <Route path="/conductores"    element={<ConductoresPage />} />
             <Route path="/vehiculos"      element={<VehiculosPage />} />
+            <Route path="/monitoreo"      element={<MonitoreoPage />} />
             <Route path="/reservas"       element={<PlaceholderPage title="Gestión de Reservas" />} />
             <Route path="/pagos"          element={<PlaceholderPage title="Historial de Pagos" />} />
             <Route path="/notificaciones" element={<NotificacionesPage />} />

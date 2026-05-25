@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, memo } from 'react';
 import { createPortal } from 'react-dom';
+import Swal from 'sweetalert2';
 import {
   X, Save, Upload, User, Truck, Mail, AtSign, Calendar,
   Users, Palette, CheckCircle, AlertCircle, MapPin, Clock,
-  History, Navigation, FileCheck, IdCard
+  History, Navigation, FileCheck, IdCard,
+  Power, PowerOff, Trash2, AlertTriangle
 } from 'lucide-react';
 import driverService from '../../services/driverService';
 import passengerService from '../../services/passengerService';
@@ -70,6 +72,81 @@ const SCHEDULES = [
 ];
 
 const generateTempPassword = () => "SafeRide@" + Math.random().toString(36).slice(-4) + Math.floor(Math.random() * 10);
+
+// ─── Validaciones ──────────────────────────────────────────
+const EMAIL_RE    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_CR_RE = /^[2678]\d{7}$/; // móvil/fijo CR: 8 dígitos, prefijo 2/6/7/8
+const NAME_RE     = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.\-']+$/;
+const USERNAME_RE = /^[a-zA-Z0-9._-]+$/;
+const PLATE_RE    = /^[A-Z0-9]{6}$/;
+
+const validateField = (name, rawValue, { isPassenger } = {}) => {
+  const value = rawValue ?? '';
+  switch (name) {
+    case 'name':
+      if (!value.trim())                return 'El nombre es obligatorio';
+      if (value.trim().length < 4)      return 'Mínimo 4 caracteres';
+      if (!NAME_RE.test(value))         return 'Solo letras, números, espacios, puntos y guiones';
+      return null;
+    case 'username':
+      if (!value)                       return 'El usuario es obligatorio';
+      if (value.length < 4)             return 'Mínimo 4 caracteres';
+      if (!USERNAME_RE.test(value))     return 'Solo letras, números, puntos, guiones y guiones bajos';
+      return null;
+    case 'email':
+      if (!value)                       return 'El correo es obligatorio';
+      if (!EMAIL_RE.test(value))        return 'Correo con formato inválido';
+      return null;
+    case 'phone':
+      if (!value)                       return 'El teléfono es obligatorio';
+      if (!PHONE_CR_RE.test(value))     return 'Debe tener 8 dígitos y empezar con 2, 6, 7 u 8';
+      return null;
+    case 'v-license_plate':
+      if (isPassenger) return null;
+      if (!value)                                  return 'La placa es obligatoria';
+      if (!PLATE_RE.test(value.toUpperCase()))     return 'Placa: 6 caracteres alfanuméricos';
+      return null;
+    case 'v-model':
+      if (isPassenger) return null;
+      if (!value)                       return 'El modelo es obligatorio';
+      return null;
+    default:
+      return null;
+  }
+};
+
+const validateAll = (form, ctx) => {
+  const errors = {};
+  ['name', 'username', 'email', 'phone'].forEach((f) => {
+    const err = validateField(f, form[f], ctx);
+    if (err) errors[f] = err;
+  });
+  if (!ctx.isPassenger) {
+    const plateErr = validateField('v-license_plate', form.vehicle?.license_plate, ctx);
+    const modelErr = validateField('v-model',         form.vehicle?.model,         ctx);
+    if (plateErr) errors['v-license_plate'] = plateErr;
+    if (modelErr) errors['v-model']         = modelErr;
+  }
+  return errors;
+};
+
+const FieldError = ({ msg }) => msg ? (
+  <span className="field-error">
+    <AlertCircle size={12} /> {msg}
+  </span>
+) : null;
+
+// ─── Iconos SVG inline para usar dentro de Swal.fire({ html: ... }) ──
+const svgIcon = (paths, { size = 14, color = '#EF4444' } = {}) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" `
+  + `fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" `
+  + `style="vertical-align:-2px; flex-shrink:0;">${paths}</svg>`;
+
+const ICONS = {
+  alert: (c = '#EF4444') => svgIcon('<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>', { color: c }),
+  trash: (c = '#DC2626') => svgIcon('<polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>', { color: c }),
+  lock:  (c = '#DC2626') => svgIcon('<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>', { color: c }),
+};
 
 // Componente interno para items del historial memoizado
 const TripItem = memo(({ trip, idx, isLast }) => (
@@ -138,12 +215,21 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
   const [activeTab, setActiveTab] = useState(initialTab);
   const [trips, setTrips] = useState([]);
   const [loadingTrips, setLoadingTrips] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  // Snapshot del formulario tras la hidratación inicial. Lo usamos para
+  // detectar "no hay cambios" en modo edición.
+  const initialFormRef = useRef(null);
+
+  // Loading independiente para las acciones de la "zona de riesgo".
+  const [dangerLoading, setDangerLoading] = useState(false);
 
   useEffect(() => {
+    let next;
     if (isEditMode) {
       const v = driver.vehicle || {};
       const brand = v.brand || BRANDS[0];
-      setForm({
+      next = {
         name: driver.name || '',
         username: driver.username || '',
         email: driver.email || '',
@@ -158,11 +244,10 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
           year: String(v.year || YEARS[0]),
           capacity: v.capacity || 4,
         }
-      });
+      };
       setPreviewUrl(driver.profileImage || '');
-      setUsernameStatus('idle');
     } else {
-      setForm({
+      next = {
         name: '', username: '', email: '', phone: '',
         company: COMPANIES[0], work_schedule: SCHEDULES[0],
         vehicle: {
@@ -173,12 +258,16 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
           year: YEARS[0],
           capacity: 4
         }
-      });
+      };
       setPreviewUrl('');
       setAvatarFile(null);
-      setUsernameStatus('idle');
     }
+    setForm(next);
+    initialFormRef.current = JSON.stringify(next);
+    setUsernameStatus('idle');
+    setEmailStatus('idle');
     setStep('');
+    setFieldErrors({});
     if (isOpen) {
       setActiveTab(initialTab);
     }
@@ -256,50 +345,246 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
 
   const handleChange = e => {
     const { name, value } = e.target;
+    let nextValue = value;
+
+    if (name === 'name') {
+      nextValue = value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.\-']/g, '');
+    }
+
     if (name.startsWith('v-')) {
       const field = name.replace('v-', '');
       setForm(prev => {
-        const newVehicle = { ...prev.vehicle, [field]: value };
+        const newVehicle = { ...prev.vehicle, [field]: nextValue };
         if (field === 'brand') {
-          newVehicle.model = CAR_DATA[value] ? CAR_DATA[value][0] : '';
+          newVehicle.model = CAR_DATA[nextValue] ? CAR_DATA[nextValue][0] : '';
         }
         return { ...prev, vehicle: newVehicle };
       });
     } else {
-      if (name === 'name') {
-        const filteredValue = value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.\-']/g, '');
-        setForm(prev => ({ ...prev, [name]: filteredValue }));
-      } else {
-        setForm(prev => ({ ...prev, [name]: value }));
-        if (name === 'username' && !isEditMode) setUsernameStatus('idle');
-        if (name === 'email' && !isEditMode) setEmailStatus('idle');
-      }
+      setForm(prev => ({ ...prev, [name]: nextValue }));
+      if (name === 'username' && !isEditMode) setUsernameStatus('idle');
+      if (name === 'email' && !isEditMode) setEmailStatus('idle');
+    }
+
+    // Validación inline: solo mostramos error si el campo ya tiene contenido,
+    // así no marcamos en rojo apenas abre el modal con todo vacío.
+    if (nextValue) {
+      const err = validateField(name, nextValue, { isPassenger });
+      setFieldErrors(prev => ({ ...prev, [name]: err }));
+    } else {
+      setFieldErrors(prev => ({ ...prev, [name]: null }));
     }
   };
 
-  const validate = () => {
-    if (!form.name.trim() || form.name.trim().length < 4) return 'El nombre completo debe tener al menos 4 caracteres';
-    if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.\-']+$/.test(form.name)) return 'El nombre contiene caracteres no permitidos (solo se permiten letras, números, espacios, puntos y guiones)';
-    if (form.username && !/^[a-zA-Z0-9._-]+$/.test(form.username)) return 'El nombre de usuario solo puede contener letras, números, puntos, guiones y guiones bajos';
-    if (!/^\d{8}$/.test(form.phone)) return 'El teléfono debe tener exactamente 8 dígitos';
-    if (!form.email || !form.username) return 'Email y Usuario son obligatorios';
-    if (!isEditMode && (usernameStatus === 'taken' || emailStatus === 'taken')) {
-      return emailStatus === 'taken' ? 'Este correo ya está registrado' : 'El nombre de usuario ya está en uso';
-    }
-    if (form.username.length < 4) return 'El usuario debe tener al menos 4 caracteres';
+  const hasChanges = () => {
+    if (!isEditMode)       return true;
+    if (avatarFile)        return true;
+    if (!initialFormRef.current) return true;
+    return JSON.stringify(form) !== initialFormRef.current;
+  };
 
-    // Validaciones exclusivas de conductor
-    if (!isPassenger) {
-      if (!/^[A-Z0-9]{6}$/.test(form.vehicle.license_plate.toUpperCase())) return 'La placa debe tener exactamente 6 caracteres alfanuméricos';
-      if (!form.vehicle.model) return 'El modelo del vehículo es obligatorio';
+  const showValidationAlert = (errors) => {
+    const items = Object.values(errors).filter(Boolean);
+    return Swal.fire({
+      icon: 'warning',
+      title: 'Revisa los datos del formulario',
+      html: `
+        <p style="margin: 0 0 12px; color: #475569;">
+          Hay ${items.length} ${items.length === 1 ? 'campo' : 'campos'} que necesita${items.length === 1 ? '' : 'n'} atención:
+        </p>
+        <ul style="list-style:none; text-align:left; padding:0; margin:0; color:#1E293B; line-height:1.5;">
+          ${items.map((e) => `
+            <li style="display:flex; align-items:flex-start; gap:8px; padding:6px 10px; margin-bottom:4px; background:#FEF2F2; border-radius:6px;">
+              ${ICONS.alert('#EF4444')}
+              <span>${e}</span>
+            </li>
+          `).join('')}
+        </ul>
+      `,
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#EF4444',
+      background: 'rgba(255, 255, 255, 0.95)',
+      backdrop: 'blur(4px)',
+      customClass: { container: 'swal-over-modal' },
+    });
+  };
+
+  const showNoChangesAlert = () => Swal.fire({
+    icon: 'info',
+    title: 'No hay cambios para guardar',
+    text: 'Modifica al menos un campo antes de actualizar el perfil.',
+    confirmButtonText: 'Entendido',
+    confirmButtonColor: '#2563EB',
+    background: 'rgba(255, 255, 255, 0.95)',
+    backdrop: 'blur(4px)',
+    customClass: { container: 'swal-over-modal' },
+  });
+
+  // ─── Zona de Riesgo: desactivar / activar / eliminar permanente ───
+  const SWAL_OVER = { customClass: { container: 'swal-over-modal' } };
+  const userLabel = isPassenger ? 'pasajero' : 'conductor';
+
+  const handleDeactivate = async () => {
+    const step1 = await Swal.fire({
+      ...SWAL_OVER,
+      icon: 'warning',
+      title: `¿Desactivar ${userLabel}?`,
+      text: `${driver.name} no podrá iniciar sesión ni usar la plataforma hasta que lo reactives.`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, continuar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#F59E0B',
+      cancelButtonColor: '#64748B',
+    });
+    if (!step1.isConfirmed) return;
+
+    const step2 = await Swal.fire({
+      ...SWAL_OVER,
+      icon: 'question',
+      title: 'Confirmación final',
+      text: '¿Estás absolutamente seguro? Esta acción se puede revertir, pero requiere intervención manual.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, desactivar',
+      cancelButtonText: 'No, volver',
+      confirmButtonColor: '#EF4444',
+      cancelButtonColor: '#64748B',
+    });
+    if (!step2.isConfirmed) return;
+
+    setDangerLoading(true);
+    try {
+      if (isPassenger) await passengerService.deletePassenger(driver._id);
+      else             await driverService.deleteDriver(driver._id);
+      toast.success(`${userLabel.charAt(0).toUpperCase() + userLabel.slice(1)} desactivado`);
+      onSaved();
+      onClose();
+    } catch (err) {
+      console.error('Deactivate error:', err);
+      toast.error('No se pudo desactivar: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setDangerLoading(false);
     }
-    return null;
+  };
+
+  const handleActivateInModal = async () => {
+    const r = await Swal.fire({
+      ...SWAL_OVER,
+      icon: 'question',
+      title: `¿Reactivar ${userLabel}?`,
+      text: `${driver.name} podrá volver a usar la plataforma.`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, activar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#10B981',
+      cancelButtonColor: '#64748B',
+    });
+    if (!r.isConfirmed) return;
+
+    setDangerLoading(true);
+    try {
+      if (isPassenger) await passengerService.activatePassenger(driver._id);
+      else             await driverService.activateDriver(driver._id);
+      toast.success(`${userLabel.charAt(0).toUpperCase() + userLabel.slice(1)} reactivado`);
+      onSaved();
+      onClose();
+    } catch (err) {
+
+      
+      console.error('Activate error:', err);
+      toast.error('No se pudo reactivar: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setDangerLoading(false);
+    }
+  };
+
+  const handleHardDelete = async () => {
+    const step1 = await Swal.fire({
+      ...SWAL_OVER,
+      icon: 'warning',
+      iconColor: '#DC2626',
+      title: 'Eliminar permanentemente',
+      html: `
+        <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:#FEF2F2; border-left:3px solid #DC2626; border-radius:4px; margin-bottom:12px;">
+          ${ICONS.alert('#DC2626')}
+          <strong style="color:#B91C1C;">Esta acción NO se puede deshacer.</strong>
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:8px; color:#475569; font-size:0.9rem; text-align:left;">
+          ${ICONS.trash('#94A3B8')}
+          <span>Se borrarán todos los datos de <strong>${driver.name}</strong> del sistema: perfil, historial de viajes${isPassenger ? '' : ', vehículo y documentos'}.</span>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Continuar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#DC2626',
+      cancelButtonColor: '#64748B',
+    });
+    if (!step1.isConfirmed) return;
+
+    const step2 = await Swal.fire({
+      ...SWAL_OVER,
+      icon: 'error',
+      title: 'Última confirmación',
+      html: `
+        <div style="display:flex; align-items:center; gap:8px; justify-content:center; margin-bottom:8px;">
+          ${ICONS.lock('#DC2626')}
+          <span style="color:#475569;">Para borrar definitivamente, escribe el nombre exacto:</span>
+        </div>
+        <strong style="color:#0F172A; font-size:1.05rem;">${driver.name}</strong>
+      `,
+      input: 'text',
+      inputPlaceholder: 'Escribe el nombre completo',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar para siempre',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#DC2626',
+      cancelButtonColor: '#64748B',
+      inputValidator: (value) => {
+        if ((value || '').trim() !== driver.name) return 'El nombre no coincide exactamente';
+        return null;
+      },
+    });
+    if (!step2.isConfirmed) return;
+
+    setDangerLoading(true);
+    try {
+      if (isPassenger) await passengerService.hardDeletePassenger(driver._id);
+      else             await driverService.hardDeleteDriver(driver._id);
+      await Swal.fire({
+        ...SWAL_OVER,
+        icon: 'success',
+        title: 'Eliminado',
+        text: `${driver.name} fue borrado permanentemente del sistema.`,
+        confirmButtonColor: '#2563EB',
+      });
+      onSaved();
+      onClose();
+    } catch (err) {
+      console.error('Hard delete error:', err);
+      toast.error('No se pudo eliminar: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setDangerLoading(false);
+    }
   };
 
   const handleSubmit = async e => {
     e.preventDefault();
-    const error = validate();
-    if (error) return toast.error(error);
+
+    const errors = validateAll(form, { isPassenger });
+    if (!isEditMode) {
+      if (emailStatus === 'taken')    errors.email    = 'Este correo ya está registrado';
+      if (usernameStatus === 'taken') errors.username = 'Este nombre de usuario ya está en uso';
+    }
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      showValidationAlert(errors);
+      return;
+    }
+
+    if (!hasChanges()) {
+      showNoChangesAlert();
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -472,7 +757,7 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
                   onChange={handleChange}
                   required
                   readOnly={isEditMode}
-                  className={isEditMode ? 'input-readonly' : ''}
+                  className={`${isEditMode ? 'input-readonly' : ''} ${fieldErrors.email || (!isEditMode && emailStatus === 'taken') ? 'has-error' : ''}`}
                 />
                 {!isEditMode && (
                   <div className="username-status-icon">
@@ -482,11 +767,19 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
                   </div>
                 )}
               </div>
+              <FieldError msg={fieldErrors.email || (!isEditMode && emailStatus === 'taken' ? 'Este correo ya está registrado' : null)} />
             </div>
             <div className="field-group">
               <label>Nombre de Usuario</label>
               <div className="username-input-wrapper">
-                <input name="username" value={form.username} onChange={handleChange} required readOnly={isEditMode} className={isEditMode ? 'input-readonly' : ''} />
+                <input
+                  name="username"
+                  value={form.username}
+                  onChange={handleChange}
+                  required
+                  readOnly={isEditMode}
+                  className={`${isEditMode ? 'input-readonly' : ''} ${fieldErrors.username || (!isEditMode && usernameStatus === 'taken') ? 'has-error' : ''}`}
+                />
                 {!isEditMode && (
                   <div className="username-status-icon">
                     {usernameStatus === 'checking' && <div className="spinner-mini" />}
@@ -495,16 +788,33 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
                   </div>
                 )}
               </div>
+              <FieldError msg={fieldErrors.username || (!isEditMode && usernameStatus === 'taken' ? 'Este nombre de usuario ya está en uso' : null)} />
             </div>
 
             <div className="section-title"><User size={14} /> Información Personal</div>
             <div className="field-group">
               <label>Nombre Completo *</label>
-              <input name="name" value={form.name} onChange={handleChange} required />
+              <input
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                required
+                className={fieldErrors.name ? 'has-error' : ''}
+              />
+              <FieldError msg={fieldErrors.name} />
             </div>
             <div className="field-group">
-              <label>Teléfono (8 dígitos) *</label>
-              <input name="phone" value={form.phone} onChange={handleChange} required maxLength={8} />
+              <label>Teléfono (8 dígitos, CR) *</label>
+              <input
+                name="phone"
+                value={form.phone}
+                onChange={handleChange}
+                required
+                maxLength={8}
+                inputMode="numeric"
+                className={fieldErrors.phone ? 'has-error' : ''}
+              />
+              <FieldError msg={fieldErrors.phone} />
             </div>
             <div className="field-group">
               <label>Empresa *</label>
@@ -536,7 +846,15 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
                 </div>
                 <div className="field-group">
                   <label>Placa (6 Caracteres) *</label>
-                  <input name="v-license_plate" value={form.vehicle.license_plate} onChange={handleChange} maxLength={6} style={{ textTransform: 'uppercase' }} />
+                  <input
+                    name="v-license_plate"
+                    value={form.vehicle.license_plate}
+                    onChange={handleChange}
+                    maxLength={6}
+                    style={{ textTransform: 'uppercase' }}
+                    className={fieldErrors['v-license_plate'] ? 'has-error' : ''}
+                  />
+                  <FieldError msg={fieldErrors['v-license_plate']} />
                 </div>
                 <div className="field-group">
                   <label>Color *</label>
@@ -558,9 +876,56 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
             )}
 
             <div className="modal-footer">
-              <button type="submit" className="save-btn" disabled={submitting || usernameStatus === 'checking' || emailStatus === 'checking'}>
+              <button
+                type="submit"
+                className="save-btn"
+                disabled={
+                  submitting
+                  || dangerLoading
+                  || (!isEditMode && (usernameStatus === 'checking' || emailStatus === 'checking'))
+                  || (!isEditMode && (usernameStatus === 'taken' || emailStatus === 'taken'))
+                  || Object.values(fieldErrors).some(Boolean)
+                }
+              >
                 {submitting ? step : (isEditMode ? 'Actualizar Perfil' : 'Completar Registro')}
               </button>
+
+              {isEditMode && (
+                <div className="danger-zone">
+                  <div className="danger-zone-title">
+                    <AlertTriangle size={14} /> Zona de Riesgo
+                  </div>
+                  <div className="danger-zone-buttons">
+                    {driver?.isActive ? (
+                      <button
+                        type="button"
+                        className="btn-deactivate"
+                        onClick={handleDeactivate}
+                        disabled={submitting || dangerLoading}
+                      >
+                        <PowerOff size={14} /> Desactivar
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn-activate"
+                        onClick={handleActivateInModal}
+                        disabled={submitting || dangerLoading}
+                      >
+                        <Power size={14} /> Activar
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="btn-hard-delete"
+                      onClick={handleHardDelete}
+                      disabled={submitting || dangerLoading}
+                    >
+                      <Trash2 size={14} /> Eliminar por completo
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </form>
         ) : activeTab === 'documents' ? (
