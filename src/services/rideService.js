@@ -24,7 +24,18 @@ const rideService = {
       console.error(`Error al obtener viajes del pasajero ${passengerId}:`, error);
       throw error;
     }
-  }
+  },
+
+  /**
+   * Viajes en curso (admin). Endpoint del backend pendiente — ver
+   * docs/Backend_Rides_InProgress_Endpoint.docx. Polling cada 8 s desde el
+   * hook useInProgressRides.
+   * @returns {Promise<{ success: boolean, data: Array }>}
+   */
+  getInProgressRides: async () => {
+    const response = await api.get('/rides/in-progress');
+    return response.data;
+  },
 };
 
 export default rideService;

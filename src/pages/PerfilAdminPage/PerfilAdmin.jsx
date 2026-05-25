@@ -3,34 +3,62 @@ import { useAuth } from '../../context/AuthContext';
 import { InsertarEnCloudinary } from '../../services/cloudinary';
 import DefaultImageUser from '../../imgs/DefaultImageUser.png';
 import api from '../../services/api';
+import passengerService from '../../services/passengerService';
+import COMPANIES from '../../constants/companies';
 import { Link } from 'react-router-dom';
 
 // DISEÑOS E ICONOS
 import {
     User, FileUser, Mail, Building2, Check, Users,
-    ArrowLeft, Camera, X, Phone, Car, Leaf, MapPin
+    ArrowLeft, Camera, X, Phone, Car, Leaf, MapPin,
+    Bell, AlertTriangle, Activity, Send,
+    Shield, KeyRound, LogOut, Smartphone
 } from 'lucide-react';
 import './PerfilAdmin.css';
 import Swal from 'sweetalert2';
+
+// Clave de localStorage para las preferencias del admin.
+const PREFS_STORAGE_KEY = 'saferide-admin-prefs';
+const DEFAULT_PREFS = {
+    alertasEmergencia: true,
+    reportesDiarios: true,
+    monitoreoTiempoReal: false,
+    notificacionesEmail: true,
+};
+const loadPrefs = () => {
+    try {
+        const raw = localStorage.getItem(PREFS_STORAGE_KEY);
+        return raw ? { ...DEFAULT_PREFS, ...JSON.parse(raw) } : DEFAULT_PREFS;
+    } catch {
+        return DEFAULT_PREFS;
+    }
+};
+
+const PREF_ITEMS = [
+    { key: 'alertasEmergencia',   icon: AlertTriangle, label: 'Alertas de emergencia',     desc: 'Recibe avisos cuando se reporta una incidencia crítica.' },
+    { key: 'reportesDiarios',     icon: Send,          label: 'Reportes diarios',          desc: 'Resumen automático al final de cada día por correo.' },
+    { key: 'monitoreoTiempoReal', icon: Activity,      label: 'Monitoreo en tiempo real',  desc: 'Notificaciones push de cada viaje en curso.' },
+    { key: 'notificacionesEmail', icon: Bell,          label: 'Notificaciones por email',  desc: 'Cualquier evento relevante llega a tu correo.' },
+];
 
 // ────────────────────────────────────────────────────────────────────────────────────────────────────
 // COMPONENTE: PERFIL DE ADMINISTRADOR
 // ────────────────────────────────────────────────────────────────────────────────────────────────────
 
 const PerfilAdmin = () => {
-    const { user, setUser } = useAuth();
-    const [empresas, setEmpresas] = useState([]);
+    const { user, setUser, cerrarSesion } = useAuth();
+    // Default: lista hardcodeada de empresas conocidas. Si el endpoint
+    // /users/companies responde con más, las mergeamos (dedup).
+    const [empresas, setEmpresas] = useState(COMPANIES);
     const [cargando, setCargando] = useState(false);
     const [EditActivo, setEditActivo] = useState(false);
     const [nuevaFoto, setNuevaFoto] = useState(null);
     const [previewFoto, setPreviewFoto] = useState(null);
-    const [estadisticas, setEstadisticas] = useState({
-        totalRides: 0,
-        totalDrivers: 0,
-        totalPassengers: 0,
-        totalCarbonSaved: 0
-    });
-    const [notificaciones, setNotificaciones] = useState([]);
+    // Métricas globales (null mientras no se hayan cargado, para distinguir
+    // "todavía no respondió el backend" de "el backend devolvió 0").
+    const [estadisticas, setEstadisticas] = useState(null);
+    // Conteo real de pasajeros registrados (no viene en /metrics/global).
+    const [totalPassengers, setTotalPassengers] = useState(null);
 
     // Estado para los datos del perfil
     const [datosPerfil, setDatosPerfil] = useState({
@@ -42,13 +70,8 @@ const PerfilAdmin = () => {
         status: ''
     });
 
-    // Opciones de configuración (Aun simuladas)
-    const [ajustes, setAjustes] = useState({
-        alertasEmergencia: true,
-        reportesDiarios: true,
-        monitoreoTiempoReal: false,
-        notificacionesEmail: true
-    });
+    // Preferencias persistidas en localStorage.
+    const [ajustes, setAjustes] = useState(loadPrefs);
 
     useEffect(() => {
         if (user) {
@@ -65,12 +88,19 @@ const PerfilAdmin = () => {
     }, [user]);
 
     useEffect(() => {
-        // Cargar lista de empresas
         api.get('/users/companies')
-            .then(res => setEmpresas(res.data.data || []))
-            .catch(err => console.error(err));
+            .then(res => {
+                const raw = Array.isArray(res.data?.data) ? res.data.data : [];
+                // Acepta strings o { name }. Filtra vacíos y mergea con la lista base.
+                const fromApi = raw
+                    .map(x => (typeof x === 'string' ? x : x?.name))
+                    .filter(Boolean);
+                if (fromApi.length > 0) {
+                    setEmpresas([...new Set([...COMPANIES, ...fromApi])]);
+                }
+            })
+            .catch(() => { /* sin endpoint: queda la lista hardcodeada */ });
 
-        // Cargar estadísticas globales
         api.get('/metrics/global')
             .then(res => {
                 if (res.data.success && res.data.data) {
@@ -79,15 +109,33 @@ const PerfilAdmin = () => {
             })
             .catch(err => console.error("Error al cargar estadísticas:", err));
 
-        // Cargar actividad reciente (notificaciones)
-        api.get('/notifications')
+        // Pasajeros registrados: traemos la primera página con limit=1 y leemos
+        // el total de la paginación. Más barato que pedir el listado completo.
+        passengerService.getAllPassengers({ page: 1, limit: 1 })
             .then(res => {
-                if (res.data.success && Array.isArray(res.data.data)) {
-                    setNotificaciones(res.data.data.slice(0, 3));
-                }
+                const t = res?.stats?.total ?? res?.pagination?.total ?? null;
+                setTotalPassengers(typeof t === 'number' ? t : null);
             })
-            .catch(err => console.error("Error al cargar actividad:", err));
+            .catch(err => console.error("Error al cargar conteo de pasajeros:", err));
     }, []);
+
+    // Formateador para las cards de estadísticas: muestra '—' si el valor es
+    // null/undefined (no hay datos aún) y formatea el número si existe.
+    const fmtStat = (val, { decimals = 0, locale = true } = {}) => {
+        if (val === null || val === undefined) return '—';
+        const num = Number(val);
+        if (Number.isNaN(num)) return '—';
+        return locale ? num.toLocaleString(undefined, { maximumFractionDigits: decimals, minimumFractionDigits: decimals }) : num.toFixed(decimals);
+    };
+
+    // Persistencia de preferencias + aviso a otros componentes de la misma tab
+    // (el evento 'storage' nativo solo dispara en otras tabs).
+    useEffect(() => {
+        try {
+            localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(ajustes));
+            window.dispatchEvent(new CustomEvent('saferide-prefs-changed'));
+        } catch { /* sin storage */ }
+    }, [ajustes]);
 
     const manejarSeleccionFoto = (e) => {
         const file = e.target.files[0];
@@ -144,7 +192,7 @@ const PerfilAdmin = () => {
             // ───────────────── VALIDACIONES PREVIAS ─────────────────
             // Validar si hubo algún cambio real
             const phoneVal = user.phone ? `${String(user.phone).slice(0, 4)}-${String(user.phone).slice(4, 8)}` : '';
-            if (datosPerfil.name == user.name && datosPerfil.phone == phoneVal && datosPerfil.company == (user.company || '') && !nuevaFoto) {
+            if (datosPerfil.name === user.name && datosPerfil.phone === phoneVal && datosPerfil.company === (user.company || '') && !nuevaFoto) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Sin Cambios',
@@ -168,7 +216,7 @@ const PerfilAdmin = () => {
                 return;
             }
 
-            if (!/^[a-zA-Z\s]+$/.test(datosPerfil.name)) {
+            if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.\-']+$/.test(datosPerfil.name)) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
@@ -243,6 +291,82 @@ const PerfilAdmin = () => {
         } finally {
             setCargando(false);
         }
+    };
+
+    // ─── Seguridad ─────────────────────────────────────────
+    const handleCambiarPassword = async () => {
+        const { value: pwds } = await Swal.fire({
+            title: 'Cambiar contraseña',
+            html: `
+                <input id="cur-pwd" type="password" placeholder="Contraseña actual"  class="swal2-input" autocomplete="current-password" />
+                <input id="new-pwd" type="password" placeholder="Nueva contraseña"     class="swal2-input" autocomplete="new-password" />
+                <input id="cnf-pwd" type="password" placeholder="Confirmar nueva"      class="swal2-input" autocomplete="new-password" />
+            `,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Cambiar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#2563EB',
+            cancelButtonColor: '#64748B',
+            preConfirm: () => {
+                const cur = document.getElementById('cur-pwd').value;
+                const nu  = document.getElementById('new-pwd').value;
+                const cnf = document.getElementById('cnf-pwd').value;
+                if (!cur || !nu || !cnf)  { Swal.showValidationMessage('Todos los campos son obligatorios'); return false; }
+                if (nu.length < 8)        { Swal.showValidationMessage('La nueva contraseña debe tener al menos 8 caracteres'); return false; }
+                if (nu === cur)           { Swal.showValidationMessage('La nueva contraseña debe ser distinta a la actual'); return false; }
+                if (nu !== cnf)           { Swal.showValidationMessage('Las contraseñas no coinciden'); return false; }
+                return { currentPassword: cur, newPassword: nu };
+            },
+        });
+        if (!pwds) return;
+        try {
+            await api.patch('/auth/change-password', pwds);
+            Swal.fire({ icon: 'success', title: 'Contraseña actualizada', timer: 2000, showConfirmButton: false });
+        } catch (err) {
+            const msg = err.response?.status === 404
+                ? 'El endpoint /auth/change-password todavía no existe en el backend.'
+                : (err.response?.data?.message || err.message);
+            Swal.fire({ icon: 'error', title: 'No se pudo cambiar', text: msg, confirmButtonColor: '#EF4444' });
+        }
+    };
+
+    const handleCerrarSesionTodos = async () => {
+        const r = await Swal.fire({
+            icon: 'warning',
+            title: '¿Cerrar todas las sesiones?',
+            text: 'Tu sesión se cerrará en todos los dispositivos. Tendrás que volver a iniciar sesión aquí también.',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, cerrar todo',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#EF4444',
+            cancelButtonColor: '#64748B',
+        });
+        if (!r.isConfirmed) return;
+        try {
+            await api.post('/auth/logout-all');
+            cerrarSesion();
+        } catch (err) {
+            const msg = err.response?.status === 404
+                ? 'El endpoint /auth/logout-all todavía no existe en el backend.'
+                : (err.response?.data?.message || err.message);
+            Swal.fire({ icon: 'error', title: 'No se pudo cerrar todas las sesiones', text: msg, confirmButtonColor: '#EF4444' });
+        }
+    };
+
+    const handleCerrarSesion = async () => {
+        const r = await Swal.fire({
+            icon: 'question',
+            title: '¿Cerrar sesión?',
+            text: 'Volverás a la pantalla de inicio de sesión.',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, cerrar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#2563EB',
+            cancelButtonColor: '#64748B',
+        });
+        if (!r.isConfirmed) return;
+        cerrarSesion();
     };
 
     if (!user) return <div className="contenedorPerfil">Cargando...</div>;
@@ -378,15 +502,15 @@ const PerfilAdmin = () => {
                             <div className="contenedorUsername">
 
                                 <div className="grupoInput">
-                                    <label className="labelInput">Nombre de Usuario</label>
+                                    <label className="labelInput">Nombre de Usuario (no editable)</label>
                                     <div style={{ position: 'relative' }}>
                                         <input
                                             type="text"
                                             name="username"
                                             className="inputEstilizado"
                                             value={datosPerfil.username}
-                                            onChange={manejarCambioPerfil}
-                                            style={{ paddingLeft: '40px', width: '100%' }}
+                                            readOnly
+                                            style={{ paddingLeft: '40px', width: '100%', background: '#F1F5F9', color: '#64748B', cursor: 'not-allowed' }}
                                         />
                                         <FileUser size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: '#94A3B8' }} />
                                     </div>
@@ -407,6 +531,45 @@ const PerfilAdmin = () => {
                                             style={{ paddingLeft: '40px', width: '100%' }}
                                         />
                                         <User size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: '#94A3B8' }} />
+                                    </div>
+                                </div>
+
+                                <div className="grupoInput">
+                                    <label className="labelInput">Teléfono</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <input
+                                            type="text"
+                                            name="phone"
+                                            className="inputEstilizado"
+                                            value={datosPerfil.phone}
+                                            onChange={manejarCambioPerfil}
+                                            maxLength={9}
+                                            placeholder="0000-0000"
+                                            style={{ paddingLeft: '40px', width: '100%' }}
+                                        />
+                                        <Phone size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: '#94A3B8' }} />
+                                    </div>
+                                </div>
+
+                                <div className="grupoInput">
+                                    <label className="labelInput">Empresa</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <select
+                                            name="company"
+                                            className="inputEstilizado"
+                                            value={datosPerfil.company}
+                                            onChange={manejarCambioPerfil}
+                                            style={{ paddingLeft: '40px', width: '100%', appearance: 'none', cursor: 'pointer' }}
+                                        >
+                                            <option value="">Sin empresa</option>
+                                            {datosPerfil.company && !empresas.includes(datosPerfil.company) && (
+                                                <option value={datosPerfil.company}>{datosPerfil.company} (actual)</option>
+                                            )}
+                                            {empresas.map(e => (
+                                                <option key={e} value={e}>{e}</option>
+                                            ))}
+                                        </select>
+                                        <Building2 size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: '#94A3B8', pointerEvents: 'none' }} />
                                     </div>
                                 </div>
                             </div>
@@ -436,7 +599,7 @@ const PerfilAdmin = () => {
                     </div>
 
                     <p className="estadisticaEtiqueta">Viajes Corporativos</p>
-                    <h3 className="estadisticaValor">{(estadisticas.totalRides || 0).toLocaleString()}</h3>
+                    <h3 className="estadisticaValor">{fmtStat(estadisticas?.totalRides)}</h3>
                 </div>
 
                 <div className="tarjetaEstadistica">
@@ -447,7 +610,7 @@ const PerfilAdmin = () => {
                     </div>
 
                     <p className="estadisticaEtiqueta">Conductores Registrados</p>
-                    <h3 className="estadisticaValor">{estadisticas.totalDrivers || 0}</h3>
+                    <h3 className="estadisticaValor">{fmtStat(estadisticas?.totalDrivers)}</h3>
                 </div>
 
                 <div className="tarjetaEstadistica">
@@ -458,7 +621,7 @@ const PerfilAdmin = () => {
                     </div>
 
                     <p className="estadisticaEtiqueta">Funcionarios Beneficiados</p>
-                    <h3 className="estadisticaValor">{(estadisticas.totalPassengers || 0).toLocaleString()}</h3>
+                    <h3 className="estadisticaValor">{fmtStat(totalPassengers)}</h3>
                 </div>
 
                 <div className="tarjetaEstadistica">
@@ -469,9 +632,78 @@ const PerfilAdmin = () => {
                     </div>
 
                     <p className="estadisticaEtiqueta">CO₂ Ahorrado (kg)</p>
-                    <h3 className="estadisticaValor">{estadisticas.totalCarbonSaved?.toFixed(1) || 0}</h3>
+                    <h3 className="estadisticaValor">{fmtStat(estadisticas?.totalCarbonSaved, { decimals: 1 })}</h3>
                 </div>
             </div>
+
+            {/* ─── PREFERENCIAS ──────────────────────────────────── */}
+            <section className="tarjetaConfig">
+                <div className="tituloSeccion">
+                    <Bell size={18} />
+                    <div>
+                        <h2>Preferencias de Notificación</h2>
+                        <p>Controla qué tipo de alertas recibís y por qué medio.</p>
+                    </div>
+                </div>
+                <div className="listaPreferencias">
+                    {PREF_ITEMS.map(({ key, icon: Icon, label, desc }) => (
+                        <div key={key} className="itemPreferencia">
+                            <div className="iconoPreferencia"><Icon size={18} /></div>
+                            <div className="textoPreferencia">
+                                <span className="labelPreferencia">{label}</span>
+                                <span className="descPreferencia">{desc}</span>
+                            </div>
+                            <button
+                                type="button"
+                                role="switch"
+                                aria-checked={ajustes[key]}
+                                aria-label={label}
+                                className={`switch ${ajustes[key] ? 'is-on' : ''}`}
+                                onClick={() => toggleAjuste(key)}
+                            />
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* ─── SEGURIDAD ─────────────────────────────────────── */}
+            <section className="tarjetaConfig">
+                <div className="tituloSeccion">
+                    <Shield size={18} />
+                    <div>
+                        <h2>Seguridad</h2>
+                        <p>Gestiona tu contraseña y las sesiones activas.</p>
+                    </div>
+                </div>
+                <div className="listaSeguridad">
+                    <button type="button" className="itemSeguridad" onClick={handleCambiarPassword}>
+                        <div className="iconoSeguridad"><KeyRound size={18} /></div>
+                        <div className="textoSeguridad">
+                            <span className="labelSeguridad">Cambiar contraseña</span>
+                            <span className="descSeguridad">Recomendamos hacerlo cada 90 días.</span>
+                        </div>
+                        <span className="ctaSeguridad">Cambiar</span>
+                    </button>
+
+                    <button type="button" className="itemSeguridad" onClick={handleCerrarSesionTodos}>
+                        <div className="iconoSeguridad"><Smartphone size={18} /></div>
+                        <div className="textoSeguridad">
+                            <span className="labelSeguridad">Cerrar sesión en todos los dispositivos</span>
+                            <span className="descSeguridad">Útil si perdiste un equipo o sospechás de acceso no autorizado.</span>
+                        </div>
+                        <span className="ctaSeguridad">Cerrar todo</span>
+                    </button>
+
+                    <button type="button" className="itemSeguridad itemSeguridad--danger" onClick={handleCerrarSesion}>
+                        <div className="iconoSeguridad iconoSeguridad--danger"><LogOut size={18} /></div>
+                        <div className="textoSeguridad">
+                            <span className="labelSeguridad">Cerrar sesión aquí</span>
+                            <span className="descSeguridad">Salir de la sesión actual en este navegador.</span>
+                        </div>
+                        <span className="ctaSeguridad ctaSeguridad--danger">Salir</span>
+                    </button>
+                </div>
+            </section>
 
         </div>
     );

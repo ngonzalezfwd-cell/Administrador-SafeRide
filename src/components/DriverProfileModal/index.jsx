@@ -488,6 +488,8 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
       onSaved();
       onClose();
     } catch (err) {
+
+      
       console.error('Activate error:', err);
       toast.error('No se pudo reactivar: ' + (err.response?.data?.message || err.message));
     } finally {

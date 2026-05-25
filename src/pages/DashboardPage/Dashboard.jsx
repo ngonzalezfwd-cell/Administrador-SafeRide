@@ -305,54 +305,8 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/*  3. MONITOREO Y ALERTAS (NUEVO) */}
+                {/* 3. ALERTAS Y METAS */}
                 <div className="graficoGrid">
-                    <div className="graficos graficoFilaCompleta tarjetaMonitoreo">
-                        <div className="graficoHeader">
-                            <div className="tituloConIcono">
-                                <Activity size={20} className="color-green-dark" />
-                                <h3>Centro de Monitoreo en Tiempo Real</h3>
-                            </div>
-                            <div className="indicadorEnVivo">
-                                <span className="puntoPulso"></span>
-                                Sincronizado
-                            </div>
-                        </div>
-                        <div className="cuerpoMonitoreo">
-                            <div id="mapaSimulado" className="mapaPlaceholder">
-                                <div className="marcadorVehiculo v1" style={{ top: '30%', left: '40%' }}>
-                                    <Car size={16} />
-                                    <span className="etiquetaVehiculo">SafeRide #102</span>
-                                </div>
-                                <div className="marcadorVehiculo v2" style={{ top: '60%', left: '70%' }}>
-                                    <Car size={16} />
-                                    <span className="etiquetaVehiculo">SafeRide #045</span>
-                                </div>
-                                <div className="marcadorVehiculo v3" style={{ top: '45%', left: '20%' }}>
-                                    <Car size={16} />
-                                    <span className="etiquetaVehiculo">SafeRide #089</span>
-                                </div>
-                                <div className="overlayMapa">
-                                    <p>Visualizando 8 vehículos activos en la zona metropolitana</p>
-                                </div>
-                            </div>
-                            <div className="estadisticasRapidas">
-                                <div className="itemMiniEstadistica">
-                                    <span className="valorMini">{metricas.totalRides || 12}</span>
-                                    <span className="etiquetaMini">Viajes en curso</span>
-                                </div>
-                                <div className="itemMiniEstadistica">
-                                    <span className="valorMini">98%</span>
-                                    <span className="etiquetaMini">Cumplimiento</span>
-                                </div>
-                                <div className="itemMiniEstadistica">
-                                    <span className="valorMini">4.2 min</span>
-                                    <span className="etiquetaMini">Espera prom.</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <div id="panelAlertasCriticas" className="graficos tarjetaAlertas">
                         <div className="graficoHeader">
                             <div className="tituloConIcono">
