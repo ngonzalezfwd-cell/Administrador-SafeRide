@@ -28,10 +28,18 @@
   --q-slate-900: #0F172A;
 }
 
-/* Anular el margin-bottom del page-header dentro de quejas */
+/* Anular el margin-bottom del page-header dentro de quejas y forzar colores base */
 .quejas-container .page-header {
-  margin-bottom: 4px !important; /* Reducido de 8px */
+  margin-bottom: 4px !important;
   padding-bottom: 0 !important;
+}
+
+.quejas-container .page-header h1 {
+  color: var(--q-slate-900);
+}
+
+.quejas-container .page-header p {
+  color: var(--q-slate-500);
 }
 
 /* Acciones del header: badge + botón bien separados */
@@ -445,7 +453,7 @@
 
 /* Visor de mensaje */
 .q-message-box {
-  background: var(--q-slate-50) !important;
+  background: var(--q-slate-50);
   padding: 22px !important;
   border-radius: var(--q-radius-md) !important;
   position: relative !important;
@@ -613,7 +621,7 @@
 .n-preview-box strong {
   display: block;
   margin-bottom: 6px;
-  color: #0F172A;
+  color: inherit;
   font-weight: 700;
 }
 
@@ -719,7 +727,7 @@
 .n-message {
   font-size: 14.5px;
   font-weight: 600;
-  color: #1E293B;
+  color: inherit;
   margin: 0;
 }
 
