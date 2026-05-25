@@ -1,38 +1,75 @@
-/**
- * Pasajeros.jsx
- *
- * Página de Gestión de Pasajeros — SafeRide Admin Panel
- * Sincronizada con la estructura exacta de ConductoresPage.jsx para heredar estilos y UX.
- *
- * @author SafeRide Dev Team
- */
-
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 import {
-  LayoutDashboard, Users, UserCheck, Car, Calendar, CreditCard,
-  Bell, AlertCircle, ShieldCheck, Settings, Search, Menu,
-  ChevronDown, Plus, Mail, Star, Activity, Clock,
+  Users, Search, Plus, Mail, Star, Activity,
   Eye, Edit, Trash2, CheckCircle, Briefcase, Phone,
-  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
 } from 'lucide-react';
-import passengerService from '../../services/passengerService';
 import Swal from 'sweetalert2';
 import { toast, Toaster } from 'react-hot-toast';
+
+import passengerService from '../../services/passengerService';
 import DriverProfileModal from '../../components/DriverProfileModal';
+import DefaultImageUser from '../../imgs/DefaultImageUser.png';
 
 import '../DashboardPage/Dashboard.css';
 import '../ConductoresPage/ConductoresPage.css';
 import './Pasajeros.css';
-import IconSafeRide from '../../imgs/IconSafeRide.png';
-import DefaultImageUser from '../../imgs/DefaultImageUser.png';
 
 // ─────────────────────────────────────────────────────────────
-const getDefaultImagen = (url) => (url && url.trim() !== '') ? url : DefaultImageUser;
+// Constantes
+// ─────────────────────────────────────────────────────────────
+const ALPHABET = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
+const PAGE_LIMIT = 9;
+const SKELETON_COUNT = 6;
+const SEARCH_DEBOUNCE_MS = 300;
+const INITIAL_STATS = { total: 0, activeNow: 0, avgRating: 0 };
+
+const SWAL_BASE = {
+  showCancelButton: true,
+  cancelButtonColor: '#64748B',
+  cancelButtonText: 'Cancelar',
+  background: 'rgba(255, 255, 255, 0.9)',
+  backdrop: 'blur(4px)',
+};
 
 // ─────────────────────────────────────────────────────────────
-// COMPONENTE: Skeleton para carga de tarjetas
+// Helpers
+// ─────────────────────────────────────────────────────────────
+const getDefaultImagen = (url) => (url && url.trim() !== '' ? url : DefaultImageUser);
+
+const confirmAction = async ({ title, text, icon, confirmText, confirmColor }) => {
+  const result = await Swal.fire({
+    ...SWAL_BASE,
+    title,
+    text,
+    icon,
+    confirmButtonText: confirmText,
+    confirmButtonColor: confirmColor,
+  });
+  return result.isConfirmed;
+};
+
+const buildPageNumbers = (currentPage, totalPages) => {
+  const pages = [];
+  const maxVisible = 5;
+  if (totalPages <= maxVisible + 2) {
+    for (let i = 1; i <= totalPages; i++) pages.push(i);
+    return pages;
+  }
+  pages.push(1);
+  if (currentPage > 3) pages.push('...');
+  let start = Math.max(2, currentPage - 1);
+  let end = Math.min(totalPages - 1, currentPage + 1);
+  if (currentPage <= 3) end = 4;
+  if (currentPage >= totalPages - 2) start = totalPages - 3;
+  for (let i = start; i <= end; i++) pages.push(i);
+  if (currentPage < totalPages - 2) pages.push('...');
+  pages.push(totalPages);
+  return pages;
+};
+
+// ─────────────────────────────────────────────────────────────
+// Subcomponentes
 // ─────────────────────────────────────────────────────────────
 const CardSkeleton = () => (
   <div className="conductor-card skeleton">
@@ -56,92 +93,185 @@ const CardSkeleton = () => (
   </div>
 );
 
-const PassengerCard = React.memo(({ passenger, onEdit, onDelete, onActivate, onView, index }) => {
-  return (
-    <div className="conductor-card" style={{ '--card-index': index }}>
-      <div className="card-header">
-        <img
-          src={getDefaultImagen(passenger.profileImage)}
-          alt={passenger.name}
-          className="conductor-img"
-          loading="lazy"
-        />
-        <div className={`status-badge ${passenger.isActive ? 'active' : 'inactive'}`}>
-          {passenger.isActive ? 'Activo' : 'Inactivo'}
+const PassengerCard = React.memo(({ passenger, index, onEdit, onDelete, onActivate, onView }) => (
+  <div className="conductor-card" style={{ '--card-index': index }}>
+    <div className="card-header">
+      <img
+        src={getDefaultImagen(passenger.profileImage)}
+        alt={passenger.name}
+        className="conductor-img"
+        loading="lazy"
+      />
+      <div className={`status-badge ${passenger.isActive ? 'active' : 'inactive'}`}>
+        {passenger.isActive ? 'Activo' : 'Inactivo'}
+      </div>
+    </div>
+
+    <div className="card-content">
+      <h3 className="conductor-name">{passenger.name}</h3>
+      <p className="conductor-role">
+        <Mail size={13} style={{ marginRight: '6px' }} />
+        {passenger.email}
+      </p>
+
+      <div className="vehicle-info-mini" style={{ marginTop: '12px' }}>
+        <div className="info-item">
+          <Phone size={14} />
+          <span>{passenger.phone || 'Sin teléfono'}</span>
+        </div>
+        <div className="info-item">
+          <Briefcase size={14} />
+          <span>{passenger.company || 'Particular'}</span>
         </div>
       </div>
+    </div>
 
-      <div className="card-content">
-        <h3 className="conductor-name">{passenger.name}</h3>
-        <p className="conductor-role">
-          <Mail size={13} style={{ marginRight: '6px' }} />
-          {passenger.email}
-        </p>
-        
-        <div className="vehicle-info-mini" style={{ marginTop: '12px' }}>
-          <div className="info-item">
-            <Phone size={14} />
-            <span>{passenger.phone || 'Sin teléfono'}</span>
-          </div>
-          <div className="info-item">
-            <Briefcase size={14} />
-            <span>{passenger.company || 'Particular'}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="card-actions">
-        {!passenger.isActive ? (
-          <button 
-            className="action-btn activate" 
-            title="Activar" 
-            onClick={() => onActivate(passenger)}
-            style={{ color: '#10B981', background: 'rgba(16, 185, 129, 0.1)' }}
-          >
-            <CheckCircle size={18} />
-          </button>
-        ) : (
-          <button className="action-btn view" title="Ver Historial de Viajes" onClick={() => onView(passenger)}>
-            <Eye size={18} />
-          </button>
-        )}
-        <button className="action-btn edit" title="Editar" onClick={() => onEdit(passenger)}>
-          <Edit size={18} />
+    <div className="card-actions">
+      {!passenger.isActive ? (
+        <button
+          className="action-btn activate"
+          title="Activar"
+          onClick={() => onActivate(passenger)}
+          style={{ color: '#10B981', background: 'rgba(16, 185, 129, 0.1)' }}
+        >
+          <CheckCircle size={18} />
         </button>
+      ) : (
+        <button className="action-btn view" title="Ver Historial de Viajes" onClick={() => onView(passenger)}>
+          <Eye size={18} />
+        </button>
+      )}
+      <button className="action-btn edit" title="Editar" onClick={() => onEdit(passenger)}>
+        <Edit size={18} />
+      </button>
+      {passenger.isActive && (
         <button className="action-btn delete" title="Desactivar" onClick={() => onDelete(passenger)}>
           <Trash2 size={18} />
         </button>
+      )}
+    </div>
+  </div>
+));
+
+const StatCard = ({ icon: Icon, color, value, title, subtitle, loading }) => (
+  <div className="tarjetaEstadistica">
+    <div className="estadisticaHeader">
+      <div className={`estadisticaIcono ${color}`}><Icon size={20} /></div>
+      <div className="estadisticaValor">{loading ? '—' : value}</div>
+    </div>
+    <div className="estadisticaTitulo">{title}</div>
+    <div className="estadisticaFooter">
+      <span className="estadisticaSubtitulo">{subtitle}</span>
+    </div>
+  </div>
+);
+
+const StatsGrid = ({ loading, stats }) => (
+  <div className="graficosGrid">
+    <StatCard icon={Users}    color="color-blue"   value={stats.total}     title="Total Pasajeros" subtitle="Usuarios registrados" loading={loading} />
+    <StatCard icon={Activity} color="color-green"  value={stats.activeNow} title="Activos Ahora"   subtitle="Usuarios en línea"    loading={loading} />
+    <StatCard icon={Star}     color="color-yellow" value={stats.avgRating} title="Rating Promedio" subtitle="Valoración general"   loading={loading} />
+  </div>
+);
+
+const AlphabetFilter = ({ selected, onSelect }) => (
+  <div className="alphabet-filter">
+    <button
+      className={`letter-btn ${selected === '' ? 'active' : ''}`}
+      onClick={() => onSelect('')}
+    >
+      Todos
+    </button>
+    {ALPHABET.map((letter) => (
+      <button
+        key={letter}
+        className={`letter-btn ${selected === letter ? 'active' : ''}`}
+        onClick={() => onSelect(selected === letter ? '' : letter)}
+      >
+        {letter}
+      </button>
+    ))}
+  </div>
+);
+
+const Pagination = ({ currentPage, totalPages, onChange }) => {
+  const pages = useMemo(
+    () => buildPageNumbers(currentPage, totalPages),
+    [currentPage, totalPages],
+  );
+  if (totalPages <= 1) return null;
+
+  const atFirst = currentPage === 1;
+  const atLast  = currentPage === totalPages;
+
+  return (
+    <div className="pagination-container">
+      <button className="pagination-btn" disabled={atFirst} onClick={() => onChange(1)} title="Primera página">
+        <ChevronsLeft size={18} />
+      </button>
+      <button className="pagination-btn" disabled={atFirst} onClick={() => onChange(currentPage - 1)}>
+        <ChevronLeft size={18} />
+      </button>
+
+      <div className="pagination-numbers">
+        {pages.map((num, i) =>
+          num === '...' ? (
+            <span key={`dots-${i}`} className="pagination-dots">...</span>
+          ) : (
+            <button
+              key={`page-${num}`}
+              className={`page-num ${currentPage === num ? 'active' : ''}`}
+              onClick={() => onChange(num)}
+            >
+              {num}
+            </button>
+          ),
+        )}
       </div>
+
+      <button className="pagination-btn" disabled={atLast} onClick={() => onChange(currentPage + 1)}>
+        <ChevronRight size={18} />
+      </button>
+      <button className="pagination-btn" disabled={atLast} onClick={() => onChange(totalPages)} title="Última página">
+        <ChevronsRight size={18} />
+      </button>
     </div>
   );
-});
+};
+
+const EmptyState = () => (
+  <div className="empty-state-dashboard">
+    <Users size={48} />
+    <h3>No se encontraron pasajeros</h3>
+    <p>Intenta con otros filtros o verifica la conexión.</p>
+  </div>
+);
 
 // ─────────────────────────────────────────────────────────────
-// PÁGINA PRINCIPAL: PasajerosPage
+// Página
 // ─────────────────────────────────────────────────────────────
 const PasajerosPage = () => {
-  const { user, logout, cerrarSesion } = useAuth();
-  const location = useLocation();
-
+  // ── Data ───────────────────────────────────────────────────
   const [passengers, setPassengers] = useState([]);
+  const [stats, setStats] = useState(INITIAL_STATS);
   const [loading, setLoading] = useState(true);
+
+  // ── Filtros / orden / paginación ──────────────────────────
   const [searchTerm, setSearch] = useState('');
   const [selectedLetter, setSelectedLetter] = useState('');
-  const [sortOrder, setSortOrder] = useState('desc'); // 'desc' = más nuevos primero, 'asc' = más viejos primero
+  const [sortOrder, setSortOrder] = useState('desc'); // desc: nuevos primero | asc: viejos primero
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  // ── Modal ──────────────────────────────────────────────────
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalTab, setModalTab] = useState('info');
   const [selectedPassenger, setSelectedPassenger] = useState(null);
+
+  // ── Refs ───────────────────────────────────────────────────
   const lastRequestId = useRef(0);
-  const [stats, setStats] = useState({
-    total: 0,
-    activeNow: 0,
-    avgRating: 0,
-    totalRides: 0,
-  });
 
-
+  // ── Carga de datos ─────────────────────────────────────────
   const loadPassengers = useCallback(async () => {
     const requestId = ++lastRequestId.current;
     setLoading(true);
@@ -150,28 +280,31 @@ const PasajerosPage = () => {
         search: searchTerm,
         initial: selectedLetter,
         page: currentPage,
-        limit: 9,
-        sort: sortOrder
+        limit: PAGE_LIMIT,
+        sort: sortOrder,
       });
 
+      // Descartamos respuestas obsoletas (race entre filtros).
       if (requestId !== lastRequestId.current) return;
 
-      if (Array.isArray(response?.data)) {
-        setPassengers(response.data);
-        if (response.pagination) {
-          setTotalPages(response.pagination.pages || 1);
-        }
- 
-        setStats({
-          total: response.stats?.total || response.pagination?.total || 0,
-          activeNow: response.stats?.active || 0,
-          avgRating: (response.data.reduce((s, p) => s + (p.rating || 0), 0) / (response.data.length || 1)).toFixed(1),
-          totalRides: (response.stats?.total || 0) * 12,
-        });
-      } else {
+      if (!Array.isArray(response?.data)) {
         setPassengers([]);
-        setStats({ total: 0, activeNow: 0, avgRating: 0, totalRides: 0 });
+        setStats(INITIAL_STATS);
+        return;
       }
+
+      setPassengers(response.data);
+      if (response.pagination) {
+        setTotalPages(response.pagination.pages || 1);
+      }
+      setStats({
+        total: response.stats?.total || response.pagination?.total || 0,
+        activeNow: response.stats?.active || 0,
+        avgRating: (
+          response.data.reduce((s, p) => s + (p.rating || 0), 0) /
+          (response.data.length || 1)
+        ).toFixed(1),
+      });
     } catch (err) {
       console.error('[PasajerosPage] Error al cargar pasajeros:', err);
       setPassengers([]);
@@ -180,136 +313,94 @@ const PasajerosPage = () => {
     }
   }, [searchTerm, selectedLetter, currentPage, sortOrder]);
 
-  useEffect(() => { loadPassengers(); }, []);
-
+  // ── Efectos ────────────────────────────────────────────────
+  // Búsqueda y letra: debounce 300 ms, vuelve a página 1 si cambia.
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (currentPage !== 1) {
-        setCurrentPage(1);
-      } else {
-        loadPassengers();
-      }
-    }, 300);
-    return () => clearTimeout(timeoutId);
+    const id = setTimeout(() => {
+      if (currentPage !== 1) setCurrentPage(1);
+      else loadPassengers();
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, selectedLetter]);
 
+  // Cambio de orden: idéntica lógica de reset a página 1.
   useEffect(() => {
-    if (currentPage !== 1) {
-      setCurrentPage(1);
-    } else {
-      loadPassengers();
-    }
+    if (currentPage !== 1) setCurrentPage(1);
+    else loadPassengers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortOrder]);
 
+  // Cambio de página: carga + scroll al top.
   useEffect(() => {
     loadPassengers();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 
-  const handleOpenModal = (passenger = null) => {
+  // ── Handlers de modal ──────────────────────────────────────
+  const openModal = (passenger = null, tab = 'info') => {
     setSelectedPassenger(passenger);
-    setModalTab('info');
+    setModalTab(tab);
     setIsModalOpen(true);
   };
-
-  const handleViewTrips = (passenger) => {
-    setSelectedPassenger(passenger);
-    setModalTab('history');
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
+  const closeModal = () => {
     setIsModalOpen(false);
     setSelectedPassenger(null);
   };
 
-  const handleSaved = () => {
-    loadPassengers();
-  };
-
+  // ── Handlers de acción ─────────────────────────────────────
   const handleActivate = async (passenger) => {
-    Swal.fire({
+    const ok = await confirmAction({
       title: '¿Reactivar pasajero?',
       text: `Estás a punto de activar a ${passenger.name}`,
       icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#10B981',
-      cancelButtonColor: '#64748B',
-      confirmButtonText: 'Sí, activar',
-      cancelButtonText: 'Cancelar',
-      background: 'rgba(255, 255, 255, 0.9)',
-      backdrop: `blur(4px)`
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          await passengerService.activatePassenger(passenger._id);
-          toast.success('Pasajero reactivado correctamente');
-          loadPassengers();
-        } catch (err) {
-          console.error('Error activating passenger:', err);
-          toast.error('No se pudo reactivar al pasajero');
-        }
-      }
+      confirmText: 'Sí, activar',
+      confirmColor: '#10B981',
     });
+    if (!ok) return;
+    try {
+      await passengerService.activatePassenger(passenger._id);
+      toast.success('Pasajero reactivado correctamente');
+      loadPassengers();
+    } catch (err) {
+      console.error('Error activating passenger:', err);
+      toast.error('No se pudo reactivar al pasajero');
+    }
   };
 
   const handleDelete = async (passenger) => {
-    Swal.fire({
+    const ok = await confirmAction({
       title: '¿Desactivar pasajero?',
       text: `Esta acción pondrá a ${passenger.name} como inactivo.`,
       icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#EF4444',
-      cancelButtonColor: '#64748B',
-      confirmButtonText: 'Sí, desactivar',
-      cancelButtonText: 'Cancelar',
-      background: 'rgba(255, 255, 255, 0.9)',
-      backdrop: `blur(4px)`
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          await passengerService.deletePassenger(passenger._id);
-          toast.success('Pasajero desactivado correctamente');
-          loadPassengers();
-        } catch (err) {
-          console.error('Error deleting passenger:', err);
-          toast.error('No se pudo desactivar al pasajero');
-        }
-      }
+      confirmText: 'Sí, desactivar',
+      confirmColor: '#EF4444',
     });
-  };
-
-  const handleEdit = (passenger) => {
-    handleOpenModal(passenger);
-  };
-
-  // Lógica para generar números de página con elipsis (...)
-  const getPageNumbers = useMemo(() => {
-    const pages = [];
-    const maxVisible = 5;
-    
-    if (totalPages <= maxVisible + 2) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      pages.push(1);
-      if (currentPage > 3) pages.push('...');
-      
-      let start = Math.max(2, currentPage - 1);
-      let end = Math.min(totalPages - 1, currentPage + 1);
-      
-      if (currentPage <= 3) end = 4;
-      if (currentPage >= totalPages - 2) start = totalPages - 3;
-      
-      for (let i = start; i <= end; i++) pages.push(i);
-      
-      if (currentPage < totalPages - 2) pages.push('...');
-      pages.push(totalPages);
+    if (!ok) return;
+    try {
+      await passengerService.deletePassenger(passenger._id);
+      toast.success('Pasajero desactivado correctamente');
+      loadPassengers();
+    } catch (err) {
+      console.error('Error deleting passenger:', err);
+      toast.error('No se pudo desactivar al pasajero');
     }
-    return pages;
-  }, [totalPages, currentPage]);
+  };
 
-  const handleCerrarSesion = logout || cerrarSesion;
+  // ── Handlers de filtros ────────────────────────────────────
+  // Búsqueda y filtro alfabético son mutuamente excluyentes: al activar uno
+  // limpiamos el otro para evitar resultados confusos.
+  const handleSearchChange = (value) => {
+    setSearch(value);
+    if (value && selectedLetter) setSelectedLetter('');
+  };
+  const handleLetterSelect = (letter) => {
+    setSelectedLetter(letter);
+    if (letter) setSearch('');
+  };
 
+  // ── Render ─────────────────────────────────────────────────
   return (
     <>
       <Toaster position="top-right" />
@@ -327,10 +418,7 @@ const PasajerosPage = () => {
               type="text"
               placeholder="Filtrar pasajeros..."
               value={searchTerm}
-              onChange={e => {
-                setSearch(e.target.value);
-                if (e.target.value && selectedLetter) setSelectedLetter('');
-              }}
+              onChange={(e) => handleSearchChange(e.target.value)}
             />
             <button className="btn-search-header" onClick={loadPassengers}>
               Buscar
@@ -343,7 +431,7 @@ const PasajerosPage = () => {
           <div className="ordenamientoContainer">
             <select
               value={sortOrder}
-              onChange={e => setSortOrder(e.target.value)}
+              onChange={(e) => setSortOrder(e.target.value)}
               className="ordenamientoSelect"
             >
               <option value="desc">Más nuevos primero</option>
@@ -351,154 +439,45 @@ const PasajerosPage = () => {
             </select>
           </div>
 
-          <button className="btn-add-passenger" onClick={() => handleOpenModal(null)}>
+          <button className="btn-add-passenger" onClick={() => openModal(null, 'info')}>
             <Plus size={18} /> Nuevo Pasajero
           </button>
         </div>
       </div>
 
-      {/* --- ALPHABET FILTER --- */}
-      <div className="alphabet-filter">
-        <button
-          className={`letter-btn ${selectedLetter === '' ? 'active' : ''}`}
-          onClick={() => setSelectedLetter('')}
-        >
-          Todos
-        </button>
-        {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'Ñ', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'].map(letter => (
-          <button
-            key={letter}
-            className={`letter-btn ${selectedLetter === letter ? 'active' : ''}`}
-            onClick={() => {
-              const newLetter = selectedLetter === letter ? '' : letter;
-              setSelectedLetter(newLetter);
-              if (newLetter) setSearch(''); 
-            }}
-          >
-            {letter}
-          </button>
-        ))}
-      </div>
+      <AlphabetFilter selected={selectedLetter} onSelect={handleLetterSelect} />
 
-      <div className="graficosGrid">
-        <div className="tarjetaEstadistica">
-          <div className="estadisticaHeader">
-            <div className="estadisticaIcono color-blue"><Users size={20} /></div>
-            <div className="estadisticaValor">{loading ? '—' : stats.total}</div>
-          </div>
-          <div className="estadisticaTitulo">Total Pasajeros</div>
-          <div className="estadisticaFooter">
-            <span className="estadisticaSubtitulo">Usuarios registrados</span>
-          </div>
-        </div>
-
-        <div className="tarjetaEstadistica">
-          <div className="estadisticaHeader">
-            <div className="estadisticaIcono color-green"><Activity size={20} /></div>
-            <div className="estadisticaValor">{loading ? '—' : stats.activeNow}</div>
-          </div>
-          <div className="estadisticaTitulo">Activos Ahora</div>
-          <div className="estadisticaFooter">
-            <span className="estadisticaSubtitulo">Usuarios en línea</span>
-          </div>
-        </div>
-
-        <div className="tarjetaEstadistica">
-          <div className="estadisticaHeader">
-            <div className="estadisticaIcono color-yellow"><Star size={20} /></div>
-            <div className="estadisticaValor">{loading ? '—' : stats.avgRating}</div>
-          </div>
-          <div className="estadisticaTitulo">Rating Promedio</div>
-          <div className="estadisticaFooter">
-            <span className="estadisticaSubtitulo">Valoración general</span>
-          </div>
-        </div>
-      </div>
+      <StatsGrid loading={loading} stats={stats} />
 
       <div id="gridPasajeros" className="passengers-section">
         <div className={`conductoresGrid ${loading ? 'conductoresGrid--loading' : 'conductoresGrid--loaded'}`}>
-          {loading ? (
-            Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={`skp-${i}`} />)
-          ) : passengers.length > 0 ? (
-            passengers.map((p, index) => (
-              <PassengerCard
-                key={p._id}
-                passenger={p}
-                index={index}
-                onEdit={handleOpenModal}
-                onDelete={handleDelete}
-                onActivate={handleActivate}
-                onView={handleViewTrips}
-              />
-            ))
-          ) : (
-            <div className="empty-state-dashboard">
-              <Users size={48} />
-              <h3>No se encontraron pasajeros</h3>
-              <p>Intenta con otros filtros o verifica la conexión.</p>
-            </div>
-          )}
+          {loading
+            ? Array.from({ length: SKELETON_COUNT }).map((_, i) => <CardSkeleton key={`skp-${i}`} />)
+            : passengers.length > 0
+              ? passengers.map((p, index) => (
+                  <PassengerCard
+                    key={p._id}
+                    passenger={p}
+                    index={index}
+                    onEdit={(passenger) => openModal(passenger, 'info')}
+                    onView={(passenger) => openModal(passenger, 'history')}
+                    onDelete={handleDelete}
+                    onActivate={handleActivate}
+                  />
+                ))
+              : <EmptyState />}
         </div>
       </div>
 
-      {/* --- PAGINACIÓN INTELIGENTE --- */}
-      {totalPages > 1 && (
-        <div className="pagination-container">
-          <button 
-            className="pagination-btn" 
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage(1)}
-            title="Primera página"
-          >
-            <ChevronsLeft size={18} />
-          </button>
-          
-          <button 
-            className="pagination-btn" 
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage(prev => prev - 1)}
-          >
-            <ChevronLeft size={18} />
-          </button>
-          
-          <div className="pagination-numbers">
-            {getPageNumbers.map((num, i) => (
-              num === '...' ? (
-                <span key={`dots-${i}`} className="pagination-dots">...</span>
-              ) : (
-                <button
-                  key={`page-${num}`}
-                  className={`page-num ${currentPage === num ? 'active' : ''}`}
-                  onClick={() => setCurrentPage(num)}
-                >
-                  {num}
-                </button>
-              )
-            ))}
-          </div>
-
-          <button 
-            className="pagination-btn" 
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage(prev => prev + 1)}
-          >
-            <ChevronRight size={18} />
-          </button>
-
-          <button 
-            className="pagination-btn" 
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage(totalPages)}
-            title="Última página"
-          >
-            <ChevronsRight size={18} />
-          </button>
-        </div>
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onChange={setCurrentPage}
+      />
 
       <DriverProfileModal
         isOpen={isModalOpen}
-        onClose={handleCloseModal}
+        onClose={closeModal}
         driver={selectedPassenger}
         onSaved={loadPassengers}
         userType="pasajero"

@@ -454,6 +454,7 @@ const Dashboard = () => {
                                 </div>
                             ))}
                             {vehiculos.length === 0 && <div className="textoGris">No hay vehículos registrados</div>}
+
                         </div>
                     </div>
 

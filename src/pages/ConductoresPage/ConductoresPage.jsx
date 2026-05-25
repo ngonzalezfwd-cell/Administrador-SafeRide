@@ -129,9 +129,11 @@ const DriverCard = React.memo(({ driver, onEdit, onDelete, onActivate, onView, o
         <button className="action-btn edit" title="Editar" onClick={() => onEdit(driver)}>
           <Edit size={18} />
         </button>
-        <button className="action-btn delete" title="Desactivar" onClick={() => onDelete(driver)}>
-          <Trash2 size={18} />
-        </button>
+        {driver.isActive && (
+          <button className="action-btn delete" title="Desactivar" onClick={() => onDelete(driver)}>
+            <Trash2 size={18} />
+          </button>
+        )}
       </div>
     </div>
   );

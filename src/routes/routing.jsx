@@ -67,7 +67,7 @@ const Routing = () => (
         <Route path="/login"                element={<Login />} />
         <Route path="/Login"                element={<Login />} />
         <Route path="/recuperarPassword"    element={<RecuperarPassword />} />
-        <Route path="/nuevoPassword/:token" element={<NuevoPassword />} />
+        <Route path="/nuevoPassword"        element={<NuevoPassword />} />
 
         {/* ── RUTAS PRIVADAS (ADMIN ONLY) ───────────────────── */}
         <Route element={<PrivateRoute requiredRole="admin" />}>
