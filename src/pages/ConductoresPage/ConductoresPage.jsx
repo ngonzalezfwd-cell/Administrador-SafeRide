@@ -366,6 +366,18 @@ const ConductoresPage = () => {
     });
   };
 
+  // Filtrado local sobre la página ya cargada. Hace que la barra responda
+  // de inmediato aunque el backend tarde o falle: el usuario siempre ve
+  // resultados filtrados dentro de los conductores visibles en esta página.
+  const filteredDrivers = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return drivers;
+    return drivers.filter(d => {
+      const haystack = `${d.name || ''} ${d.username || ''} ${d.email || ''} ${d.phone || ''}`.toLowerCase();
+      return haystack.includes(term);
+    });
+  }, [drivers, searchTerm]);
+
   // Lógica para generar números de página con elipsis (...)
   const getPageNumbers = useMemo(() => {
     const pages = [];
@@ -515,8 +527,8 @@ const ConductoresPage = () => {
           {loading ? (
             // Mostrar 6 esqueletos mientras carga
             Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={`sk-${i}`} />)
-          ) : drivers.length > 0 ? (
-            drivers
+          ) : filteredDrivers.length > 0 ? (
+            filteredDrivers
               .filter(d => !showOnlyWithDocIssues || docFlagsByDriver[d._id])
               .map((driver, index) => (
                 <DriverCard

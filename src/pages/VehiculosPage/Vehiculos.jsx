@@ -12,6 +12,7 @@ import documentService from '../../services/documentService';
 import DocumentReviewPanel from '../../components/DocumentReviewPanel';
 import api from '../../services/api';
 import { toast } from 'react-hot-toast';
+import Swal from 'sweetalert2';
 import './Vehiculos.css';
 
 // Todos los documentos relevantes que verifica el Agente
@@ -308,6 +309,19 @@ const VehiculosPage = () => {
     }
   }, [filterStatus, debouncedSearch]);
 
+  // Filtrado local sobre los vehículos ya cargados. Hace que la barra de
+  // búsqueda responda al instante (placa, marca, modelo o nombre del conductor)
+  // aunque el backend tarde o falle.
+  const filteredVehicles = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return vehicles;
+    return vehicles.filter(v => {
+      const driverName = typeof v.driver_id === 'object' ? (v.driver_id?.name || '') : '';
+      const haystack = `${v.license_plate || ''} ${v.brand || ''} ${v.model || ''} ${v.color || ''} ${v.year || ''} ${driverName}`.toLowerCase();
+      return haystack.includes(term);
+    });
+  }, [vehicles, searchTerm]);
+
   // Lógica de números de página
   const getPageNumbers = useMemo(() => {
     const pages = [];
@@ -338,10 +352,38 @@ const VehiculosPage = () => {
     }
   };
 
-  const handleDeactivate = async (id) => {
-    if (!window.confirm('¿Estás seguro de desactivar este vehículo?')) return;
+  const handleDeactivate = async (vehicle) => {
+    // Datos legibles del vehículo para que el admin sepa exactamente cuál va a desactivar.
+    const label = [vehicle?.brand, vehicle?.model].filter(Boolean).join(' ') || 'este vehículo';
+    const plate = vehicle?.license_plate ? ` (placa ${vehicle.license_plate})` : '';
+    const driver = vehicle?.driver_id?.name ? ` del conductor ${vehicle.driver_id.name}` : '';
+
+    const { isConfirmed } = await Swal.fire({
+      title: '¿Desactivar vehículo?',
+      html: `
+        <p style="margin:0;color:#475569;font-size:0.95rem">
+          Estás a punto de desactivar <strong>${label}</strong>${plate}${driver}.
+        </p>
+        <p style="margin-top:10px;color:#64748B;font-size:0.85rem">
+          El vehículo dejará de aparecer como disponible y no podrá ser usado para nuevos viajes hasta que vuelva a aprobarse.
+        </p>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, desactivar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#EF4444',
+      cancelButtonColor: '#64748B',
+      background: 'rgba(255, 255, 255, 0.95)',
+      backdrop: 'blur(4px)',
+      reverseButtons: true,
+      focusCancel: true,
+    });
+
+    if (!isConfirmed) return;
+
     try {
-      await vehicleService.updateVehicleStatus(id, false);
+      await vehicleService.updateVehicleStatus(vehicle._id, false);
       toast.success('Vehículo desactivado');
       loadVehicles();
     } catch (error) {
@@ -439,10 +481,10 @@ const VehiculosPage = () => {
       <div className="vehicles-grid">
         {loading ? (
           Array.from({ length: 9 }).map((_, i) => <VehicleSkeleton key={`vsk-${i}`} />)
-        ) : vehicles.length === 0 ? (
+        ) : filteredVehicles.length === 0 ? (
           <div className="empty-state">No se encontraron vehículos.</div>
         ) : (
-          vehicles.map((vehicle, index) => (
+          filteredVehicles.map((vehicle, index) => (
             <div
               key={vehicle._id}
               className={`vehicle-card ${!vehicle.isActive ? 'is-pending' : ''}`}
@@ -528,7 +570,7 @@ const VehiculosPage = () => {
                   {vehicle.isActive ? (
                     <button
                       className="action-btn deactivate"
-                      onClick={() => handleDeactivate(vehicle._id)}
+                      onClick={() => handleDeactivate(vehicle)}
                     >
                       Desactivar
                     </button>

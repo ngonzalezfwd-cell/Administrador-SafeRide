@@ -5,7 +5,7 @@ import {
   X, Save, Upload, User, Truck, Mail, AtSign, Calendar,
   Users, Palette, CheckCircle, AlertCircle, MapPin, Clock,
   History, Navigation, FileCheck, IdCard,
-  Power, PowerOff, Trash2, AlertTriangle
+  Power, PowerOff, Trash2, AlertTriangle, ShieldCheck, Plus, Minus, RefreshCw
 } from 'lucide-react';
 import driverService from '../../services/driverService';
 import passengerService from '../../services/passengerService';
@@ -224,6 +224,16 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
   // Loading independiente para las acciones de la "zona de riesgo".
   const [dangerLoading, setDangerLoading] = useState(false);
 
+  // TrustScore local: refleja el valor PENDIENTE (lo que se aplicará al guardar).
+  // Mientras el modal esté abierto, los botones +/- / restaurar solo modifican
+  // este estado y empujan la acción a `pendingTrustOps`. Las llamadas reales
+  // a la API se hacen dentro de handleSubmit cuando el admin clickea
+  // "Actualizar Perfil". Si cierra sin guardar, se descarta todo (useEffect
+  // de hidratación abajo resetea ambos estados).
+  const [trustScore, setTrustScore] = useState(driver?.trustScore ?? 4);
+  const [pendingTrustOps, setPendingTrustOps] = useState([]);
+  const [trustLoading, setTrustLoading] = useState(false);
+
   useEffect(() => {
     let next;
     if (isEditMode) {
@@ -268,6 +278,8 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
     setEmailStatus('idle');
     setStep('');
     setFieldErrors({});
+    setTrustScore(driver?.trustScore ?? 4);
+    setPendingTrustOps([]); // Descarta cambios pendientes al re-hidratar (abrir/cerrar modal o cambiar de usuario).
     if (isOpen) {
       setActiveTab(initialTab);
     }
@@ -379,6 +391,7 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
   const hasChanges = () => {
     if (!isEditMode)       return true;
     if (avatarFile)        return true;
+    if (pendingTrustOps.length > 0) return true; // hay cambios de trust por aplicar
     if (!initialFormRef.current) return true;
     return JSON.stringify(form) !== initialFormRef.current;
   };
@@ -567,8 +580,91 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
     }
   };
 
+  // NOTA: handleTrust ya NO llama a la API. Solo modifica el score mostrado
+  // y empuja la operación a pendingTrustOps. La aplicación real al backend
+  // ocurre dentro de handleSubmit cuando el admin guarda el perfil.
+  // Esto permite que el admin pueda cambiar de opinión (cerrar el modal sin
+  // guardar descarta todos los pendientes vía el useEffect de hidratación).
+  const handleTrust = async (action) => {
+    console.log('[Trust] handleTrust called with action=', action, 'currentScore=', trustScore);
+    const isReset     = action === 'reset';
+    const isDecrement = action === 'decrement';
+
+    // Guards: cada acción tiene un piso/techo distinto.
+    //   increment/reset → no tiene sentido si ya está en 4
+    //   decrement       → no tiene sentido si ya está en 0
+    if (!isDecrement && trustScore >= 4) {
+      console.log('[Trust] early-return: trustScore at max');
+      return;
+    }
+    if (isDecrement && trustScore <= 0) {
+      console.log('[Trust] early-return: trustScore at min');
+      return;
+    }
+
+    const nextScore = isReset
+      ? 4
+      : (isDecrement ? Math.max(trustScore - 1, 0) : Math.min(trustScore + 1, 4));
+
+    // Warning extra cuando el decremento lleva al usuario a 0 (cuenta se desactiva).
+    const willDeactivate = isDecrement && nextScore === 0;
+
+    let title, text, confirmText, confirmColor, icon;
+    if (isReset) {
+      title = '¿Restaurar al máximo?';
+      text  = `${driver.name} tendrá 4 puntos de confianza cuando guardes el perfil.`;
+      confirmText  = 'Sí, marcar para guardar';
+      confirmColor = '#10B981';
+      icon = 'question';
+    } else if (isDecrement) {
+      title = willDeactivate ? '¿Bajar a 0 y desactivar?' : '¿Bajar un punto?';
+      text  = willDeactivate
+        ? `${driver.name} pasará a 0 puntos y su cuenta quedará desactivada cuando guardes el perfil.`
+        : `${driver.name} pasará de ${trustScore} a ${nextScore} puntos cuando guardes el perfil.`;
+      confirmText  = willDeactivate ? 'Sí, marcar para guardar' : 'Sí, marcar';
+      confirmColor = '#EF4444';
+      icon = willDeactivate ? 'warning' : 'question';
+    } else {
+      title = '¿Sumar un punto?';
+      text  = `${driver.name} pasará de ${trustScore} a ${nextScore} puntos cuando guardes el perfil.`;
+      confirmText  = 'Sí, marcar';
+      confirmColor = '#10B981';
+      icon = 'question';
+    }
+
+    const r = await Swal.fire({
+      ...SWAL_OVER,
+      icon,
+      title,
+      text,
+      showCancelButton: true,
+      confirmButtonText: confirmText,
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: confirmColor,
+      cancelButtonColor: '#64748B',
+      focusCancel: isDecrement,
+    });
+    if (!r.isConfirmed) return;
+
+    // Buffer local — la API se llama en handleSubmit.
+    setTrustScore(nextScore);
+    setPendingTrustOps(prev => {
+      const updated = [...prev, action];
+      console.log('[Trust] buffered op:', action, '→ queue:', updated, 'nextScore:', nextScore);
+      return updated;
+    });
+  };
+
+  // Descarta cambios de trust pendientes sin tocar la API.
+  // Usado por el botón "Descartar cambios" en la sección de trust.
+  const discardPendingTrust = () => {
+    setPendingTrustOps([]);
+    setTrustScore(driver?.trustScore ?? 4);
+  };
+
   const handleSubmit = async e => {
     e.preventDefault();
+    console.log('[Submit] start. pendingTrustOps=', pendingTrustOps, 'isEditMode=', isEditMode);
 
     const errors = validateAll(form, { isPassenger });
     if (!isEditMode) {
@@ -576,15 +672,18 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
       if (usernameStatus === 'taken') errors.username = 'Este nombre de usuario ya está en uso';
     }
     if (Object.keys(errors).length > 0) {
+      console.log('[Submit] aborted: validation errors', errors);
       setFieldErrors(errors);
       showValidationAlert(errors);
       return;
     }
 
     if (!hasChanges()) {
+      console.log('[Submit] aborted: hasChanges()=false. pendingTrustOps=', pendingTrustOps);
       showNoChangesAlert();
       return;
     }
+    console.log('[Submit] validations passed, proceeding to API calls');
 
     setSubmitting(true);
     try {
@@ -664,6 +763,38 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
             };
             await api.post('/vehicles', vehiclePayload);
           }
+        }
+      }
+
+      // Aplica las operaciones de trust pendientes (acumuladas mientras el
+      // admin clickeaba +1 / Bajar 1 / Restaurar). Se ejecutan secuencialmente
+      // contra PATCH /users/:id/trust. Cada una queda registrada en TrustHistory
+      // con su propia razón (admin_increment / admin_decrement / admin_reset).
+      // Solo aplica en modo edición — en registro nuevo el usuario ya nace con
+      // trustScore=4 por default y no hay nada que ajustar antes de guardar.
+      // Importante: usamos try/catch propio aquí para que un error de trust
+      // NO sea enmascarado por el catch general "Error: ..." (que el admin
+      // confunde con un fallo del perfil completo). Si una op falla, se
+      // muestra toast específico, se mantiene la cola pendiente y NO se cierra
+      // el modal — así el admin puede reintentar.
+      if (isEditMode && pendingTrustOps.length > 0 && savedDriverId) {
+        setStep('Aplicando cambios de confianza...');
+        const updateTrustFn = isPassenger
+          ? passengerService.updateTrust
+          : driverService.updateTrust;
+        try {
+          for (const op of pendingTrustOps) {
+            const res = await updateTrustFn(savedDriverId, op);
+            console.log('[Trust] op:', op, '→', res?.trust);
+          }
+          setPendingTrustOps([]);
+        } catch (trustErr) {
+          console.error('[Trust] update failed:', trustErr.response?.data || trustErr);
+          const msg = trustErr.response?.data?.message || trustErr.message;
+          toast.error('Perfil guardado pero falló el cambio de confianza: ' + msg);
+          setSubmitting(false);
+          setStep('');
+          return; // no cerramos el modal — el admin ve los cambios pendientes y puede reintentar
         }
       }
 
@@ -875,6 +1006,83 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
               </>
             )}
 
+            {isEditMode && (
+              <>
+                <div className="section-title"><ShieldCheck size={14} /> Puntaje de Confianza</div>
+                <div className="trust-section">
+                  <div className="trust-score-display">
+                    <div className="trust-dots" aria-label={`Puntaje ${trustScore} de 4`}>
+                      {[0, 1, 2, 3].map(i => (
+                        <span key={i} className={`trust-dot ${i < trustScore ? 'filled' : ''}`} />
+                      ))}
+                    </div>
+                    <span className="trust-score-text">
+                      {trustScore} / 4
+                      {pendingTrustOps.length > 0 && (
+                        <span style={{
+                          marginLeft: 8, fontSize: '0.72rem', fontWeight: 600,
+                          color: '#B45309', background: '#FEF3C7',
+                          padding: '2px 8px', borderRadius: 4,
+                        }}>
+                          {pendingTrustOps.length} cambio{pendingTrustOps.length === 1 ? '' : 's'} pendiente{pendingTrustOps.length === 1 ? '' : 's'}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <p className="trust-help">
+                    Los puntos se descuentan automáticamente por mala conducta. El admin puede subirlos, bajarlos o restaurarlos al máximo.
+                    {pendingTrustOps.length > 0 && (
+                      <>
+                        {' '}<strong>Los cambios marcados se aplicarán al presionar "Actualizar Perfil".</strong>
+                      </>
+                    )}
+                  </p>
+                  <div className="trust-buttons">
+                    <button
+                      type="button"
+                      className="btn-trust-inc"
+                      onClick={() => handleTrust('increment')}
+                      disabled={trustScore >= 4 || trustLoading || submitting || dangerLoading}
+                    >
+                      <Plus size={14} /> Sumar 1
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-trust-dec"
+                      onClick={() => handleTrust('decrement')}
+                      disabled={trustScore <= 0 || trustLoading || submitting || dangerLoading}
+                      title={trustScore <= 0 ? 'Ya está en el mínimo' : 'Bajar un punto'}
+                    >
+                      <Minus size={14} /> Bajar 1
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-trust-reset"
+                      onClick={() => handleTrust('reset')}
+                      disabled={trustScore >= 4 || trustLoading || submitting || dangerLoading}
+                    >
+                      <RefreshCw size={14} /> Restaurar al máximo
+                    </button>
+                  </div>
+                  {pendingTrustOps.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={discardPendingTrust}
+                      disabled={submitting || dangerLoading}
+                      style={{
+                        marginTop: 8, padding: '6px 12px', fontSize: '0.78rem',
+                        color: '#64748B', background: 'transparent',
+                        border: '1px solid #CBD5E1', borderRadius: 4,
+                        cursor: 'pointer', fontWeight: 500,
+                      }}
+                    >
+                      Descartar cambios pendientes
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+
             <div className="modal-footer">
               <button
                 type="submit"
@@ -882,6 +1090,7 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
                 disabled={
                   submitting
                   || dangerLoading
+                  || trustLoading
                   || (!isEditMode && (usernameStatus === 'checking' || emailStatus === 'checking'))
                   || (!isEditMode && (usernameStatus === 'taken' || emailStatus === 'taken'))
                   || Object.values(fieldErrors).some(Boolean)
@@ -901,7 +1110,7 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
                         type="button"
                         className="btn-deactivate"
                         onClick={handleDeactivate}
-                        disabled={submitting || dangerLoading}
+                        disabled={submitting || dangerLoading || trustLoading}
                       >
                         <PowerOff size={14} /> Desactivar
                       </button>
@@ -910,7 +1119,7 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
                         type="button"
                         className="btn-activate"
                         onClick={handleActivateInModal}
-                        disabled={submitting || dangerLoading}
+                        disabled={submitting || dangerLoading || trustLoading}
                       >
                         <Power size={14} /> Activar
                       </button>
@@ -919,7 +1128,7 @@ const DriverProfileModal = ({ isOpen, onClose, driver, onSaved, userType = 'cond
                       type="button"
                       className="btn-hard-delete"
                       onClick={handleHardDelete}
-                      disabled={submitting || dangerLoading}
+                      disabled={submitting || dangerLoading || trustLoading}
                     >
                       <Trash2 size={14} /> Eliminar por completo
                     </button>

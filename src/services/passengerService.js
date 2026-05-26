@@ -97,6 +97,17 @@ const passengerService = {
   },
 
   /**
+   * Actualiza el trustScore del pasajero. Solo admins.
+   * @param {string} id
+   * @param {'increment'|'reset'} action - 'increment' suma +1 (cap 4); 'reset' lo pone en 4.
+   * @returns {Promise<{ success, message, data, trust: { previousScore, newScore, changed } }>}
+   */
+  updateTrust: async (id, action) => {
+    const response = await api.patch(`/users/${id}/trust`, { action });
+    return response.data;
+  },
+
+  /**
    * Elimina PERMANENTEMENTE un pasajero del sistema (hard delete).
    * Esta operación no se puede deshacer. Solo admins.
    * @param {string} id
