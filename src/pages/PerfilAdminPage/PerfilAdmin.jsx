@@ -35,7 +35,7 @@ const loadPrefs = () => {
 };
 
 const PREF_ITEMS = [
-    { key: 'alertasEmergencia',   icon: AlertTriangle, label: 'Alertas de emergencia',     desc: 'Recibe avisos cuando se reporta una incidencia crítica.' },
+    { key: 'alertasEmergencia',   icon: AlertTriangle, label: 'Alertas de emergencia',     desc: 'Muestra el panel de alertas SOS en el Dashboard.' },
     { key: 'reportesDiarios',     icon: Send,          label: 'Reportes diarios',          desc: 'Resumen automático al final de cada día por correo.' },
     { key: 'monitoreoTiempoReal', icon: Activity,      label: 'Monitoreo en tiempo real',  desc: 'Notificaciones push de cada viaje en curso.' },
     { key: 'notificacionesEmail', icon: Bell,          label: 'Notificaciones por email',  desc: 'Cualquier evento relevante llega a tu correo.' },

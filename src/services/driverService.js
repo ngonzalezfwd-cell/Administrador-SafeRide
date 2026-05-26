@@ -48,6 +48,12 @@ export const activateDriver = async (id) => {
   return res.data;
 };
 
+// Actualiza el trustScore. action: 'increment' (+1, cap 4) | 'reset' (= 4). Admin only.
+export const updateTrust = async (id, action) => {
+  const res = await api.patch(`/users/${id}/trust`, { action });
+  return res.data;
+};
+
 // Hard delete: elimina al conductor permanentemente. Irrecuperable.
 export const hardDeleteDriver = async (id) => {
   const res = await api.delete(`/users/${id}/hard`);
@@ -71,6 +77,7 @@ export default {
   updateDriver,
   deleteDriver,
   activateDriver,
+  updateTrust,
   hardDeleteDriver,
   uploadImage
 };

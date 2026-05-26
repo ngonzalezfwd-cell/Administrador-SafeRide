@@ -4,8 +4,8 @@ import api from '../../services/api';
 import Swal from 'sweetalert2';
 import { toast, Toaster } from 'react-hot-toast';
 import {
-    Users, Car, Calendar, AlertCircle, ShieldCheck,
-    ArrowUpRight, ArrowDownRight, ChevronDown, Activity, Zap
+    Users, Car, Calendar, AlertCircle, ShieldCheck, BellOff,
+    ArrowUpRight, ArrowDownRight, ChevronDown, Zap
 } from 'lucide-react';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import './Dashboard.css';
 import DefaultImageUser from '../../imgs/DefaultImageUser.png';
+import { useAdminPref } from '../../hooks/useAdminPref';
 
 // ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 // ──────────────────────────────────────────────────────────────────────────────────────────────────
@@ -30,7 +31,7 @@ const TarjetaEstadistica = React.memo(({ icon, title, value, change, isPositive,
             <>
                 <div className="estadisticaHeader">
                     <div className="estadisticaIcono">{icon}</div>
-                    <div className="estadisticaValor">{value}</div>
+                    <div className="estadisticaValor">{value ?? '—'}</div>
                 </div>
                 <div className="estadisticaTitulo">{title}</div>
                 <div className="estadisticaFooter">
@@ -55,24 +56,44 @@ const Dashboard = () => {
     const [metricas, setMetricas] = useState({});
     const [vehiculos, setVehiculos] = useState([]);
     const [usuarios, setUsuarios] = useState([]);
+    const [totalAdmins, setTotalAdmins] = useState(0);
+    const [payments, setPayments] = useState({ paid: 0, pending: 0, waived: 0 });
     const [loading, setLoading] = useState(true);
     const [alertasSOS, setAlertasSOS] = useState([
         { id: 'sos-1', tipo: 'critica', titulo: 'Botón SOS Activado', descripcion: 'Conductor: Roberto M. · Ruta 14-B', tiempo: 'Hace 2 min', atendida: false },
         { id: 'sos-2', tipo: 'advertencia', titulo: 'Retraso por Tráfico Alto', descripcion: 'Zona Norte · 5 funcionarios afectados', tiempo: 'Hace 15 min', atendida: false },
     ]);
+    const alertasEnabled = useAdminPref('alertasEmergencia', true);
 
     useEffect(() => {
         const CargarDatos = async () => {
             try {
-                const [metricasRes, vehiculosRes, usuariosRes] = await Promise.all([
+                // /metrics/global solo trae totalUsers y totalDrivers; pedimos los admins
+                // y las bookings aparte porque el backend no expone esos agregados.
+                // Para los admins leemos pagination.total con limit=1 (no necesitamos docs).
+                // Para los pagos pedimos hasta 1000 bookings y contamos payment_status
+                // localmente; cuando el backend exponga /metrics/payments, sustituir esto.
+                const [metricasRes, vehiculosRes, usuariosRes, adminsRes, bookingsRes] = await Promise.all([
                     api.get('/metrics/global').catch(() => ({ data: { data: {} } })),
                     api.get('/vehicles?limit=5').catch(() => ({ data: { data: [] } })),
-                    api.get('/users?limit=5').catch(() => ({ data: { data: [] } }))
+                    api.get('/users?limit=5').catch(() => ({ data: { data: [] } })),
+                    api.get('/users?type=admin&limit=1').catch(() => ({ data: { pagination: { total: 0 } } })),
+                    api.get('/bookings?limit=1000').catch(() => ({ data: { data: [] } }))
                 ]);
 
                 setMetricas(metricasRes.data?.data || {});
                 setVehiculos(vehiculosRes.data?.data?.docs || vehiculosRes.data?.data || []);
                 setUsuarios(usuariosRes.data?.data || usuariosRes.data?.data?.docs || []);
+                setTotalAdmins(adminsRes.data?.pagination?.total || 0);
+
+                const bookingsList = bookingsRes.data?.data?.docs || bookingsRes.data?.data || [];
+                const paymentCounts = bookingsList.reduce((acc, b) => {
+                    const s = b.payment_status;
+                    if (s === 'paid' || s === 'pending' || s === 'waived') acc[s] += 1;
+                    return acc;
+                }, { paid: 0, pending: 0, waived: 0 });
+                setPayments(paymentCounts);
+
                 setLoading(false);
 
             } catch (error) {
@@ -115,22 +136,28 @@ const Dashboard = () => {
 
     const totalUsuarios = metricas.totalUsers || 0;
     const totalConductores = metricas.totalDrivers || 0;
-    const totalPasajeros = totalUsuarios > 0 ? totalUsuarios - totalConductores : 0;
+    // Los pasajeros son el residuo: total activos − conductores − admins.
+    // Antes se calculaba como total − conductores, lo que metía a los admins
+    // dentro de "Pasajeros" y dejaba "Moderadores" siempre en 0 → caía al
+    // fallback hardcodeado de 14.
+    const totalPasajeros = Math.max(0, totalUsuarios - totalConductores - totalAdmins);
     const totalViajes = metricas.totalRides || 0;
-    const totalKM = metricas.totalKilometers || 0;
-    const totalCarbon = metricas.totalCarbonSaved || 0;
 
     const pieDataRoles = useMemo(() => [
-        { name: 'Pasajeros', value: totalPasajeros > 0 ? totalPasajeros : 892, color: '#3B82F6' },
-        { name: 'Conductores', value: totalConductores > 0 ? totalConductores : 342, color: '#10B981' },
-        { name: 'Moderadores', value: (totalUsuarios - totalPasajeros - totalConductores) > 0 ? (totalUsuarios - totalPasajeros - totalConductores) : 14, color: '#8B5CF6' },
-    ], [totalPasajeros, totalConductores, totalUsuarios]);
+        { name: 'Pasajeros',   value: totalPasajeros,   color: '#3B82F6' },
+        { name: 'Conductores', value: totalConductores, color: '#10B981' },
+        { name: 'Moderadores', value: totalAdmins,      color: '#8B5CF6' },
+    ], [totalPasajeros, totalConductores, totalAdmins]);
 
+    // Backend usa payment_status ∈ {paid, pending, waived}. No existe 'failed'
+    // como tal; mapeamos 'waived' (cortesía/exonerado) al slot rojo "Eximidos".
     const pieDataPagos = useMemo(() => [
-        { name: 'Pagados', value: 100, color: '#10B981' },
-        { name: 'Pendientes', value: 100, color: '#F59E0B' },
-        { name: 'Fallidos', value: 100, color: '#EF4444' },
-    ], []);
+        { name: 'Pagados',    value: payments.paid,    color: '#10B981' },
+        { name: 'Pendientes', value: payments.pending, color: '#F59E0B' },
+        { name: 'Eximidos',   value: payments.waived,  color: '#EF4444' },
+    ], [payments]);
+
+    const totalPagos = payments.paid + payments.pending + payments.waived;
 
     const lineData = useMemo(() => [
         { name: '14 May', value: 30 },
@@ -166,10 +193,10 @@ const Dashboard = () => {
 
                 {/*  1. ESTADISTICAS PRINCIPALES */}
                 <div className="graficosGrid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-                    <TarjetaEstadistica loading={loading} icon={<Users size={20} className="color-purple" />} title="Usuarios Totales" value={totalUsuarios.toLocaleString()} change="12.5%" isPositive={true} subtitle="Crecimiento" />
-                    <TarjetaEstadistica loading={loading} icon={<Calendar size={20} className="color-blue" />} title="Viajes Completados" value={totalViajes.toLocaleString()} change="15.7%" isPositive={true} subtitle="Éxito" />
-                    <TarjetaEstadistica loading={loading} icon={<Car size={20} className="color-yellow" />} title="KM Totales" value={`${totalKM.toLocaleString()} km`} change="4.3%" isPositive={true} subtitle="Alcance de red" />
-                    <TarjetaEstadistica loading={loading} icon={<AlertCircle size={20} className="color-green" />} title="Carbono Ahorrado" value={`${totalCarbon.toFixed(1)} kg`} change="5.6%" isPositive={true} subtitle="Sostenibilidad" />
+                    <TarjetaEstadistica loading={loading} icon={<Users size={20} className="color-purple" />} title="Usuarios Totales" value={metricas.totalUsers != null ? metricas.totalUsers.toLocaleString() : null} change="12.5%" isPositive={true} subtitle="Crecimiento" />
+                    <TarjetaEstadistica loading={loading} icon={<Calendar size={20} className="color-blue" />} title="Viajes Completados" value={metricas.totalRides != null ? metricas.totalRides.toLocaleString() : null} change="15.7%" isPositive={true} subtitle="Éxito" />
+                    <TarjetaEstadistica loading={loading} icon={<Car size={20} className="color-yellow" />} title="KM Totales" value={metricas.totalKilometers != null ? `${metricas.totalKilometers.toLocaleString()} km` : null} change="4.3%" isPositive={true} subtitle="Alcance de red" />
+                    <TarjetaEstadistica loading={loading} icon={<AlertCircle size={20} className="color-green" />} title="Carbono Ahorrado" value={metricas.totalCarbonSaved != null ? `${metricas.totalCarbonSaved.toFixed(1)} kg` : null} change="5.6%" isPositive={true} subtitle="Sostenibilidad" />
                 </div>
 
 
@@ -231,7 +258,7 @@ const Dashboard = () => {
 
                                     <span className="etiquetaTotal">Total</span>
 
-                                    <span className="valorTotal">1,896</span>
+                                    <span className="valorTotal">{totalPagos.toLocaleString()}</span>
                                 </div>
                             </div>
 
@@ -246,7 +273,7 @@ const Dashboard = () => {
                                         <div className="detallesLeyenda">
 
                                             <span className="nombreLeyenda">{item.name}</span>
-                                            <span className="valorLeyenda">{item.value} <span className="porcentajeLeyenda">({((item.value / 1896) * 100).toFixed(1)}%)</span></span>
+                                            <span className="valorLeyenda">{item.value} <span className="porcentajeLeyenda">({totalPagos > 0 ? ((item.value / totalPagos) * 100).toFixed(1) : '0.0'}%)</span></span>
                                         </div>
                                     </div>
                                 ))}
@@ -316,7 +343,13 @@ const Dashboard = () => {
                             <Link to="/quejas" className="botonVerTodos" style={{fontSize:'12px'}}>Ver quejas</Link>
                         </div>
                         <div className="cuerpoAlertas">
-                            {alertasSOS.length === 0 ? (
+                            {!alertasEnabled ? (
+                                <div style={{ textAlign: 'center', padding: '24px 0', color: '#94A3B8' }}>
+                                    <BellOff size={32} style={{ marginBottom: '8px', opacity: 0.6 }} />
+                                    <p style={{ fontSize: '0.85rem', fontWeight: 600 }}>Alertas de emergencia desactivadas</p>
+                                    <p style={{ fontSize: '0.78rem' }}>Actívalas desde tu perfil para verlas aquí</p>
+                                </div>
+                            ) : alertasSOS.length === 0 ? (
                                 <div style={{ textAlign: 'center', padding: '24px 0', color: '#10B981' }}>
                                     <ShieldCheck size={32} style={{ marginBottom: '8px', opacity: 0.7 }} />
                                     <p style={{ fontSize: '0.85rem', fontWeight: 600 }}>Sin alertas activas</p>

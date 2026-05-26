@@ -303,6 +303,96 @@
   to { transform: rotate(360deg); }
 }
 
+/* Puntaje de Confianza — control admin del trustScore. */
+.trust-section {
+  grid-column: span 2;
+  padding: 12px 14px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  background: #F8FAFC;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.trust-score-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.trust-dots {
+  display: inline-flex;
+  gap: 5px;
+}
+
+.trust-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #E2E8F0;
+  border: 1px solid #CBD5E1;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.trust-dot.filled {
+  background: #10B981;
+  border-color: #059669;
+}
+
+.trust-score-text {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.trust-help {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #64748B;
+  line-height: 1.4;
+}
+
+.trust-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-trust-inc,
+.btn-trust-dec,
+.btn-trust-reset {
+  flex: 1;
+  min-width: 140px;
+  padding: 9px 12px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  border: 1px solid;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn-trust-inc        { color: #166534; background: #F0FDF4; border-color: #86EFAC; }
+.btn-trust-inc:hover:not(:disabled)  { background: #DCFCE7; }
+
+.btn-trust-dec        { color: #991B1B; background: #FEF2F2; border-color: #FCA5A5; }
+.btn-trust-dec:hover:not(:disabled)  { background: #FEE2E2; }
+
+.btn-trust-reset      { color: #1E40AF; background: #EFF6FF; border-color: #93C5FD; }
+.btn-trust-reset:hover:not(:disabled) { background: #DBEAFE; }
+
+.btn-trust-inc:disabled,
+.btn-trust-dec:disabled,
+.btn-trust-reset:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ============================================
    TABS & HISTORY STYLES
    ============================================ */

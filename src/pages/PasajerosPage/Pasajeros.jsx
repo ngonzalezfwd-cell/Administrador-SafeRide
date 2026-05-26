@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Users, Search, Plus, Mail, Star, Activity,
-  Eye, Edit, Trash2, CheckCircle, Briefcase, Phone,
-  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
+  Eye, Edit, CheckCircle, Briefcase, Phone,
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, PowerOff
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { toast, Toaster } from 'react-hot-toast';
@@ -22,7 +22,7 @@ const ALPHABET = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
 const PAGE_LIMIT = 9;
 const SKELETON_COUNT = 6;
 const SEARCH_DEBOUNCE_MS = 300;
-const INITIAL_STATS = { total: 0, activeNow: 0, avgRating: 0 };
+const INITIAL_STATS = { total: null, activeNow: null, avgRating: null };
 
 const SWAL_BASE = {
   showCancelButton: true,
@@ -146,7 +146,7 @@ const PassengerCard = React.memo(({ passenger, index, onEdit, onDelete, onActiva
       </button>
       {passenger.isActive && (
         <button className="action-btn delete" title="Desactivar" onClick={() => onDelete(passenger)}>
-          <Trash2 size={18} />
+          <PowerOff size={18} />
         </button>
       )}
     </div>
@@ -157,7 +157,7 @@ const StatCard = ({ icon: Icon, color, value, title, subtitle, loading }) => (
   <div className="tarjetaEstadistica">
     <div className="estadisticaHeader">
       <div className={`estadisticaIcono ${color}`}><Icon size={20} /></div>
-      <div className="estadisticaValor">{loading ? '—' : value}</div>
+      <div className="estadisticaValor">{loading || value == null ? '—' : value}</div>
     </div>
     <div className="estadisticaTitulo">{title}</div>
     <div className="estadisticaFooter">
@@ -169,8 +169,8 @@ const StatCard = ({ icon: Icon, color, value, title, subtitle, loading }) => (
 const StatsGrid = ({ loading, stats }) => (
   <div className="graficosGrid">
     <StatCard icon={Users}    color="color-blue"   value={stats.total}     title="Total Pasajeros" subtitle="Usuarios registrados" loading={loading} />
-    <StatCard icon={Activity} color="color-green"  value={stats.activeNow} title="Activos Ahora"   subtitle="Usuarios en línea"    loading={loading} />
-    <StatCard icon={Star}     color="color-yellow" value={stats.avgRating} title="Rating Promedio" subtitle="Valoración general"   loading={loading} />
+    <StatCard icon={Activity} color="color-green"  value={stats.activeNow} title="Cuentas Activas" subtitle="Pasajeros habilitados" loading={loading} />
+    <StatCard icon={Star}     color="color-yellow" value={stats.avgRating} title="Rating Promedio" subtitle="Promedio global"      loading={loading} />
   </div>
 );
 
@@ -271,6 +271,33 @@ const PasajerosPage = () => {
   // ── Refs ───────────────────────────────────────────────────
   const lastRequestId = useRef(0);
 
+  // ── Stats globales ─────────────────────────────────────────
+  // Pide TODOS los pasajeros (limit alto) solo para calcular el rating
+  // promedio real sobre toda la BD, no sobre los 9 visibles. Se refresca
+  // solo en mount y tras mutaciones (activate/delete/save), no en cada
+  // cambio de filtro/búsqueda/paginación, donde el promedio no cambia.
+  // Km recorridos y CO2 ahorrado NO se muestran aquí — eso vive en el Panel.
+  const loadGlobalStats = useCallback(async () => {
+    try {
+      const res = await passengerService.getAllPassengers({ limit: 10000, page: 1 });
+      const all = Array.isArray(res?.data) ? res.data : [];
+
+      const rated = all.filter(p => typeof p.rating === 'number' && p.rating > 0);
+      const avg = rated.length > 0
+        ? (rated.reduce((s, p) => s + p.rating, 0) / rated.length).toFixed(1)
+        : null;
+
+      setStats(prev => ({
+        ...prev,
+        total:     prev.total     ?? res.stats?.total     ?? all.length,
+        activeNow: prev.activeNow ?? res.stats?.active    ?? all.filter(p => p.isActive).length,
+        avgRating: avg,
+      }));
+    } catch (err) {
+      console.error('[PasajerosPage] Error al cargar stats globales:', err);
+    }
+  }, []);
+
   // ── Carga de datos ─────────────────────────────────────────
   const loadPassengers = useCallback(async () => {
     const requestId = ++lastRequestId.current;
@@ -297,19 +324,20 @@ const PasajerosPage = () => {
       if (response.pagination) {
         setTotalPages(response.pagination.pages || 1);
       }
-      setStats({
-        total: response.stats?.total || response.pagination?.total || 0,
-        activeNow: response.stats?.active || 0,
-        avgRating: (
-          response.data.reduce((s, p) => s + (p.rating || 0), 0) /
-          (response.data.length || 1)
-        ).toFixed(1),
-      });
+      // Importante: avgRating NO se calcula aquí porque response.data trae solo
+      // la página actual (9 pasajeros). Para que el rating refleje todos los
+      // pasajeros de la BD usamos loadGlobalStats() que pide la lista completa.
+      // Mantenemos el avgRating previo entre cargas para evitar parpadeos.
+      setStats(prev => ({
+        ...prev,
+        total: response.stats?.total ?? response.pagination?.total ?? null,
+        activeNow: response.stats?.active ?? null,
+      }));
     } catch (err) {
       console.error('[PasajerosPage] Error al cargar pasajeros:', err);
-      setPassengers([]);
+      if (requestId === lastRequestId.current) setPassengers([]);
     } finally {
-      setLoading(false);
+      if (requestId === lastRequestId.current) setLoading(false);
     }
   }, [searchTerm, selectedLetter, currentPage, sortOrder]);
 
@@ -338,6 +366,13 @@ const PasajerosPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 
+  // Stats globales: una vez al montar. Las mutaciones (activate/delete/save)
+  // disparan loadGlobalStats() explícitamente, no es necesario reaccionar a
+  // cambios de filtro/orden/página porque el promedio global no varía.
+  useEffect(() => {
+    loadGlobalStats();
+  }, [loadGlobalStats]);
+
   // ── Handlers de modal ──────────────────────────────────────
   const openModal = (passenger = null, tab = 'info') => {
     setSelectedPassenger(passenger);
@@ -363,6 +398,7 @@ const PasajerosPage = () => {
       await passengerService.activatePassenger(passenger._id);
       toast.success('Pasajero reactivado correctamente');
       loadPassengers();
+      loadGlobalStats();
     } catch (err) {
       console.error('Error activating passenger:', err);
       toast.error('No se pudo reactivar al pasajero');
@@ -382,11 +418,23 @@ const PasajerosPage = () => {
       await passengerService.deletePassenger(passenger._id);
       toast.success('Pasajero desactivado correctamente');
       loadPassengers();
+      loadGlobalStats();
     } catch (err) {
       console.error('Error deleting passenger:', err);
       toast.error('No se pudo desactivar al pasajero');
     }
   };
+
+  // Filtrado local sobre la página ya cargada. Garantiza respuesta inmediata
+  // de la barra de búsqueda aunque el backend tarde o falle.
+  const filteredPassengers = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return passengers;
+    return passengers.filter(p => {
+      const haystack = `${p.name || ''} ${p.username || ''} ${p.email || ''} ${p.phone || ''} ${p.company || ''}`.toLowerCase();
+      return haystack.includes(term);
+    });
+  }, [passengers, searchTerm]);
 
   // ── Handlers de filtros ────────────────────────────────────
   // Búsqueda y filtro alfabético son mutuamente excluyentes: al activar uno
@@ -405,7 +453,7 @@ const PasajerosPage = () => {
     <>
       <Toaster position="top-right" />
 
-      <div id="encabezadoPagina" className="page-header">
+      <div className="page-header">
         <div className="page-header-title">
           <h1>Gestión de Pasajeros</h1>
           <p>Supervisa y administra los usuarios registrados en la plataforma</p>
@@ -449,12 +497,12 @@ const PasajerosPage = () => {
 
       <StatsGrid loading={loading} stats={stats} />
 
-      <div id="gridPasajeros" className="passengers-section">
+      <div className="passengers-section">
         <div className={`conductoresGrid ${loading ? 'conductoresGrid--loading' : 'conductoresGrid--loaded'}`}>
           {loading
             ? Array.from({ length: SKELETON_COUNT }).map((_, i) => <CardSkeleton key={`skp-${i}`} />)
-            : passengers.length > 0
-              ? passengers.map((p, index) => (
+            : filteredPassengers.length > 0
+              ? filteredPassengers.map((p, index) => (
                   <PassengerCard
                     key={p._id}
                     passenger={p}
@@ -479,7 +527,7 @@ const PasajerosPage = () => {
         isOpen={isModalOpen}
         onClose={closeModal}
         driver={selectedPassenger}
-        onSaved={loadPassengers}
+        onSaved={() => { loadPassengers(); loadGlobalStats(); }}
         userType="pasajero"
         initialTab={modalTab}
       />
