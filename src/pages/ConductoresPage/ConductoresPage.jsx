@@ -369,11 +369,16 @@ const ConductoresPage = () => {
   // Filtrado local sobre la página ya cargada. Hace que la barra responda
   // de inmediato aunque el backend tarde o falle: el usuario siempre ve
   // resultados filtrados dentro de los conductores visibles en esta página.
+  // NOTA: No incluimos `phone` en el haystack para mantener paridad con el
+  // backend (`userController.getAllUsers` solo hace $regex sobre name/username/
+  // email). Si lo incluyéramos, buscar un dígito traería falsos positivos por
+  // los números del teléfono — p.ej. buscar "3" matcheaba al conductor 4 porque
+  // su teléfono termina en 3.
   const filteredDrivers = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     if (!term) return drivers;
     return drivers.filter(d => {
-      const haystack = `${d.name || ''} ${d.username || ''} ${d.email || ''} ${d.phone || ''}`.toLowerCase();
+      const haystack = `${d.name || ''} ${d.username || ''} ${d.email || ''}`.toLowerCase();
       return haystack.includes(term);
     });
   }, [drivers, searchTerm]);

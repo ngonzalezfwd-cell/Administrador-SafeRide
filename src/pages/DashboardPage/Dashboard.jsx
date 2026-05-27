@@ -31,7 +31,7 @@ const TarjetaEstadistica = React.memo(({ icon, title, value, change, isPositive,
             <>
                 <div className="estadisticaHeader">
                     <div className="estadisticaIcono">{icon}</div>
-                    <div className="estadisticaValor">{value ?? '—'}</div>
+                    <div className="estadisticaValor" style={{ color: '#0F172A' }}>{value ?? '—'}</div>
                 </div>
                 <div className="estadisticaTitulo">{title}</div>
                 <div className="estadisticaFooter">
@@ -134,14 +134,19 @@ const Dashboard = () => {
         });
     };
 
-    const totalUsuarios = metricas.totalUsers || 0;
-    const totalConductores = metricas.totalDrivers || 0;
+    const totalUsuarios = Number(metricas.totalUsers) || 0;
+    const totalConductores = Number(metricas.totalDrivers) || 0;
     // Los pasajeros son el residuo: total activos − conductores − admins.
     // Antes se calculaba como total − conductores, lo que metía a los admins
     // dentro de "Pasajeros" y dejaba "Moderadores" siempre en 0 → caía al
     // fallback hardcodeado de 14.
     const totalPasajeros = Math.max(0, totalUsuarios - totalConductores - totalAdmins);
-    const totalViajes = metricas.totalRides || 0;
+    const totalViajes = Number(metricas.totalRides) || 0;
+    // Denominador real para el gráfico de roles: usa la suma de los tres
+    // segmentos (no metricas.totalUsers) para garantizar que los % siempre
+    // sumen 100, incluso si totalUsers viene con un valor inconsistente
+    // (p.ej. drivers+admins+pasajeros calculado da 0 → evita NaN%).
+    const totalRoles = totalPasajeros + totalConductores + totalAdmins;
 
     const pieDataRoles = useMemo(() => [
         { name: 'Pasajeros',   value: totalPasajeros,   color: '#3B82F6' },
@@ -256,9 +261,9 @@ const Dashboard = () => {
 
                                 <div className="textoCentroTorta">
 
-                                    <span className="etiquetaTotal">Total</span>
+                                    <span className="etiquetaTotal" style={{ color: '#64748B' }}>Total</span>
 
-                                    <span className="valorTotal">{totalPagos.toLocaleString()}</span>
+                                    <span className="valorTotal" style={{ color: '#0F172A' }}>{totalPagos.toLocaleString()}</span>
                                 </div>
                             </div>
 
@@ -272,8 +277,8 @@ const Dashboard = () => {
 
                                         <div className="detallesLeyenda">
 
-                                            <span className="nombreLeyenda">{item.name}</span>
-                                            <span className="valorLeyenda">{item.value} <span className="porcentajeLeyenda">({totalPagos > 0 ? ((item.value / totalPagos) * 100).toFixed(1) : '0.0'}%)</span></span>
+                                            <span className="nombreLeyenda" style={{ color: '#475569' }}>{item.name}</span>
+                                            <span className="valorLeyenda" style={{ color: '#0F172A' }}>{item.value.toLocaleString()} <span className="porcentajeLeyenda" style={{ color: '#94A3B8' }}>({totalPagos > 0 ? ((item.value / totalPagos) * 100).toFixed(1) : '0.0'}%)</span></span>
                                         </div>
                                     </div>
                                 ))}
@@ -307,8 +312,8 @@ const Dashboard = () => {
 
                                 <div className="textoCentroTorta">
 
-                                    <span className="valorTotal">{totalUsuarios.toLocaleString()}</span>
-                                    <span className="etiquetaTotal">Total</span>
+                                    <span className="valorTotal" style={{ color: '#0F172A' }}>{totalUsuarios.toLocaleString()}</span>
+                                    <span className="etiquetaTotal" style={{ color: '#64748B' }}>Total</span>
                                 </div>
                             </div>
 
@@ -322,8 +327,8 @@ const Dashboard = () => {
 
                                         <div className="detallesLeyenda">
 
-                                            <span className="nombreLeyenda">{item.name}</span>
-                                            <span className="valorLeyenda">{item.value} <span className="porcentajeLeyenda">({((item.value / 1248) * 100).toFixed(1)}%)</span></span>
+                                            <span className="nombreLeyenda" style={{ color: '#475569' }}>{item.name}</span>
+                                            <span className="valorLeyenda" style={{ color: '#0F172A' }}>{item.value.toLocaleString()} <span className="porcentajeLeyenda" style={{ color: '#94A3B8' }}>({totalRoles > 0 ? ((item.value / totalRoles) * 100).toFixed(1) : '0.0'}%)</span></span>
                                         </div>
                                     </div>
                                 ))}
