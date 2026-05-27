@@ -239,6 +239,7 @@
 
 .n-card {
   background: white;
+  color: #1E293B;
   border-radius: 16px;
   border: 1px solid #E2E8F0;
   overflow: hidden;
@@ -301,7 +302,7 @@
 .n-message {
   font-size: 14px;
   line-height: 1.5;
-  color: #1E293B;
+  color: inherit;
   font-weight: 600;
   margin: 0;
 }
@@ -313,7 +314,8 @@
 }
 .n-card.read .n-message {
   font-weight: 500;
-  color: #475569;
+  color: inherit;
+  opacity: 0.85;
   text-decoration: none;
 }
 
