@@ -427,11 +427,15 @@ const PasajerosPage = () => {
 
   // Filtrado local sobre la página ya cargada. Garantiza respuesta inmediata
   // de la barra de búsqueda aunque el backend tarde o falle.
+  // NOTA: No incluimos `phone` en el haystack para mantener paridad con el
+  // backend (`userController.getAllUsers` solo hace $regex sobre name/username/
+  // email). Incluir teléfono causaba falsos positivos al buscar dígitos —
+  // p.ej. buscar "3" matcheaba pasajeros cuyo teléfono contenía un 3.
   const filteredPassengers = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     if (!term) return passengers;
     return passengers.filter(p => {
-      const haystack = `${p.name || ''} ${p.username || ''} ${p.email || ''} ${p.phone || ''} ${p.company || ''}`.toLowerCase();
+      const haystack = `${p.name || ''} ${p.username || ''} ${p.email || ''} ${p.company || ''}`.toLowerCase();
       return haystack.includes(term);
     });
   }, [passengers, searchTerm]);

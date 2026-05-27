@@ -1,11 +1,7 @@
-import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    
-    <App />
-  </StrictMode>,
-)
+// StrictMode deshabilitado temporalmente: en React 19 + HMR de Vite causaba
+// que el Dashboard renderizara dos instancias con desync de state.
+createRoot(document.getElementById('root')).render(<App />)
